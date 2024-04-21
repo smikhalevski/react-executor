@@ -1,0 +1,12 @@
+{
+  "preset": "ts-jest",
+  "testMatch": [
+    "<rootDir>/src/**/*.test.{tsx,ts}"
+  ],
+  "modulePathIgnorePatterns": [
+    "<rootDir>/lib"
+  ],
+  "testEnvironment": "jsdom",
+  "detectOpenHandles": true,
+  "forceExit": true
+}
