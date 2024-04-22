@@ -1,54 +1,52 @@
-import { Executor } from './Executor';
+import { Executor } from './types';
 import { ExecutorImpl } from './ExecutorImpl';
 import { noop } from './utils';
 
 export class ExecutorManager {
-  private _refs = new Map<unknown, { executor: Executor; observerCount: number }>();
+  private _executorRefs = new Map<unknown, { executor: ExecutorImpl; refCount: number }>();
 
   /**
-   * Returns a shared executor by its key.
+   * Returns an executor by its key, or `undefined` if there's no such executor.
    */
-  get(key: unknown): Executor | undefined {
-    return this._refs.get(key)?.executor;
+  get(key: string): Executor | undefined {
+    return this._executorRefs.get(key)?.executor;
   }
 
   /**
    * Returns an existing shared executor or creates a new one.
    */
-  getOrCreate(key: unknown): Executor {
-    let ref = this._refs.get(key);
+  getOrCreate(key: string): Executor {
+    let ref = this._executorRefs.get(key);
 
     if (ref === undefined) {
-      ref = { executor: new ExecutorImpl(), observerCount: 0 };
-      this._refs.set(key, ref);
+      ref = { executor: new ExecutorImpl(key), refCount: 0 };
+      this._executorRefs.set(key, ref);
     }
 
     return ref.executor;
   }
 
-  observe(key: unknown): () => void {
-    const ref = this._refs.get(key);
+  connect(key: unknown): () => void {
+    const ref = this._executorRefs.get(key);
 
     if (ref === undefined) {
       return noop;
     }
 
-    let isObserved = true;
+    let isConnected = true;
 
-    ref.observerCount++;
+    ref.refCount++;
 
     return () => {
-      if (!isObserved) {
-        return;
+      if (isConnected) {
+        isConnected = false;
+
+        setTimeout(() => {
+          if (--ref.refCount === 0) {
+            ref.executor.abort();
+          }
+        }, 0);
       }
-
-      isObserved = false;
-
-      setTimeout(() => {
-        if (--ref.observerCount === 0) {
-          ref.executor.abort();
-        }
-      }, 0);
     };
   }
 }

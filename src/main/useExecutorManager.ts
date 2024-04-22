@@ -1,6 +1,16 @@
-import { useContext } from 'react';
+import { createContext, useContext } from 'react';
 import { ExecutorManager } from './ExecutorManager';
-import { ExecutorManagerContext } from './ExecutorManagerContext';
+
+const ExecutorManagerContext = createContext(new ExecutorManager());
+
+/**
+ * > — Big man in a suit of armour. Take that off, what are you?
+ * >
+ * > — Genius, billionaire, playboy, philanthropist.
+ *
+ * The provides the manager that retrieves and creates executors.
+ */
+export const ExecutorManagerProvider = ExecutorManagerContext.Provider;
 
 /**
  * Returns the current executor manager.

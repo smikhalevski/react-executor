@@ -1,5 +1,4 @@
-export type { ExecutorEvent, Executor } from './Executor';
+export type { ExecutorEvent, Executor } from './types';
 export { ExecutorManager } from './ExecutorManager';
-export { ExecutorManagerContext } from './ExecutorManagerContext';
 export { useExecutor } from './useExecutor';
-export { useExecutorManager } from './useExecutorManager';
+export { useExecutorManager, ExecutorManagerProvider } from './useExecutorManager';

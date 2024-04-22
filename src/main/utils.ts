@@ -1,7 +1,3 @@
-import type { DependencyList } from 'react';
-
-export const emptyDeps: DependencyList = [];
-
 export function noop(): void {}
 
 /**

@@ -1,11 +1,22 @@
-import type { AbortableCallback } from 'parallel-universe';
 import { useEffect, useMemo } from 'react';
 import { useRerender } from 'react-hookers';
-import type { Executor } from './Executor';
+import type { Executor, Task } from './types';
 import { useExecutorManager } from './useExecutorManager';
-import { emptyDeps } from './utils';
 
-export function useExecutor<T>(key: unknown, initialValue?: AbortableCallback<T> | PromiseLike<T> | T): Executor<T> {
+/**
+ * Manages the async task execution process and provides ways to access task execution results, abort or replace the
+ * task execution, and subscribe to its state changes.
+ *
+ * @param key The unique executor key. All hook usages with the same key, return the same {@link Executor} instance.
+ * @param initialValue The initial executor value. This value is applied to the non-{@link Executor.isPending pending}
+ * executor if it isn't {@link Executor.isFulfilled fulfilled} or if it's value is
+ * {@link Executor.isInvalidated invalidated}. Otherwise, this value is ignored.
+ * @template Value The value stored by the executor.
+ */
+export function useExecutor<Value>(
+  key: string,
+  initialValue?: Task<Value> | PromiseLike<Value> | Value
+): Executor<Value> {
   const rerender = useRerender();
   const manager = useExecutorManager();
   const executor = manager.getOrCreate(key);
@@ -15,21 +26,21 @@ export function useExecutor<T>(key: unknown, initialValue?: AbortableCallback<T>
       return;
     }
     if (typeof initialValue === 'function') {
-      executor.execute(initialValue as AbortableCallback<T>);
+      executor.execute(initialValue as Task<Value>);
     } else {
       executor.resolve(initialValue);
     }
-  }, emptyDeps);
+  }, [executor]);
 
   useEffect(() => {
-    const unobserve = manager.observe(key);
+    const disconnect = manager.connect(key);
     const unsubscribe = executor.subscribe(rerender);
 
     return () => {
-      unobserve();
+      disconnect();
       unsubscribe();
     };
-  }, emptyDeps);
+  }, [key, executor]);
 
   return executor;
 }
