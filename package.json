@@ -55,7 +55,6 @@
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0"
   },
   "dependencies": {
-    "parallel-universe": "^5.0.1",
-    "react-hookers": "^5.1.0"
+    "parallel-universe": "^5.0.1"
   }
 }

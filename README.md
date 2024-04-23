@@ -122,3 +122,31 @@ useEffect(() => {
   executorManager.get('user')?.invalidate();
 }, []);
 ```
+
+```ts
+useExecutor(`user-${orderId}`, initialValue, [
+  // Binds all executor prototype methods to the instance
+  bindPlugin(),
+
+  // Persists the executor value in the local storage
+  storagePlugin(localStorage),
+
+  // Aborts pending task if executor is disconnected 
+  abortPlugin(),
+
+  // Retries the last task if window is focused 
+  focusPlugin(),
+
+  // Marks settled executor as invalidated after the given timeout
+  invalidatePlugin(10_000),
+
+  // Retries the last task of the active executor if it was invalidated 
+  retryPlugin(),
+
+  // Disposes disconnected executor after a given timeout
+  disposePlugin(),
+
+  // Invalidates this executor if a dependency is fulfilled or invalidated
+  dependencyPlugin([/^order-/, /verification/, /account/])
+]);
+```

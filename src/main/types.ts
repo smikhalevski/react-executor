@@ -1,21 +1,34 @@
 import type { AbortablePromise, Awaitable } from 'parallel-universe';
+import type { ExecutorManager } from './ExecutorManager';
 
 /**
  * The event published by the {@link Executor}.
  *
  * @template Value The value stored by the executor.
  */
-export interface ExecutorEvent<Value = any> {
+export interface Event<Value = any> {
   /**
    * The type of the event.
    */
-  type: 'aborted' | 'pending' | 'cleared' | 'invalidated' | 'fulfilled' | 'rejected';
+  type:
+    | 'created'
+    | 'pending'
+    | 'fulfilled'
+    | 'rejected'
+    | 'aborted'
+    | 'cleared'
+    | 'invalidated'
+    | 'activated'
+    | 'deactivated'
+    | 'disposed';
 
   /**
    * The executor that published the event.
    */
   target: Executor<Value>;
 }
+
+export type Plugin<Value = any> = (executor: Executor<Value>) => (() => void | undefined) | void | undefined;
 
 /**
  * The task executed by {@link Executor}.
@@ -25,7 +38,7 @@ export interface ExecutorEvent<Value = any> {
  * @returns The value that the executor must be fulfilled with.
  * @template Value The value stored by the executor.
  */
-export type Task<Value> = (signal: AbortSignal, prevValue: Value | undefined) => Awaitable<Value>;
+export type Task<Value = any> = (signal: AbortSignal, prevValue: Value | undefined) => Awaitable<Value>;
 
 /**
  * Manages the async task execution process and provides ways to access task execution results, abort or replace the
@@ -38,6 +51,11 @@ export interface Executor<Value = any> {
    * The unique key of this executor.
    */
   readonly key: string;
+
+  /**
+   * The manager that created this executor.
+   */
+  readonly manager: ExecutorManager;
 
   /**
    * `true` if the result was fulfilled with a value, or `false` otherwise.
@@ -54,6 +72,13 @@ export interface Executor<Value = any> {
    * occurred yet.
    */
   readonly isInvalidated: boolean;
+
+  /**
+   * `true` if this executor was marked as active at least once.
+   *
+   * @see {@link activate}
+   */
+  readonly isActive: boolean;
 
   /**
    * The value or `undefined` if executor isn't {@link isFulfilled fulfilled}.
@@ -153,10 +178,19 @@ export interface Executor<Value = any> {
   reject(reason: any): this;
 
   /**
+   * Marks the executor as being actively monitored by an external subscriber.
+   *
+   * Activated executor stays {@link isActive active} until all deactivate callbacks are invoked.
+   *
+   * @returns The callback that deactivates the executor.
+   */
+  activate(): () => void;
+
+  /**
    * Subscribes a listener to the events published by this executor.
    *
    * @param listener The listener to subscribe.
    * @returns The callback that unsubscribes the listener.
    */
-  subscribe(listener: (event: ExecutorEvent<Value>) => void): () => void;
+  subscribe(listener: (event: Event<Value>) => void): () => void;
 }
