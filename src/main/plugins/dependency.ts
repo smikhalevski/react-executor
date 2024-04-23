@@ -1,9 +1,9 @@
-import type { Plugin } from '../types';
+import type { ExecutorPlugin } from '../types';
 
 /**
  * Invalidates the executor if a dependency is fulfilled or invalidated.
  */
-export default function dependencyPlugin(keys: Array<RegExp | string>): Plugin {
+export default function dependencyPlugin(keys: Array<RegExp | string>): ExecutorPlugin {
   return executor =>
     executor.manager.subscribe(event => {
       const targetKey = event.target.key;

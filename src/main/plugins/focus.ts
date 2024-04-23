@@ -1,9 +1,9 @@
-import type { Plugin } from '../types';
+import type { ExecutorPlugin } from '../types';
 
 /**
- * Retries the last task if window gains focused.
+ * Retries the latest task if window gains focused.
  */
-export default function focusPlugin(): Plugin {
+export default function focusPlugin(): ExecutorPlugin {
   return executor => {
     if (typeof window === 'undefined') {
       return;

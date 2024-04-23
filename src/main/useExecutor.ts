@@ -1,5 +1,5 @@
 import { useEffect, useReducer } from 'react';
-import type { Executor, Plugin, Task } from './types';
+import type { Executor, ExecutorPlugin, ExecutorTask } from './types';
 import { useExecutorManager } from './useExecutorManager';
 
 /**
@@ -8,17 +8,16 @@ import { useExecutorManager } from './useExecutorManager';
  *
  * @param key The unique executor key. All hook usages with the same key, return the same {@link Executor} instance.
  * @param initialValue The initial executor value.
- * @param plugins
+ * @param plugins The array of plugins that are applied to the newly created executor.
  * @template Value The value stored by the executor.
  */
 export function useExecutor<Value>(
   key: string,
-  initialValue?: Task<Value> | PromiseLike<Value> | Value,
-  plugins?: Plugin<Value>[]
+  initialValue?: ExecutorTask<Value> | PromiseLike<Value> | Value,
+  plugins?: ExecutorPlugin<Value>[]
 ): Executor<Value> {
   const [, rerender] = useReducer(reduceCount, 0);
-  const manager = useExecutorManager();
-  const executor = manager.getOrCreate(key, initialValue, plugins);
+  const executor = useExecutorManager().getOrCreate(key, initialValue, plugins);
 
   useEffect(() => {
     const deactivate = executor.activate();

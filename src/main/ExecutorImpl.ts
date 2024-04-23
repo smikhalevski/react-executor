@@ -1,10 +1,10 @@
 import { AbortablePromise, Awaitable, PubSub } from 'parallel-universe';
 import type { ExecutorManager } from './ExecutorManager';
-import type { Event, Executor, Task } from './types';
+import type { ExecutorEvent, Executor, ExecutorTask } from './types';
 import { isEqual, isPromiseLike } from './utils';
 
 /**
- * The default {@link Executor} implementation returned by the {@link ExecutorManager}.
+ * The {@link Executor} implementation returned by the {@link ExecutorManager}.
  *
  * @internal
  */
@@ -12,36 +12,35 @@ export class ExecutorImpl<Value = any> implements Executor {
   isFulfilled = false;
   isRejected = false;
   isInvalidated = false;
-  value: Value | undefined;
-  reason: any;
+  value: Value | undefined = undefined;
+  reason: any = undefined;
+  latestTask: ExecutorTask<Value> | null = null;
 
   /**
-   * The last task passed to {@link execute}, or `null` if executor wasn't settled through {@link execute}.
+   * The number of times the executor was {@link activate activated}.
    */
-  task: Task<Value> | null = null;
+  activationCount = 0;
 
   /**
    * The promise of the pending task execution, or `null` if there's no pending task execution.
    */
-  promise: AbortablePromise<Value> | null = null;
+  pendingPromise: AbortablePromise<Value> | null = null;
 
   /**
-   * Number of times {@link activate} was called for this executor.
+   * The pubsub that handles the executor subscriptions.
    */
-  activationCount = 0;
-
-  pubSub = new PubSub<Event>();
-
-  get isActive() {
-    return this.activationCount !== 0;
-  }
+  readonly pubSub = new PubSub<ExecutorEvent>();
 
   get isSettled() {
     return this.isFulfilled || this.isRejected;
   }
 
+  get isActive() {
+    return this.activationCount !== 0;
+  }
+
   get isPending() {
-    return this.promise !== null;
+    return this.pendingPromise !== null;
   }
 
   constructor(
@@ -49,15 +48,45 @@ export class ExecutorImpl<Value = any> implements Executor {
     public readonly manager: ExecutorManager
   ) {}
 
-  getOrWait(): AbortablePromise<Value> {
+  await(): AbortablePromise<Value> {
+    return new AbortablePromise((resolve, reject, signal) => {
+      if (!this.isPending) {
+        if (this.isFulfilled) {
+          resolve(this.value!);
+          return;
+        }
+        if (this.isRejected) {
+          reject(this.reason);
+          return;
+        }
+      }
+
+      const unsubscribe = this.pubSub.subscribe(event => {
+        if ((event.type === 'fulfilled' || event.type === 'rejected') && !this.isPending) {
+          if (this.isFulfilled) {
+            resolve(this.value!);
+            unsubscribe();
+          }
+          if (this.isRejected) {
+            reject(this.reason);
+            unsubscribe();
+          }
+        }
+      });
+
+      signal.addEventListener('abort', unsubscribe);
+    });
+  }
+
+  awaitValue(): AbortablePromise<Value> {
     return new AbortablePromise((resolve, _reject, signal) => {
-      if (this.isFulfilled) {
+      if (this.isFulfilled && !this.isPending) {
         resolve(this.value!);
         return;
       }
 
       const unsubscribe = this.pubSub.subscribe(event => {
-        if (event.type === 'fulfilled') {
+        if (event.type === 'fulfilled' && !this.isPending) {
           resolve(this.value!);
           unsubscribe();
         }
@@ -67,46 +96,50 @@ export class ExecutorImpl<Value = any> implements Executor {
     });
   }
 
-  getOrThrow(): Value {
+  getValue(): Value {
     if (this.isFulfilled) {
       return this.value!;
     }
     if (this.isRejected) {
       throw this.reason;
     }
-    throw new DOMException('Executor is not settled', 'InvalidStateError');
+    throw new Error('Executor is not settled');
   }
 
-  getOrDefault(defaultValue: Value): Value {
+  getValueOrDefault(defaultValue: Value): Value {
     return this.isFulfilled ? this.value! : defaultValue;
   }
 
-  execute(task: Task<Value>): AbortablePromise<Value> {
-    this.task = task;
+  execute(task: ExecutorTask<Value>): AbortablePromise<Value> {
+    this.latestTask = task;
 
-    const promise = new AbortablePromise<Value>((resolve, reject, signal) => {
+    if (this.pendingPromise !== null) {
+      this.pendingPromise.abort();
+    }
+
+    const pendingPromise = new AbortablePromise<Value>((resolve, reject, signal) => {
       signal.addEventListener('abort', () => {
-        if (this.promise === promise) {
-          this.promise = null;
+        if (this.pendingPromise === pendingPromise) {
+          this.pendingPromise = null;
           this.pubSub.publish({ type: 'aborted', target: this });
         }
       });
 
       new Promise<Value>(resolve => {
-        const value = task(signal, this.value);
+        const value = task(signal, this);
 
         resolve(value instanceof AbortablePromise ? value.withSignal(signal) : value);
       }).then(
         value => {
-          if (this.promise === promise) {
-            this.promise = null;
+          if (this.pendingPromise === pendingPromise) {
+            this.pendingPromise = null;
             this.resolve(value);
           }
           resolve(value);
         },
         reason => {
-          if (this.promise === promise) {
-            this.promise = null;
+          if (this.pendingPromise === pendingPromise) {
+            this.pendingPromise = null;
             this.reject(reason);
           }
           reject(reason);
@@ -114,28 +147,18 @@ export class ExecutorImpl<Value = any> implements Executor {
       );
     });
 
-    const prevPromise = this.promise;
-    this.promise = promise;
-
-    if (prevPromise !== null) {
-      prevPromise.abort();
-    }
+    this.pendingPromise = pendingPromise;
 
     this.pubSub.publish({ type: 'pending', target: this });
 
-    return promise;
+    return pendingPromise;
   }
 
-  retry(): AbortablePromise<Value> {
-    if (this.promise !== null) {
-      return this.promise;
+  retry(): this {
+    if (this.latestTask !== null && !this.isPending) {
+      this.execute(this.latestTask);
     }
-    if (this.task !== null) {
-      return this.execute(this.task);
-    }
-    return new AbortablePromise<Value>((_resolve, reject) => {
-      reject(new DOMException('Executor has no task to retry', 'InvalidStateError'));
-    });
+    return this;
   }
 
   clear(): this {
@@ -148,8 +171,8 @@ export class ExecutorImpl<Value = any> implements Executor {
   }
 
   abort(reason?: unknown): this {
-    if (this.promise !== null) {
-      this.promise.abort(reason);
+    if (this.pendingPromise !== null) {
+      this.pendingPromise.abort(reason);
     }
     return this;
   }
@@ -162,14 +185,14 @@ export class ExecutorImpl<Value = any> implements Executor {
   }
 
   resolve(value: Awaitable<Value>): this {
-    const promise = this.promise;
+    const pendingPromise = this.pendingPromise;
 
     if (isPromiseLike(value)) {
       this.execute(() => value);
       return this;
     }
     if (
-      (promise !== null && ((this.promise = null), promise.abort(), true)) ||
+      (pendingPromise !== null && ((this.pendingPromise = null), pendingPromise.abort(), true)) ||
       this.isInvalidated ||
       !this.isFulfilled ||
       !isEqual(this.value, value)
@@ -184,10 +207,10 @@ export class ExecutorImpl<Value = any> implements Executor {
   }
 
   reject(reason: any): this {
-    const promise = this.promise;
+    const pendingPromise = this.pendingPromise;
 
     if (
-      (promise !== null && ((this.promise = null), promise.abort(), true)) ||
+      (pendingPromise !== null && ((this.pendingPromise = null), pendingPromise.abort(), true)) ||
       this.isInvalidated ||
       !this.isRejected ||
       !isEqual(this.reason, reason)
@@ -219,7 +242,7 @@ export class ExecutorImpl<Value = any> implements Executor {
     };
   }
 
-  subscribe(listener: (event: Event) => void): () => void {
+  subscribe(listener: (event: ExecutorEvent) => void): () => void {
     return this.pubSub.subscribe(listener);
   }
 }

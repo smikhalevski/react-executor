@@ -88,7 +88,7 @@ const cartExecutor = useExecutor(
 
   async signal => {
     // 🟡 Pause the task until the user executor is fulfilled
-    const user = await userExecutor.getOrWait().withSignal(signal);
+    const user = await userExecutor.getValue().withSignal(signal);
 
     // Fetch the user's shopping cart
   }
@@ -134,13 +134,13 @@ useExecutor(`user-${orderId}`, initialValue, [
   // Aborts pending task if executor is disconnected 
   abortPlugin(),
 
-  // Retries the last task if window is focused 
+  // Retries the latest task if window is focused 
   focusPlugin(),
 
   // Marks settled executor as invalidated after the given timeout
   invalidatePlugin(10_000),
 
-  // Retries the last task of the active executor if it was invalidated 
+  // Retries the latest task of the active executor if it was invalidated 
   retryPlugin(),
 
   // Disposes disconnected executor after a given timeout

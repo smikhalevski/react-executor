@@ -1,9 +1,9 @@
-import type { Plugin } from '../types';
+import type { ExecutorPlugin } from '../types';
 
 /**
- * Retries the last task of the connected executor if it was invalidated.
+ * Retries the latest task of the connected executor if it was invalidated.
  */
-export default function retryPlugin(): Plugin {
+export default function retryPlugin(): ExecutorPlugin {
   return executor => {
     if (executor.isInvalidated) {
       executor.retry();

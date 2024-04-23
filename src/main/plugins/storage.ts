@@ -1,4 +1,4 @@
-import type { Plugin } from '../types';
+import type { ExecutorPlugin } from '../types';
 
 export interface Serializer<Value> {
   serialize(value: Value): string;
@@ -9,7 +9,7 @@ export interface Serializer<Value> {
 export default function storagePlugin<Value = any>(
   storage: Storage,
   serializer: Serializer<Value> = jsonSerializer
-): Plugin<Value> {
+): ExecutorPlugin<Value> {
   return executor => {
     const str = storage.getItem(executor.key);
 

@@ -1,9 +1,9 @@
-import type { Plugin } from '../types';
+import type { ExecutorPlugin } from '../types';
 
 /**
  * Binds all executor methods to the instance.
  */
-export default function bindPlugin(): Plugin {
+export default function bindPlugin(): ExecutorPlugin {
   return (executor: any) => {
     const { prototype } = executor.constructor.prototype;
 

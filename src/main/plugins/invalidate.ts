@@ -1,9 +1,9 @@
-import type { Plugin } from '../types';
+import type { ExecutorPlugin } from '../types';
 
 /**
  * Marks settled executor as invalidated after the given timeout.
  */
-export default function invalidatePlugin(ms: number): Plugin {
+export default function invalidatePlugin(ms: number): ExecutorPlugin {
   return executor => {
     let timer: NodeJS.Timeout;
 
