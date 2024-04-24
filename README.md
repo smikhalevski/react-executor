@@ -71,7 +71,7 @@ useExecutor(`order-${orderId}`, initialValue, [
   // Invalidates the settled executor result after the timeout.
   invalidateAfter(10_000),
 
-  // Invalidates the settled executor result if another executor with a matching is fulfilled or invalidated.
+  // Invalidates the settled executor result if another executor with a matching key is fulfilled or invalidated.
   invalidateByPeers([/verification/, /account/]),
 
   // Retries the latest task of the active executor if it was invalidated. 

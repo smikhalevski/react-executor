@@ -1,7 +1,7 @@
 import type { ExecutorPlugin } from '../types';
 
 /**
- * Invalidates the settled executor result if another executor with a matching is fulfilled or invalidated.
+ * Invalidates the settled executor result if another executor with a matching key is fulfilled or invalidated.
  *
  * @param keys The array of executor keys and key patterns.
  */
