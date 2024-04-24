@@ -11,6 +11,46 @@
       "import": "./index.mjs",
       "require": "./index.js"
     },
+    "./plugin/abortDeactivated": {
+      "types": "./plugin/abortDeactivated.d.ts",
+      "import": "./plugin/abortDeactivated.mjs",
+      "require": "./plugin/abortDeactivated.js"
+    },
+    "./plugin/bindAll": {
+      "types": "./plugin/bindAll.d.ts",
+      "import": "./plugin/bindAll.mjs",
+      "require": "./plugin/bindAll.js"
+    },
+    "./plugin/disposeDeactivated": {
+      "types": "./plugin/disposeDeactivated.d.ts",
+      "import": "./plugin/disposeDeactivated.mjs",
+      "require": "./plugin/disposeDeactivated.js"
+    },
+    "./plugin/invalidateAfter": {
+      "types": "./plugin/invalidateAfter.d.ts",
+      "import": "./plugin/invalidateAfter.mjs",
+      "require": "./plugin/invalidateAfter.js"
+    },
+    "./plugin/invalidateByPeers": {
+      "types": "./plugin/invalidateByPeers.d.ts",
+      "import": "./plugin/invalidateByPeers.mjs",
+      "require": "./plugin/invalidateByPeers.js"
+    },
+    "./plugin/retryFocused": {
+      "types": "./plugin/retryFocused.d.ts",
+      "import": "./plugin/retryFocused.mjs",
+      "require": "./plugin/retryFocused.js"
+    },
+    "./plugin/retryStale": {
+      "types": "./plugin/retryStale.d.ts",
+      "import": "./plugin/retryStale.mjs",
+      "require": "./plugin/retryStale.js"
+    },
+    "./plugin/syncStorage": {
+      "types": "./plugin/syncStorage.d.ts",
+      "import": "./plugin/syncStorage.mjs",
+      "require": "./plugin/syncStorage.js"
+    },
     "./package.json": "./package.json"
   },
   "sideEffects": false,

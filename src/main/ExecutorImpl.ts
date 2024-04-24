@@ -1,7 +1,6 @@
-import { AbortablePromise, Awaitable, PubSub } from 'parallel-universe';
+import { AbortablePromise, Awaitable, Deferred, PubSub } from 'parallel-universe';
 import type { ExecutorManager } from './ExecutorManager';
-import type { ExecutorEvent, Executor, ExecutorTask } from './types';
-import { isEqual, isPromiseLike } from './utils';
+import type { Executor, ExecutorEvent, ExecutorTask } from './types';
 
 /**
  * The {@link Executor} implementation returned by the {@link ExecutorManager}.
@@ -11,36 +10,38 @@ import { isEqual, isPromiseLike } from './utils';
 export class ExecutorImpl<Value = any> implements Executor {
   isFulfilled = false;
   isRejected = false;
-  isInvalidated = false;
+  isStale = false;
   value: Value | undefined = undefined;
   reason: any = undefined;
   latestTask: ExecutorTask<Value> | null = null;
-
-  /**
-   * The number of times the executor was {@link activate activated}.
-   */
-  activationCount = 0;
+  promise = new Deferred<Value>();
+  timestamp = 0;
 
   /**
    * The promise of the pending task execution, or `null` if there's no pending task execution.
    */
-  pendingPromise: AbortablePromise<Value> | null = null;
+  _taskPromise: AbortablePromise<Value> | null = null;
+
+  /**
+   * The number of active consumers.
+   */
+  _consumerCount = 0;
 
   /**
    * The pubsub that handles the executor subscriptions.
    */
-  readonly pubSub = new PubSub<ExecutorEvent>();
+  _pubSub = new PubSub<ExecutorEvent>();
 
   get isSettled() {
     return this.isFulfilled || this.isRejected;
   }
 
   get isActive() {
-    return this.activationCount !== 0;
+    return this._consumerCount !== 0;
   }
 
   get isPending() {
-    return this.pendingPromise !== null;
+    return this._taskPromise !== null;
   }
 
   constructor(
@@ -48,55 +49,7 @@ export class ExecutorImpl<Value = any> implements Executor {
     public readonly manager: ExecutorManager
   ) {}
 
-  await(): AbortablePromise<Value> {
-    return new AbortablePromise((resolve, reject, signal) => {
-      if (!this.isPending) {
-        if (this.isFulfilled) {
-          resolve(this.value!);
-          return;
-        }
-        if (this.isRejected) {
-          reject(this.reason);
-          return;
-        }
-      }
-
-      const unsubscribe = this.pubSub.subscribe(event => {
-        if ((event.type === 'fulfilled' || event.type === 'rejected') && !this.isPending) {
-          if (this.isFulfilled) {
-            resolve(this.value!);
-            unsubscribe();
-          }
-          if (this.isRejected) {
-            reject(this.reason);
-            unsubscribe();
-          }
-        }
-      });
-
-      signal.addEventListener('abort', unsubscribe);
-    });
-  }
-
-  awaitValue(): AbortablePromise<Value> {
-    return new AbortablePromise((resolve, _reject, signal) => {
-      if (this.isFulfilled && !this.isPending) {
-        resolve(this.value!);
-        return;
-      }
-
-      const unsubscribe = this.pubSub.subscribe(event => {
-        if (event.type === 'fulfilled' && !this.isPending) {
-          resolve(this.value!);
-          unsubscribe();
-        }
-      });
-
-      signal.addEventListener('abort', unsubscribe);
-    });
-  }
-
-  getValue(): Value {
+  get(): Value {
     if (this.isFulfilled) {
       return this.value!;
     }
@@ -106,52 +59,59 @@ export class ExecutorImpl<Value = any> implements Executor {
     throw new Error('Executor is not settled');
   }
 
-  getValueOrDefault(defaultValue: Value): Value {
+  getOrDefault(defaultValue: Value): Value {
     return this.isFulfilled ? this.value! : defaultValue;
   }
 
   execute(task: ExecutorTask<Value>): AbortablePromise<Value> {
-    this.latestTask = task;
-
-    if (this.pendingPromise !== null) {
-      this.pendingPromise.abort();
-    }
-
-    const pendingPromise = new AbortablePromise<Value>((resolve, reject, signal) => {
+    const taskPromise = new AbortablePromise<Value>((resolve, reject, signal) => {
       signal.addEventListener('abort', () => {
-        if (this.pendingPromise === pendingPromise) {
-          this.pendingPromise = null;
-          this.pubSub.publish({ type: 'aborted', target: this });
+        if (this._taskPromise === taskPromise) {
+          this._taskPromise = null;
+
+          if (this.isFulfilled) {
+            this.promise.resolve(this.value!);
+          }
+          if (this.isRejected) {
+            this.promise.reject(this.reason);
+          }
         }
+        this._pubSub.publish({ type: 'aborted', target: this });
       });
 
       new Promise<Value>(resolve => {
-        const value = task(signal, this);
-
-        resolve(value instanceof AbortablePromise ? value.withSignal(signal) : value);
+        resolve(task(signal, this));
       }).then(
         value => {
-          if (this.pendingPromise === pendingPromise) {
-            this.pendingPromise = null;
-            this.resolve(value);
+          if (!signal.aborted) {
+            this._resolve(value, Date.now(), false);
+            resolve(value);
           }
-          resolve(value);
         },
         reason => {
-          if (this.pendingPromise === pendingPromise) {
-            this.pendingPromise = null;
-            this.reject(reason);
+          if (!signal.aborted) {
+            this._reject(reason, Date.now(), false);
+            reject(reason);
           }
-          reject(reason);
         }
       );
     });
 
-    this.pendingPromise = pendingPromise;
+    const prevTaskPromise = this._taskPromise;
 
-    this.pubSub.publish({ type: 'pending', target: this });
+    this._taskPromise = taskPromise;
 
-    return pendingPromise;
+    if (prevTaskPromise !== null) {
+      prevTaskPromise.abort();
+    } else if (this.isSettled) {
+      this.promise = new Deferred();
+    }
+
+    this.latestTask = task;
+
+    this._pubSub.publish({ type: 'pending', target: this });
+
+    return taskPromise;
   }
 
   retry(): this {
@@ -163,86 +123,101 @@ export class ExecutorImpl<Value = any> implements Executor {
 
   clear(): this {
     if (this.isSettled) {
-      this.isFulfilled = this.isRejected = this.isInvalidated = false;
+      this.isFulfilled = this.isRejected = this.isStale = false;
       this.value = this.reason = undefined;
-      this.pubSub.publish({ type: 'cleared', target: this });
+      this._pubSub.publish({ type: 'cleared', target: this });
     }
     return this;
   }
 
   abort(reason?: unknown): this {
-    if (this.pendingPromise !== null) {
-      this.pendingPromise.abort(reason);
+    if (this._taskPromise !== null) {
+      this._taskPromise.abort(reason);
     }
     return this;
   }
 
   invalidate(): this {
-    if (this.isInvalidated !== (this.isInvalidated = this.isSettled)) {
-      this.pubSub.publish({ type: 'invalidated', target: this });
+    if (this.isStale !== (this.isStale = this.isSettled)) {
+      this._pubSub.publish({ type: 'invalidated', target: this });
     }
     return this;
   }
 
-  resolve(value: Awaitable<Value>): this {
-    const pendingPromise = this.pendingPromise;
-
-    if (isPromiseLike(value)) {
-      this.execute(() => value);
-      return this;
-    }
-    if (
-      (pendingPromise !== null && ((this.pendingPromise = null), pendingPromise.abort(), true)) ||
-      this.isInvalidated ||
-      !this.isFulfilled ||
-      !isEqual(this.value, value)
-    ) {
-      this.isFulfilled = true;
-      this.isRejected = this.isInvalidated = false;
-      this.value = value;
-      this.reason = undefined;
-      this.pubSub.publish({ type: 'fulfilled', target: this });
-    }
+  resolve(value: Awaitable<Value>, timestamp = Date.now()): this {
+    this._resolve(value, timestamp, true);
     return this;
   }
 
-  reject(reason: any): this {
-    const pendingPromise = this.pendingPromise;
-
-    if (
-      (pendingPromise !== null && ((this.pendingPromise = null), pendingPromise.abort(), true)) ||
-      this.isInvalidated ||
-      !this.isRejected ||
-      !isEqual(this.reason, reason)
-    ) {
-      this.isFulfilled = this.isInvalidated = false;
-      this.isRejected = true;
-      this.value = undefined;
-      this.reason = reason;
-      this.pubSub.publish({ type: 'rejected', target: this });
-    }
+  reject(reason: any, timestamp = Date.now()): this {
+    this._reject(reason, timestamp, true);
     return this;
   }
 
   activate(): () => void {
     let isActive = true;
 
-    if (this.activationCount++ === 0) {
-      this.pubSub.publish({ type: 'activated', target: this });
+    if (this._consumerCount++ === 0) {
+      this._pubSub.publish({ type: 'activated', target: this });
     }
 
     return () => {
       if (isActive) {
         isActive = false;
 
-        if (--this.activationCount === 0) {
-          this.pubSub.publish({ type: 'deactivated', target: this });
+        if (--this._consumerCount === 0) {
+          this._pubSub.publish({ type: 'deactivated', target: this });
         }
       }
     };
   }
 
   subscribe(listener: (event: ExecutorEvent) => void): () => void {
-    return this.pubSub.subscribe(listener);
+    return this._pubSub.subscribe(listener);
+  }
+
+  _resolve(value: Awaitable<Value>, timestamp: number, isOrphan: boolean): void {
+    if (value !== null && typeof value === 'object' && 'then' in value) {
+      this.execute(() => value);
+      return;
+    }
+
+    const taskPromise = this._taskPromise;
+    this._taskPromise = null;
+
+    if (isOrphan) {
+      taskPromise?.abort();
+      this.promise = new Deferred();
+    }
+
+    this.isFulfilled = true;
+    this.isRejected = this.isStale = false;
+    this.value = value;
+    this.reason = undefined;
+    this.timestamp = timestamp;
+
+    this.promise.resolve(value);
+
+    this._pubSub.publish({ type: 'fulfilled', target: this });
+  }
+
+  _reject(reason: any, timestamp: number, isOrphan: boolean): void {
+    const taskPromise = this._taskPromise;
+    this._taskPromise = null;
+
+    if (isOrphan) {
+      taskPromise?.abort();
+      this.promise = new Deferred();
+    }
+
+    this.isFulfilled = this.isStale = false;
+    this.isRejected = true;
+    this.value = undefined;
+    this.reason = reason;
+    this.timestamp = timestamp;
+
+    this.promise.reject(reason);
+
+    this._pubSub.publish({ type: 'rejected', target: this });
   }
 }

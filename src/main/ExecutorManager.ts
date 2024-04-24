@@ -3,7 +3,7 @@ import { ExecutorImpl } from './ExecutorImpl';
 import type { Executor, ExecutorEvent, ExecutorPlugin, ExecutorTask } from './types';
 
 export class ExecutorManager {
-  private _refs = new Map<unknown, { executor: ExecutorImpl; cleanups: Array<() => void> }>();
+  private _executors = new Map<unknown, ExecutorImpl>();
   private _pubSub = new PubSub<ExecutorEvent>();
 
   /**
@@ -12,7 +12,7 @@ export class ExecutorManager {
    * @param key The unique executor key.
    */
   get(key: string): Executor | undefined {
-    return this._refs.get(key)?.executor;
+    return this._executors.get(key);
   }
 
   /**
@@ -27,34 +27,23 @@ export class ExecutorManager {
     initialValue?: ExecutorTask<Value> | PromiseLike<Value> | Value,
     plugins?: ExecutorPlugin<Value>[]
   ): Executor<Value> {
-    const ref = this._refs.get(key);
+    let executor = this._executors.get(key);
 
-    if (ref !== undefined) {
-      return ref.executor;
+    if (executor !== undefined) {
+      return executor;
     }
 
-    const executor = new ExecutorImpl(key, this);
-    const cleanups = [];
-
-    cleanups.push(
-      executor.subscribe(event => {
-        this._pubSub.publish(event);
-      })
-    );
+    executor = new ExecutorImpl(key, this);
 
     if (plugins !== undefined) {
       for (const plugin of plugins) {
-        const cleanup = plugin(executor);
-
-        if (cleanup !== undefined) {
-          cleanups.push(cleanup);
-        }
+        plugin(executor);
       }
     }
 
-    this._refs.set(key, { executor, cleanups });
+    this._executors.set(key, executor);
 
-    executor.pubSub.publish({ type: 'configured', target: executor });
+    executor._pubSub.publish({ type: 'configured', target: executor });
 
     if (executor.isSettled || executor.isPending) {
       return executor;
@@ -68,36 +57,30 @@ export class ExecutorManager {
   }
 
   /**
-   * Deletes the non-{@link Executor.isActive active} executor from the manager and invokes plugin cleanup callbacks.
+   * Returns all executors created by this manager.
+   */
+  getAll(): Executor[] {
+    return Array.from(this._executors.values());
+  }
+
+  /**
+   * Deletes the non-{@link Executor.isActive active} executor from the manager.
    *
    * @param key The key of the executor to delete.
    * @returns `true` if the executor was disposed, or `false` if there's no such executor, or the executor is active.
    */
   dispose(key: string): boolean {
-    const ref = this._refs.get(key);
+    const executor = this._executors.get(key);
 
-    if (ref === undefined || ref.executor.isActive) {
+    if (executor === undefined || executor.isActive) {
       return false;
     }
 
-    const { executor } = ref;
+    this._executors.delete(key);
 
-    for (const cleanup of ref.cleanups) {
-      try {
-        cleanup();
-      } catch (error) {
-        // Force uncaught exception
-        setTimeout(() => {
-          throw error;
-        }, 0);
-      }
-    }
+    executor._pubSub.publish({ type: 'disposed', target: executor });
 
-    this._refs.delete(key);
-
-    executor.activationCount = 0;
-
-    executor.pubSub.publish({ type: 'disposed', target: executor });
+    // executor._pubSub.unsubscribeAll()
 
     return true;
   }

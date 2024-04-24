@@ -2,6 +2,36 @@
 
 Asynchronous task execution and state management for React.
 
+# Overview
+
+```ts
+useExecutor(`order-${orderId}`, initialValue, [
+  // Persists the executor value in the synchronous storage.
+  syncStorage(localStorage),
+
+  // Instantly aborts pending task when executor is deactivated (has no active consumers). 
+  abortDeactivated(),
+
+  // Disposes a deactivated executor after the timeout.
+  disposeDeactivated(5_000),
+
+  // Invalidates the settled executor result after the timeout.
+  invalidateAfter(10_000),
+
+  // Invalidates the settled executor result if another executor with a matching is fulfilled or invalidated.
+  invalidateByPeers([/verification/, /account/]),
+
+  // Retries the latest task of the active executor if it was invalidated. 
+  retryStale(),
+
+  // Retries the latest task of the active executor if the window gains focus. 
+  retryFocused(),
+
+  // Binds all executor methods to the instance.
+  bindAll(),
+]);
+```
+
 # Retry a failed task
 
 For example if you want to fetch a user, and instantly retry if the fetch fails:
@@ -88,7 +118,7 @@ const cartExecutor = useExecutor(
 
   async signal => {
     // 🟡 Pause the task until the user executor is fulfilled
-    const user = await userExecutor.getValue().withSignal(signal);
+    const user = await userExecutor.get().withSignal(signal);
 
     // Fetch the user's shopping cart
   }
@@ -121,32 +151,4 @@ const executorManager = useExecutorManager();
 useEffect(() => {
   executorManager.get('user')?.invalidate();
 }, []);
-```
-
-```ts
-useExecutor(`user-${orderId}`, initialValue, [
-  // Binds all executor prototype methods to the instance
-  bindPlugin(),
-
-  // Persists the executor value in the local storage
-  storagePlugin(localStorage),
-
-  // Aborts pending task if executor is disconnected 
-  abortPlugin(),
-
-  // Retries the latest task if window is focused 
-  focusPlugin(),
-
-  // Marks settled executor as invalidated after the given timeout
-  invalidatePlugin(10_000),
-
-  // Retries the latest task of the active executor if it was invalidated 
-  retryPlugin(),
-
-  // Disposes disconnected executor after a given timeout
-  disposePlugin(),
-
-  // Invalidates this executor if a dependency is fulfilled or invalidated
-  dependencyPlugin([/^order-/, /verification/, /account/])
-]);
 ```

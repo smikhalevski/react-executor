@@ -15,7 +15,7 @@ export interface ExecutorEvent<Value = any> {
    *   <dd><p>The executor was just created and plugins were applied to it.</p></dd>
    *
    *   <dt><i>"pending"</i></dt>
-   *   <dd><p>The executor started a {@link Executor.task task} execution.</p></dd>
+   *   <dd><p>The executor started a {@link Executor.latestTask task} execution.</p></dd>
    *
    *   <dt><i>"fulfilled"</i></dt>
    *   <dd><p>The executor was {@link Executor.isFulfilled fulfilled} with a {@link Executor.value value}.</p></dd>
@@ -24,14 +24,13 @@ export interface ExecutorEvent<Value = any> {
    *   <dd><p>The executor was {@link Executor.isRejected rejected} with a {@link Executor.reason reason}.</p></dd>
    *
    *   <dt><i>"aborted"</i></dt>
-   *   <dd><p>The pending task was aborted. At the moment the event is published, the aborted task is available as
-   *   {@link Executor.task}.</p></dd>
+   *   <dd><p>The latest task was aborted.</p></dd>
    *
    *   <dt><i>"cleared"</i></dt>
    *   <dd><p>The executor was cleared and now isn't {@link Executor.isSettled settled}.</p></dd>
    *
    *   <dt><i>"invalidated"</i></dt>
-   *   <dd><p>The executor was {@link Executor.isInvalidated invalidated}.</p></dd>
+   *   <dd><p>The executor was {@link Executor.isStale invalidated}.</p></dd>
    *
    *   <dt><i>"activated"</i></dt>
    *   <dd><p>The executor was inactive and became {@link Executor.isActive active}. This means that there are consumers
@@ -72,7 +71,7 @@ export interface ExecutorEvent<Value = any> {
  * `undefined` if no cleanup is required.
  * @template Value The value stored by the executor.
  */
-export type ExecutorPlugin<Value = any> = (executor: Executor<Value>) => (() => void | undefined) | void | undefined;
+export type ExecutorPlugin<Value = any> = (executor: Executor<Value>) => void;
 
 /**
  * The task that can be executed by an {@link Executor}.
@@ -120,7 +119,7 @@ export interface Executor<Value = any> {
    * `true` if {@link invalidate} was called on a {@link isSettled settled} executor and a new settlement hasn't
    * occurred yet.
    */
-  readonly isInvalidated: boolean;
+  readonly isStale: boolean;
 
   /**
    * `true` if the executor was activated more times {@link activate activated} then deactivated.
@@ -148,33 +147,31 @@ export interface Executor<Value = any> {
   readonly latestTask: ExecutorTask<Value> | null;
 
   /**
-   * For a non-{@link isPending pending} and {@link isSettled settled} executor, returns the promise that resolves
-   * with the available {@link value}, or rejects with the available {@link reason}. Otherwise, returns the promise that
-   * waits for the executor to be settled and then resolves the returned promise.
+   * The promise that is settled with the executor result.
+   *
+   * For a non-{@link isPending pending} and {@link isSettled settled} executor, the promise is resolved with the
+   * available {@link value}, or rejected with the available {@link reason}. Otherwise, the promise waits for the
+   * executor to become settled and then settles as well.
    */
-  await(): AbortablePromise<Value>;
+  readonly promise: Promise<Value>;
 
   /**
-   * For a non-{@link isPending pending} and {@link isFulfilled fulfilled} executor, returns the promise that resolves
-   * with the available {@link value}. Otherwise, returns the promise that waits for the executor to be fulfilled and then
-   * resolves the returned promise.
-   *
-   * The returned promise is never rejected unless aborted.
+   * The timestamp when the executor was last settled, or 0 if it wasn't settled yet.
    */
-  awaitValue(): AbortablePromise<Value>;
+  readonly timestamp: number;
 
   /**
    * Returns a {@link value} if the executor is {@link isFulfilled fulfilled}. Otherwise, throws the {@link reason} if
    * the executor is {@link isRejected rejected}, or an {@link Error}.
    */
-  getValue(): Value;
+  get(): Value;
 
   /**
    * Returns a {@link value} if the executor is {@link isFulfilled fulfilled}, or the default value.
    *
    * @param defaultValue The default value.
    */
-  getValueOrDefault(defaultValue?: Value): Value;
+  getOrDefault(defaultValue: Value): Value;
 
   /**
    * Executes a task and populates the executor with the returned result.
@@ -212,24 +209,28 @@ export interface Executor<Value = any> {
   abort(reason?: unknown): this;
 
   /**
-   * If the executor is settled then its value is marked as {@link isInvalidated invalidated}.
+   * If the executor is settled then its value is marked as {@link isStale stale}.
    */
   invalidate(): this;
 
   /**
-   * Aborts pending execution and fulfills the executor with the given value.
+   * Aborts pending execution and fulfills the executor with the value.
    *
    * **Note:** If value is a promise-like then {@link execute} is implicitly called which replaces the
    * {@link latestTask latest task}.
    *
-   * @param value The value to resolve the executor with.
+   * @param value The value.
+   * @param timestamp The timestamp when the value was acquired. If value is a promise then the timestamp is ignored.
    */
-  resolve(value: Awaitable<Value>): this;
+  resolve(value: Awaitable<Value>, timestamp?: number): this;
 
   /**
-   * Instantly aborts pending execution and rejects the executor with the given reason.
+   * Instantly aborts pending execution and rejects the executor with the reason.
+   *
+   * @param reason The reason of failure.
+   * @param timestamp The timestamp when the reason was acquired.
    */
-  reject(reason: any): this;
+  reject(reason: any, timestamp?: number): this;
 
   /**
    * Marks the executor as being actively monitored by an external consumer.
