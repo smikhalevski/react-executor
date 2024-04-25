@@ -11,6 +11,46 @@
       "import": "./index.mjs",
       "require": "./index.js"
     },
+    "./plugin/abortDeactivated": {
+      "types": "./plugin/abortDeactivated.d.ts",
+      "import": "./plugin/abortDeactivated.mjs",
+      "require": "./plugin/abortDeactivated.js"
+    },
+    "./plugin/bindAll": {
+      "types": "./plugin/bindAll.d.ts",
+      "import": "./plugin/bindAll.mjs",
+      "require": "./plugin/bindAll.js"
+    },
+    "./plugin/disposeDeactivated": {
+      "types": "./plugin/disposeDeactivated.d.ts",
+      "import": "./plugin/disposeDeactivated.mjs",
+      "require": "./plugin/disposeDeactivated.js"
+    },
+    "./plugin/invalidateAfter": {
+      "types": "./plugin/invalidateAfter.d.ts",
+      "import": "./plugin/invalidateAfter.mjs",
+      "require": "./plugin/invalidateAfter.js"
+    },
+    "./plugin/invalidateByPeers": {
+      "types": "./plugin/invalidateByPeers.d.ts",
+      "import": "./plugin/invalidateByPeers.mjs",
+      "require": "./plugin/invalidateByPeers.js"
+    },
+    "./plugin/retryFocused": {
+      "types": "./plugin/retryFocused.d.ts",
+      "import": "./plugin/retryFocused.mjs",
+      "require": "./plugin/retryFocused.js"
+    },
+    "./plugin/retryStale": {
+      "types": "./plugin/retryStale.d.ts",
+      "import": "./plugin/retryStale.mjs",
+      "require": "./plugin/retryStale.js"
+    },
+    "./plugin/syncStorage": {
+      "types": "./plugin/syncStorage.d.ts",
+      "import": "./plugin/syncStorage.mjs",
+      "require": "./plugin/syncStorage.js"
+    },
     "./package.json": "./package.json"
   },
   "sideEffects": false,
@@ -37,7 +77,8 @@
   "homepage": "https://github.com/smikhalevski/react-executor#readme",
   "devDependencies": {
     "@rollup/plugin-typescript": "^11.1.6",
-    "@testing-library/react": "^15.0.2",
+    "@testing-library/jest-dom": "^6.4.2",
+    "@testing-library/react": "^15.0.4",
     "@types/jest": "^29.5.12",
     "@types/react": "^18.2.79",
     "jest": "^29.7.0",
@@ -55,7 +96,6 @@
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0"
   },
   "dependencies": {
-    "parallel-universe": "^5.0.1",
-    "react-hookers": "^5.1.0"
+    "parallel-universe": "^6.0.0"
   }
 }

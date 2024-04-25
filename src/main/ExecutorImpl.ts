@@ -1,190 +1,236 @@
-import { AbortablePromise, Awaitable, PubSub } from 'parallel-universe';
-import type { Executor, ExecutorEvent, Task } from './types';
-import { isEqual, isPromiseLike } from './utils';
+import { AbortablePromise, PubSub } from 'parallel-universe';
+import type { ExecutorManager } from './ExecutorManager';
+import type { Executor, ExecutorEvent, ExecutorTask } from './types';
 
 /**
- * The default {@link Executor} implementation returned by the {@link ExecutorManager}.
+ * The {@link Executor} implementation returned by the {@link ExecutorManager}.
  *
  * @internal
  */
-export class ExecutorImpl<Value = any> extends PubSub<ExecutorEvent> implements Executor {
+export class ExecutorImpl<Value = any> implements Executor {
   isFulfilled = false;
   isRejected = false;
-  isInvalidated = false;
-  value: Value | undefined;
-  reason: any;
-
-  /**
-   * The last task passed to {@link execute}, or `null` if executor wasn't settled through {@link execute}.
-   */
-  task: Task<Value> | null = null;
+  isStale = false;
+  value: Value | undefined = undefined;
+  reason: any = undefined;
+  latestTask: ExecutorTask<Value> | null = null;
+  timestamp = 0;
 
   /**
    * The promise of the pending task execution, or `null` if there's no pending task execution.
    */
-  taskPromise: AbortablePromise<Value> | null = null;
+  _promise: AbortablePromise<Value> | null = null;
 
-  get isSettled() {
+  /**
+   * The number times the executor was activated.
+   */
+  _activeCount = 0;
+
+  /**
+   * The pubsub that handles the executor subscriptions.
+   */
+  _pubSub = new PubSub<ExecutorEvent>();
+
+  get isSettled(): boolean {
     return this.isFulfilled || this.isRejected;
   }
 
-  get isPending() {
-    return this.taskPromise !== null;
+  get isActive(): boolean {
+    return this._activeCount !== 0;
   }
 
-  constructor(public readonly key: string) {
-    super();
+  get isPending(): boolean {
+    return this._promise !== null;
   }
 
-  getOrWait(): AbortablePromise<Value> {
-    return new AbortablePromise((resolve, _reject, signal) => {
-      if (this.isFulfilled) {
-        resolve(this.value!);
-        return;
-      }
+  constructor(
+    public readonly key: string,
+    public readonly manager: ExecutorManager
+  ) {}
 
-      const unsubscribe = this.subscribe(event => {
-        if (event.type === 'fulfilled') {
-          resolve(this.value!);
-          unsubscribe();
-        }
-      });
-
-      signal.addEventListener('abort', unsubscribe);
-    });
-  }
-
-  getOrThrow(): Value {
+  get(): Value {
     if (this.isFulfilled) {
       return this.value!;
     }
     if (this.isRejected) {
       throw this.reason;
     }
-    throw new DOMException('Executor is not settled', 'InvalidStateError');
+    throw new Error('The executor is not settled');
   }
 
   getOrDefault(defaultValue: Value): Value {
     return this.isFulfilled ? this.value! : defaultValue;
   }
 
-  execute(task: Task<Value>): AbortablePromise<Value> {
-    this.task = task;
+  then<Result1 = Value, Result2 = never>(
+    onFulfilled?: ((value: Value) => PromiseLike<Result1> | Result1) | null,
+    onRejected?: ((reason: any) => PromiseLike<Result2> | Result2) | null
+  ): Promise<Result1 | Result2> {
+    return new Promise<Value>((resolve, reject) => {
+      if (this.isSettled && !this.isPending) {
+        resolve(this.get());
+        return;
+      }
 
-    const taskPromise = new AbortablePromise<Value>((resolve, reject, signal) => {
-      signal.addEventListener('abort', () => {
-        if (this.taskPromise === taskPromise) {
-          this.taskPromise = null;
-          this.publish({ type: 'aborted', target: this });
+      const unsubscribe = this.subscribe(event => {
+        if (event.type === 'disposed') {
+          unsubscribe();
+          reject(new DOMException('The executor was disposed', 'AbortError'));
+          return;
         }
+
+        if (this.isSettled && !this.isPending) {
+          unsubscribe();
+          try {
+            resolve(this.get());
+          } catch (error) {
+            reject(error);
+          }
+        }
+      });
+    }).then(onFulfilled, onRejected);
+  }
+
+  execute(task: ExecutorTask<Value>): AbortablePromise<Value> {
+    const promise = new AbortablePromise<Value>((resolve, reject, signal) => {
+      signal.addEventListener('abort', () => {
+        if (this._promise === promise) {
+          this._promise = null;
+        }
+        this._pubSub.publish({ type: 'aborted', target: this });
       });
 
       new Promise<Value>(resolve => {
-        const value = task(signal, this.value);
-
+        const value = task(signal, this);
         resolve(value instanceof AbortablePromise ? value.withSignal(signal) : value);
       }).then(
         value => {
-          if (this.taskPromise === taskPromise) {
-            this.taskPromise = null;
-            this.resolve(value);
+          if (signal.aborted) {
+            return;
           }
+          this._promise = null;
+          this.resolve(value);
           resolve(value);
         },
+
         reason => {
-          if (this.taskPromise === taskPromise) {
-            this.taskPromise = null;
-            this.reject(reason);
+          if (signal.aborted) {
+            return;
           }
+          this._promise = null;
+          this.reject(reason);
           reject(reason);
         }
       );
     });
 
-    const prevTaskPromise = this.taskPromise;
-    this.taskPromise = taskPromise;
+    const prevPromise = this._promise;
+    this._promise = promise;
 
-    if (prevTaskPromise !== null) {
-      prevTaskPromise.abort();
+    if (prevPromise !== null) {
+      prevPromise.abort();
     }
 
-    this.publish({ type: 'pending', target: this });
+    if (this._promise === promise) {
+      this.latestTask = task;
+      this._pubSub.publish({ type: 'pending', target: this });
+    }
 
-    return taskPromise;
+    return promise;
   }
 
-  retry(): AbortablePromise<Value> {
-    if (this.taskPromise !== null) {
-      return this.taskPromise;
+  retry(): this {
+    if (this.latestTask !== null && !this.isPending) {
+      this.execute(this.latestTask);
     }
-    if (this.task !== null) {
-      return this.execute(this.task);
-    }
-    return new AbortablePromise<Value>((_resolve, reject) => {
-      reject(new DOMException('Executor has no task to retry', 'InvalidStateError'));
-    });
+    return this;
   }
 
   clear(): this {
     if (this.isSettled) {
-      this.isFulfilled = this.isRejected = this.isInvalidated = false;
+      this.isFulfilled = this.isRejected = this.isStale = false;
       this.value = this.reason = undefined;
-      this.publish({ type: 'cleared', target: this });
+      this._pubSub.publish({ type: 'cleared', target: this });
     }
     return this;
   }
 
   abort(reason?: unknown): this {
-    if (this.taskPromise !== null) {
-      this.taskPromise.abort(reason);
+    if (this._promise !== null) {
+      this._promise.abort(reason);
     }
     return this;
   }
 
   invalidate(): this {
-    if (this.isInvalidated !== (this.isInvalidated = this.isSettled)) {
-      this.publish({ type: 'invalidated', target: this });
+    if (this.isStale !== (this.isStale = this.isSettled)) {
+      this._pubSub.publish({ type: 'invalidated', target: this });
     }
     return this;
   }
 
-  resolve(value: Awaitable<Value>): this {
-    const taskPromise = this.taskPromise;
-
-    if (isPromiseLike(value)) {
+  resolve(value: PromiseLike<Value> | Value, timestamp = Date.now()): this {
+    if (value !== null && typeof value === 'object' && 'then' in value) {
       this.execute(() => value);
       return this;
     }
-    if (
-      (taskPromise !== null && ((this.taskPromise = null), taskPromise.abort(), true)) ||
-      this.isInvalidated ||
-      !this.isFulfilled ||
-      !isEqual(this.value, value)
-    ) {
-      this.isFulfilled = true;
-      this.isRejected = this.isInvalidated = false;
-      this.value = value;
-      this.reason = undefined;
-      this.publish({ type: 'fulfilled', target: this });
+
+    const promise = this._promise;
+    this._promise = null;
+
+    if (promise !== null) {
+      promise.abort();
     }
+
+    this.isFulfilled = true;
+    this.isRejected = this.isStale = false;
+    this.value = value;
+    this.reason = undefined;
+    this.timestamp = timestamp;
+
+    this._pubSub.publish({ type: 'fulfilled', target: this });
+
     return this;
   }
 
-  reject(reason: any): this {
-    const taskPromise = this.taskPromise;
+  reject(reason: any, timestamp = Date.now()): this {
+    const promise = this._promise;
+    this._promise = null;
 
-    if (
-      (taskPromise !== null && ((this.taskPromise = null), taskPromise.abort(), true)) ||
-      this.isInvalidated ||
-      !this.isRejected ||
-      !isEqual(this.reason, reason)
-    ) {
-      this.isFulfilled = this.isInvalidated = false;
-      this.isRejected = true;
-      this.value = undefined;
-      this.reason = reason;
-      this.publish({ type: 'rejected', target: this });
+    if (promise !== null) {
+      promise.abort();
     }
+
+    this.isFulfilled = this.isStale = false;
+    this.isRejected = true;
+    this.value = undefined;
+    this.reason = reason;
+    this.timestamp = timestamp;
+
+    this._pubSub.publish({ type: 'rejected', target: this });
+
     return this;
+  }
+
+  activate(): () => void {
+    let isActive = true;
+
+    if (this._activeCount++ === 0) {
+      this._pubSub.publish({ type: 'activated', target: this });
+    }
+
+    return () => {
+      if (isActive) {
+        isActive = false;
+
+        if (--this._activeCount === 0) {
+          this._pubSub.publish({ type: 'deactivated', target: this });
+        }
+      }
+    };
+  }
+
+  subscribe(listener: (event: ExecutorEvent) => void): () => void {
+    return this._pubSub.subscribe(listener);
   }
 }

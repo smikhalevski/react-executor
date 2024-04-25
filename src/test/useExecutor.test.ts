@@ -1,10 +1,17 @@
-import { renderHook } from '@testing-library/react';
-import { StrictMode, useId } from 'react';
+import { act, renderHook } from '@testing-library/react';
+import { StrictMode } from 'react';
 import { useExecutor } from '../main';
 
 describe('useExecutor', () => {
+  let testIndex = 0;
+  let executorId: string;
+
+  beforeEach(() => {
+    executorId = 'executor' + testIndex++;
+  });
+
   test('returns the same executor on every render', () => {
-    const hook = renderHook(() => useExecutor(useId()), { wrapper: StrictMode });
+    const hook = renderHook(() => useExecutor(executorId), { wrapper: StrictMode });
     const executor1 = hook.result.current;
 
     hook.rerender();
@@ -14,100 +21,102 @@ describe('useExecutor', () => {
     expect(executor1).toBe(executor2);
   });
 
-  //   test('creates a blank Executor instance', () => {
-  //     const hook = renderHook(() => useExecutor(), { wrapper: StrictMode });
-  //     const executor = hook.result.current;
-  //
-  //     expect(executor.isPending).toBe(false);
-  //     expect(executor.isFulfilled).toBe(false);
-  //     expect(executor.isRejected).toBe(false);
-  //     expect(executor.value).toBe(undefined);
-  //     expect(executor.reason).toBe(undefined);
-  //     expect(executor.promise).toBe(null);
-  //   });
-  //
-  //   test('creates an executor with non-function initial result', () => {
-  //     const hook = renderHook(() => useExecutor(111), { wrapper: StrictMode });
-  //     const executor = hook.result.current;
-  //
-  //     expect(executor.isPending).toBe(false);
-  //     expect(executor.isFulfilled).toBe(true);
-  //     expect(executor.isRejected).toBe(false);
-  //     expect(executor.value).toBe(111);
-  //     expect(executor.reason).toBe(undefined);
-  //     expect(executor.promise).toBe(null);
-  //   });
-  //
-  //   test('creates an executor with synchronous function initial result', async () => {
-  //     const hook = renderHook(() => useExecutor(() => 111), { wrapper: StrictMode });
-  //     const executor = hook.result.current;
-  //
-  //     expect(executor.isPending).toBe(true);
-  //     expect(executor.isFulfilled).toBe(false);
-  //     expect(executor.isRejected).toBe(false);
-  //     expect(executor.value).toBe(undefined);
-  //     expect(executor.reason).toBe(undefined);
-  //     expect(executor.promise).toBeInstanceOf(Promise);
-  //
-  //     await act(() => executor.promise);
-  //   });
-  //
-  //   test('creates an executor with asynchronous function initial result', async () => {
-  //     const hookMock = jest.fn(() => useExecutor(() => Promise.resolve(111), { disposition: 'server' }));
-  //     const hook = renderHook(hookMock, { wrapper: StrictMode });
-  //     const executor = hook.result.current;
-  //
-  //     expect(executor.isPending).toBe(true);
-  //     expect(executor.isFulfilled).toBe(false);
-  //     expect(executor.isRejected).toBe(false);
-  //     expect(executor.value).toBe(undefined);
-  //     expect(executor.reason).toBe(undefined);
-  //     expect(executor.promise).toBeInstanceOf(Promise);
-  //
-  //     await act(() => executor.promise);
-  //
-  //     expect(hookMock).toHaveBeenCalledTimes(4);
-  //     expect(executor.isPending).toBe(false);
-  //     expect(executor.isFulfilled).toBe(true);
-  //     expect(executor.isRejected).toBe(false);
-  //     expect(executor.value).toBe(111);
-  //     expect(executor.reason).toBe(undefined);
-  //     expect(executor.promise).toBe(null);
-  //   });
-  //
-  //   test('re-renders after resolve', () => {
-  //     const hookMock = jest.fn(() => useExecutor());
-  //     const hook = renderHook(hookMock, { wrapper: StrictMode });
-  //
-  //     act(() => void hook.result.current.resolve(111));
-  //
-  //     expect(hookMock).toHaveBeenCalledTimes(4);
-  //   });
-  //
-  //   test('re-renders after reject', () => {
-  //     const hookMock = jest.fn(() => useExecutor());
-  //     const hook = renderHook(hookMock, { wrapper: StrictMode });
-  //
-  //     act(() => void hook.result.current.reject(111));
-  //
-  //     expect(hookMock).toHaveBeenCalledTimes(4);
-  //   });
-  //
-  //   test('re-renders after synchronous callback execute', async () => {
-  //     const hookMock = jest.fn(() => useExecutor());
-  //     const hook = renderHook(hookMock, { wrapper: StrictMode });
-  //
-  //     await act(() => hook.result.current.execute(() => 111));
-  //
-  //     expect(hookMock).toHaveBeenCalledTimes(4);
-  //   });
-  //
-  //   test('re-renders after asynchronous execute', async () => {
-  //     const hookMock = jest.fn(() => useExecutor());
-  //     const hook = renderHook(hookMock, { wrapper: StrictMode });
-  //
-  //     await act(() => hook.result.current.execute(() => Promise.resolve(111)));
-  //
-  //     expect(hookMock).toHaveBeenCalledTimes(4);
-  //   });
+  test('creates a blank Executor instance', () => {
+    const renderMock = jest.fn(() => useExecutor(executorId));
+
+    const hook = renderHook(renderMock, { wrapper: StrictMode });
+    const executor = hook.result.current;
+
+    expect(executor.isActive).toBe(true);
+    expect(executor.isPending).toBe(false);
+    expect(executor.isFulfilled).toBe(false);
+    expect(executor.isRejected).toBe(false);
+    expect(executor.value).toBeUndefined();
+    expect(executor.reason).toBeUndefined();
+
+    expect(renderMock).toHaveBeenCalledTimes(2);
+  });
+
+  test('creates an executor with the initial value', () => {
+    const renderMock = jest.fn(() => useExecutor(executorId, 'aaa'));
+
+    const hook = renderHook(renderMock, { wrapper: StrictMode });
+    const executor = hook.result.current;
+
+    expect(executor.isActive).toBe(true);
+    expect(executor.isPending).toBe(false);
+    expect(executor.isFulfilled).toBe(true);
+    expect(executor.isRejected).toBe(false);
+    expect(executor.value).toBe('aaa');
+    expect(executor.reason).toBeUndefined();
+    expect(executor.latestTask).toBeNull();
+
+    expect(renderMock).toHaveBeenCalledTimes(2);
+  });
+
+  test('creates an executor with the initial task', async () => {
+    const taskMock = jest.fn(() => 'aaa');
+    const renderMock = jest.fn(() => useExecutor(executorId, taskMock));
+
+    const hook = renderHook(renderMock, { wrapper: StrictMode });
+    const executor = hook.result.current;
+
+    expect(executor.isActive).toBe(true);
+    expect(executor.isPending).toBe(true);
+    expect(executor.isFulfilled).toBe(false);
+    expect(executor.isRejected).toBe(false);
+    expect(executor.value).toBeUndefined();
+    expect(executor.reason).toBeUndefined();
+    expect(executor.latestTask).toBe(taskMock);
+
+    expect(taskMock).toHaveBeenCalledTimes(1);
+    expect(renderMock).toHaveBeenCalledTimes(2);
+
+    await act(() => executor.then());
+
+    expect(executor.isPending).toBe(false);
+    expect(executor.isFulfilled).toBe(true);
+    expect(executor.isRejected).toBe(false);
+    expect(executor.value).toBe('aaa');
+    expect(executor.reason).toBeUndefined();
+    expect(executor.latestTask).toBe(taskMock);
+
+    expect(renderMock).toHaveBeenCalledTimes(4);
+  });
+
+  test('re-renders after resolve', () => {
+    const renderMock = jest.fn(() => useExecutor(executorId));
+    const hook = renderHook(renderMock, { wrapper: StrictMode });
+
+    act(() => void hook.result.current.resolve('aaa'));
+
+    expect(renderMock).toHaveBeenCalledTimes(4);
+  });
+
+  test('re-renders after reject', () => {
+    const renderMock = jest.fn(() => useExecutor(executorId));
+    const hook = renderHook(renderMock, { wrapper: StrictMode });
+
+    act(() => void hook.result.current.reject(new Error('expected')));
+
+    expect(renderMock).toHaveBeenCalledTimes(4);
+  });
+
+  test('re-renders after task execute', async () => {
+    const task = () => 'aaa';
+    const renderMock = jest.fn(() => useExecutor(executorId));
+    const hook = renderHook(renderMock, { wrapper: StrictMode });
+    const executor = hook.result.current;
+
+    await act(() => executor.execute(task));
+
+    expect(executor.isPending).toBe(false);
+    expect(executor.isFulfilled).toBe(true);
+    expect(executor.isRejected).toBe(false);
+    expect(executor.value).toBe('aaa');
+    expect(executor.reason).toBeUndefined();
+    expect(executor.latestTask).toBe(task);
+
+    expect(renderMock).toHaveBeenCalledTimes(4);
+  });
 });

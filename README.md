@@ -1,6 +1,97 @@
-# react-executor
+<p align="center">
+  <a href="#readme"><picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./assets/logo-dark.png" />
+    <source media="(prefers-color-scheme: light)" srcset="./assets/logo-light.png" />
+    <img alt="Doubter" src="./assets/logo-light.png" width="700" />
+  </picture></a>
+</p>
 
-Asynchronous task execution and state management for React.
+```sh
+npm install --save-prod react-executor
+```
+
+# Overview
+
+Executor manages an async callback execution process and provides ways to access execution results, abort or replace an
+execution, and subscribe to its state changes.
+
+Create an `Executor` instance and submit a callback for execution:
+
+```ts
+const executor = new Executor();
+
+executor.execute(doSomething);
+// ⮕ AbortablePromise<void>
+```
+
+The `execute` method returns a promise that is fulfilled when the promise returned from the callback is settled. If
+there's a pending execution, it is aborted and the new execution is started.
+
+To abort the pending execution, you can use
+an [abort signal](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal)
+passed to the executed callback:
+
+```ts
+executor.execute(async signal => {
+  // Check signal.aborted
+});
+
+executor.abort();
+```
+
+When execution is aborted the current `value` and `reason` remain intact.
+
+To reset the executor to the initial state use:
+
+```ts
+executor.clear();
+```
+
+You can directly fulfill or reject an executor:
+
+```ts
+executor.resolve(value);
+
+executor.reject(reason);
+```
+
+Subscribe to an executor to receive notifications when its state changes:
+
+```ts
+const unsubscribe = executor.subscribe(() => {
+  // Handle the update
+});
+
+unsubscribe();
+```
+
+```ts
+useExecutor(`order-${orderId}`, initialValue, [
+  // Persists the executor value in the synchronous storage.
+  syncStorage(localStorage),
+
+  // Instantly aborts pending task when executor is deactivated (has no active consumers). 
+  abortDeactivated(),
+
+  // Disposes a deactivated executor after the timeout.
+  disposeDeactivated(5_000),
+
+  // Invalidates the settled executor result after the timeout.
+  invalidateAfter(10_000),
+
+  // Invalidates the settled executor result if another executor with a matching key is fulfilled or invalidated.
+  invalidateByPeers([/verification/, /account/]),
+
+  // Retries the latest task of the active executor if it was invalidated. 
+  retryStale(),
+
+  // Retries the latest task of the active executor if the window gains focus. 
+  retryFocused(),
+
+  // Binds all executor methods to the instance.
+  bindAll(),
+]);
+```
 
 # Retry a failed task
 
@@ -88,7 +179,7 @@ const cartExecutor = useExecutor(
 
   async signal => {
     // 🟡 Pause the task until the user executor is fulfilled
-    const user = await userExecutor.getOrWait().withSignal(signal);
+    const user = await userExecutor.get().withSignal(signal);
 
     // Fetch the user's shopping cart
   }
@@ -122,3 +213,9 @@ useEffect(() => {
   executorManager.get('user')?.invalidate();
 }, []);
 ```
+
+<hr/>
+
+<p align="center">
+Illustration by <a href="https://www.slackart.com/">Michael Slack</a>
+</p>
