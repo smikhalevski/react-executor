@@ -2,3 +2,4 @@ export type { Executor, ExecutorEvent, ExecutorPlugin, ExecutorTask } from './ty
 export { ExecutorManager } from './ExecutorManager';
 export { useExecutor } from './useExecutor';
 export { useExecutorManager, ExecutorManagerProvider } from './useExecutorManager';
+export { useExecutorSuspense } from './useExecutorSuspense';
