@@ -32,7 +32,7 @@ export class ExecutorManager implements Iterable<Executor> {
    * @param initialValue The initial executor value.
    * @param plugins The array of plugins that are applied to the newly created executor.
    */
-  getOrCreate<Value>(
+  getOrCreate<Value = any>(
     key: string,
     initialValue?: ExecutorTask<Value> | PromiseLike<Value> | Value,
     plugins?: ExecutorPlugin<Value>[]
@@ -51,11 +51,15 @@ export class ExecutorManager implements Iterable<Executor> {
       }
     }
 
+    executor.subscribe(event => {
+      this._pubSub.publish(event);
+    });
+
     this._executors.set(key, executor);
 
     executor._pubSub.publish({ type: 'configured', target: executor });
 
-    if (executor.isSettled || executor.isPending) {
+    if (initialValue === undefined || executor.isSettled || executor.isPending) {
       return executor;
     }
     if (typeof initialValue === 'function') {
