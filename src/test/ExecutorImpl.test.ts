@@ -1,8 +1,11 @@
+import { AbortablePromise } from 'parallel-universe';
 import { ExecutorImpl } from '../main/ExecutorImpl';
 
 export function noop(): void {}
 
 describe('ExecutorImpl', () => {
+  const reason = new Error('expected');
+
   let listenerMock: jest.Mock;
   let executor: ExecutorImpl<string | number>;
 
@@ -12,308 +15,672 @@ describe('ExecutorImpl', () => {
     executor.subscribe(listenerMock);
   });
 
-  test('creates a blank executor', () => {
-    expect(listenerMock).not.toHaveBeenCalled();
-    expect(executor.isSettled).toBe(false);
-    expect(executor.isPending).toBe(false);
-    expect(executor.isFulfilled).toBe(false);
-    expect(executor.isRejected).toBe(false);
-    expect(executor.value).toBe(undefined);
-    expect(executor.reason).toBe(undefined);
-    expect(executor._promise).toBe(null);
+  describe('new', () => {
+    test('creates a blank executor', () => {
+      expect(listenerMock).not.toHaveBeenCalled();
+      expect(executor.isFulfilled).toBe(false);
+      expect(executor.isRejected).toBe(false);
+      expect(executor.isStale).toBe(false);
+      expect(executor.value).toBeUndefined();
+      expect(executor.reason).toBeUndefined();
+      expect(executor._promise).toBeNull();
+    });
   });
 
-  test('invokes a callback with a signal', async () => {
-    const cbMock = jest.fn(signal => 'aaa');
-    const promise = executor.execute(cbMock);
+  describe('get', () => {
+    test('throws if the executor is not settled', () => {
+      expect(() => executor.get()).toThrow(new Error('The executor is not settled'));
+    });
 
-    expect(cbMock).toHaveBeenCalledTimes(1);
-    expect(cbMock.mock.calls[0][0].aborted).toBe(false);
-    await expect(promise).resolves.toEqual('aaa');
+    test('returns the value of a fulfilled executor', () => {
+      executor.resolve('aaa');
+
+      expect(executor.get()).toBe('aaa');
+    });
+
+    test('throws the reason of a rejected executor', () => {
+      executor.reject(reason);
+
+      expect(() => executor.get()).toThrow(reason);
+    });
   });
 
-  test('resolves execution', async () => {
-    const promise = executor.execute(() => Promise.resolve(111));
+  describe('getOrDefault', () => {
+    test('returns the default value if the executor is not settled', () => {
+      expect(executor.getOrDefault('aaa')).toBe('aaa');
+    });
 
-    expect(listenerMock).toHaveBeenCalledTimes(1);
-    expect(executor.isPending).toBe(true);
-    expect(executor.isFulfilled).toBe(false);
-    expect(executor.isRejected).toBe(false);
-    expect(executor.value).toBe(undefined);
-    expect(executor.reason).toBe(undefined);
-    expect(executor._promise).toBe(promise);
+    test('returns the value of a fulfilled executor', () => {
+      executor.resolve('aaa');
 
-    await expect(promise).resolves.toBe(111);
+      expect(executor.getOrDefault('bbb')).toBe('aaa');
+    });
 
-    expect(listenerMock).toHaveBeenCalledTimes(2);
-    expect(executor.isPending).toBe(false);
-    expect(executor.isFulfilled).toBe(true);
-    expect(executor.isRejected).toBe(false);
-    expect(executor.value).toBe(111);
-    expect(executor.reason).toBe(undefined);
-    expect(executor._promise).toBe(null);
+    test('returns the default value is the executor is rejected', () => {
+      executor.reject(reason);
+
+      expect(executor.getOrDefault('aaa')).toBe('aaa');
+    });
   });
 
-  test('rejects execution', async () => {
-    const promise = executor.execute(() => Promise.reject(222));
+  describe('execute', () => {
+    test('executes a task', async () => {
+      const taskMock = jest.fn((_signal, _executor) => 'aaa');
+      const promise = executor.execute(taskMock);
 
-    expect(listenerMock).toHaveBeenCalledTimes(1);
-    expect(executor.isPending).toBe(true);
-    expect(executor.isFulfilled).toBe(false);
-    expect(executor.isRejected).toBe(false);
-    expect(executor.value).toBe(undefined);
-    expect(executor.reason).toBe(undefined);
-    expect(executor._promise).toBe(promise);
+      expect(executor.latestTask).toBe(taskMock);
 
-    await expect(promise).rejects.toEqual(222);
+      expect(taskMock).toHaveBeenCalledTimes(1);
+      expect(taskMock.mock.calls[0][0].aborted).toBe(false);
+      expect(taskMock.mock.calls[0][1]).toBe(executor);
 
-    expect(listenerMock).toHaveBeenCalledTimes(2);
-    expect(executor.isPending).toBe(false);
-    expect(executor.isFulfilled).toBe(false);
-    expect(executor.isRejected).toBe(true);
-    expect(executor.value).toBe(undefined);
-    expect(executor.reason).toBe(222);
-    expect(executor._promise).toBe(null);
+      expect(listenerMock).toHaveBeenCalledTimes(1);
+      expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'pending', target: executor });
+
+      expect(executor._promise).toBe(promise);
+
+      await expect(promise).resolves.toEqual('aaa');
+
+      expect(listenerMock).toHaveBeenCalledTimes(2);
+      expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'fulfilled', target: executor });
+
+      expect(executor.isFulfilled).toBe(true);
+      expect(executor.isRejected).toBe(false);
+      expect(executor.value).toBe('aaa');
+      expect(executor._promise).toBeNull();
+    });
+
+    test('aborts the pending task if a new task is submitted', async () => {
+      const taskMock1 = jest.fn(_signal => 'aaa');
+      const taskMock2 = jest.fn(_signal => 'bbb');
+
+      const promise1 = executor.execute(taskMock1);
+
+      const promise2 = executor.execute(taskMock2);
+
+      expect(executor.latestTask).toBe(taskMock2);
+      expect(taskMock1.mock.calls[0][0].aborted).toBe(true);
+      expect(taskMock2.mock.calls[0][0].aborted).toBe(false);
+
+      expect(listenerMock).toHaveBeenCalledTimes(3);
+      expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'pending', target: executor });
+      expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'aborted', target: executor });
+      expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'pending', target: executor });
+
+      expect(executor.isFulfilled).toBe(false);
+      expect(executor.isRejected).toBe(false);
+      expect(executor.value).toBeUndefined();
+      expect(executor._promise).toBe(promise2);
+
+      await expect(promise2).resolves.toEqual('bbb');
+
+      await expect(promise1).rejects.toEqual(new DOMException('The operation was aborted.', 'AbortError'));
+
+      expect(listenerMock).toHaveBeenCalledTimes(4);
+      expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'fulfilled', target: executor });
+
+      expect(executor.isFulfilled).toBe(true);
+      expect(executor.isRejected).toBe(false);
+      expect(executor.value).toBe('bbb');
+      expect(executor._promise).toBeNull();
+    });
+
+    test('rejects if a task throws an error', async () => {
+      const taskMock = jest.fn(() => {
+        throw reason;
+      });
+      const promise = executor.execute(taskMock);
+
+      expect(listenerMock).toHaveBeenCalledTimes(1);
+      expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'pending', target: executor });
+
+      expect(executor._promise).toBe(promise);
+
+      await expect(promise).rejects.toBe(reason);
+
+      expect(listenerMock).toHaveBeenCalledTimes(2);
+      expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'rejected', target: executor });
+
+      expect(executor.isFulfilled).toBe(false);
+      expect(executor.isRejected).toBe(true);
+      expect(executor.value).toBeUndefined();
+      expect(executor.reason).toBe(reason);
+      expect(executor._promise).toBeNull();
+    });
+
+    test('task promise can be aborted', () => {
+      const taskMock = jest.fn((_signal, _executor) => 'aaa');
+
+      const promise = executor.execute(taskMock);
+
+      promise.catch(noop);
+      promise.abort();
+
+      expect(executor.latestTask).toBe(taskMock);
+
+      expect(taskMock).toHaveBeenCalledTimes(1);
+      expect(taskMock.mock.calls[0][0].aborted).toBe(true);
+      expect(taskMock.mock.calls[0][1]).toBe(executor);
+
+      expect(listenerMock).toHaveBeenCalledTimes(2);
+      expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'pending', target: executor });
+      expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'aborted', target: executor });
+
+      expect(executor.isFulfilled).toBe(false);
+      expect(executor.isRejected).toBe(false);
+      expect(executor.value).toBeUndefined();
+      expect(executor.reason).toBeUndefined();
+      expect(executor._promise).toBeNull();
+    });
+
+    test('a new task can be executed from abort event handler if previous task is aborted manually', async () => {
+      const taskMock1 = jest.fn(_signal => 'aaa');
+      const taskMock2 = jest.fn(_signal => 'bbb');
+
+      executor.subscribe(event => {
+        if (event.type === 'aborted') {
+          executor.execute(taskMock2);
+        }
+      });
+
+      const promise = executor.execute(taskMock1);
+
+      promise.catch(noop);
+      promise.abort();
+
+      expect(executor.latestTask).toBe(taskMock2);
+      expect(executor._promise).not.toBeNull();
+      expect(executor._promise).not.toBe(promise);
+
+      expect(taskMock1).toHaveBeenCalledTimes(1);
+      expect(taskMock1.mock.calls[0][0].aborted).toBe(true);
+
+      expect(listenerMock).toHaveBeenCalledTimes(3);
+      expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'pending', target: executor });
+      expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'aborted', target: executor });
+      expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'pending', target: executor });
+
+      await expect(executor._promise).resolves.toBe('bbb');
+
+      expect(executor.isFulfilled).toBe(true);
+      expect(executor.isRejected).toBe(false);
+      expect(executor.value).toBe('bbb');
+      expect(executor.reason).toBeUndefined();
+    });
+
+    test('a new task can be executed from abort event handler if a task is replaced', async () => {
+      const taskMock1 = jest.fn(_signal => 'aaa');
+      const taskMock2 = jest.fn(_signal => 'bbb');
+      const taskMock3 = jest.fn(_signal => 'ccc');
+
+      listenerMock.mockImplementationOnce(noop).mockImplementationOnce(event => {
+        if (event.type === 'aborted') {
+          executor.execute(taskMock3);
+        }
+      });
+
+      const promise1 = executor.execute(taskMock1);
+      promise1.catch(noop);
+
+      const promise2 = executor.execute(taskMock2);
+      promise2.catch(noop);
+
+      expect(executor.latestTask).toBe(taskMock3);
+      expect(executor._promise).not.toBeNull();
+      expect(executor._promise).not.toBe(promise1);
+      expect(executor._promise).not.toBe(promise2);
+
+      expect(taskMock1).toHaveBeenCalledTimes(1);
+      expect(taskMock2).toHaveBeenCalledTimes(1);
+      expect(taskMock1.mock.calls[0][0].aborted).toBe(true);
+      expect(taskMock2.mock.calls[0][0].aborted).toBe(true);
+
+      expect(listenerMock).toHaveBeenCalledTimes(4);
+      expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'pending', target: executor });
+      expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'aborted', target: executor });
+      expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'aborted', target: executor });
+      expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'pending', target: executor });
+
+      await expect(executor._promise).resolves.toBe('ccc');
+
+      expect(executor.isFulfilled).toBe(true);
+      expect(executor.isRejected).toBe(false);
+      expect(executor.value).toBe('ccc');
+      expect(executor.reason).toBeUndefined();
+    });
+
+    test('an AbortablePromise returned from a task is aborted when a task is replaced', async () => {
+      const taskMock1 = jest.fn(
+        _signal =>
+          new AbortablePromise<string>(resolve => {
+            resolve('aaa');
+          })
+      );
+      const taskMock2 = jest.fn(_signal => 'bbb');
+
+      const promise1 = executor.execute(taskMock1);
+      const promise2 = executor.execute(taskMock2);
+
+      expect(executor.latestTask).toBe(taskMock2);
+
+      expect(taskMock1).toHaveBeenCalledTimes(1);
+      expect(taskMock1.mock.calls[0][0].aborted).toBe(true);
+
+      await expect(promise1).rejects.toEqual(new DOMException('The operation was aborted.', 'AbortError'));
+      await expect(promise2).resolves.toBe('bbb');
+
+      expect(executor.isFulfilled).toBe(true);
+      expect(executor.isRejected).toBe(false);
+      expect(executor.value).toBe('bbb');
+      expect(executor.reason).toBeUndefined();
+      expect(executor._promise).toBeNull();
+    });
+
+    test('preserves the previous value when a new task is executed', async () => {
+      await executor.execute(() => 'aaa');
+      const promise = executor.execute(() => 'bbb');
+
+      expect(executor.isFulfilled).toBe(true);
+      expect(executor.isRejected).toBe(false);
+      expect(executor.value).toBe('aaa');
+      expect(executor.reason).toBeUndefined();
+      expect(executor._promise).toBe(promise);
+
+      await promise;
+
+      expect(executor.value).toBe('bbb');
+      expect(executor._promise).toBeNull();
+    });
+
+    test('preserves the previous reason when a new task is executed', async () => {
+      await executor
+        .execute(() => {
+          throw reason;
+        })
+        .catch(noop);
+
+      const promise = executor.execute(() => 'bbb');
+
+      expect(executor.isFulfilled).toBe(false);
+      expect(executor.isRejected).toBe(true);
+      expect(executor.value).toBeUndefined();
+      expect(executor.reason).toBe(reason);
+      expect(executor._promise).toBe(promise);
+
+      await promise;
+
+      expect(executor.value).toBe('bbb');
+      expect(executor._promise).toBeNull();
+    });
   });
 
-  test('notifies the listener on sequential executions', () => {
-    executor.execute(() => Promise.resolve(111)).catch(noop);
-    executor.execute(() => Promise.resolve(222));
+  describe('resolve', () => {
+    test('synchronously fulfills the executor', () => {
+      executor.resolve('aaa');
 
-    expect(listenerMock).toHaveBeenCalledTimes(3);
+      expect(executor.isFulfilled).toBe(true);
+      expect(executor.isRejected).toBe(false);
+      expect(executor.isStale).toBe(false);
+      expect(executor.value).toBe('aaa');
+      expect(executor.reason).toBeUndefined();
+      expect(executor._promise).toBeNull();
+
+      expect(listenerMock).toHaveBeenCalledTimes(1);
+      expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'fulfilled', target: executor });
+    });
+
+    test('aborts pending task and preserves it as a latestTask', () => {
+      const taskMock = jest.fn((_signal, _executor) => 'aaa');
+
+      executor.execute(taskMock).catch(noop);
+      executor.resolve('bbb');
+
+      expect(taskMock).toHaveBeenCalledTimes(1);
+      expect(taskMock.mock.calls[0][0].aborted).toBe(true);
+      expect(taskMock.mock.calls[0][1]).toBe(executor);
+
+      expect(executor.isFulfilled).toBe(true);
+      expect(executor.isRejected).toBe(false);
+      expect(executor.isStale).toBe(false);
+      expect(executor.value).toBe('bbb');
+      expect(executor.reason).toBeUndefined();
+      expect(executor.latestTask).toBe(taskMock);
+      expect(executor._promise).toBeNull();
+
+      expect(listenerMock).toHaveBeenCalledTimes(3);
+      expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'pending', target: executor });
+      expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'aborted', target: executor });
+      expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor });
+    });
+
+    test('resets the stale flag', () => {
+      executor.resolve('aaa');
+      executor.invalidate();
+
+      expect(executor.isStale).toBe(true);
+
+      executor.resolve('bbb');
+
+      expect(executor.isStale).toBe(false);
+    });
+
+    test('executes a new task if resolved with a promise', async () => {
+      executor.resolve(Promise.resolve('aaa'));
+
+      expect(listenerMock).toHaveBeenCalledTimes(1);
+      expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'pending', target: executor });
+
+      expect(executor.isFulfilled).toBe(false);
+      expect(executor.isRejected).toBe(false);
+      expect(executor.isStale).toBe(false);
+      expect(executor.value).toBeUndefined();
+      expect(executor.reason).toBeUndefined();
+      expect(executor.latestTask).not.toBeNull();
+      expect(executor._promise).not.toBeNull();
+
+      await executor._promise;
+
+      expect(listenerMock).toHaveBeenCalledTimes(2);
+      expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'fulfilled', target: executor });
+
+      expect(executor.value).toBe('aaa');
+      expect(executor.reason).toBeUndefined();
+      expect(executor.latestTask).not.toBeNull();
+      expect(executor._promise).toBeNull();
+    });
   });
 
-  test('aborts pending execution if new execution is submitted', async () => {
-    const cbMock = jest.fn(signal => Promise.resolve(111));
+  describe('reject', () => {
+    test('synchronously rejects the executor', () => {
+      executor.reject('aaa');
 
-    const promise1 = executor.execute(cbMock);
+      expect(executor.isFulfilled).toBe(false);
+      expect(executor.isRejected).toBe(true);
+      expect(executor.isStale).toBe(false);
+      expect(executor.value).toBeUndefined();
+      expect(executor.reason).toBe('aaa');
+      expect(executor._promise).toBeNull();
 
-    const promise2 = executor.execute(() => Promise.resolve(222));
+      expect(listenerMock).toHaveBeenCalledTimes(1);
+      expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'rejected', target: executor });
+    });
 
-    expect(cbMock.mock.calls[0][0].aborted).toBe(true);
-    expect(listenerMock).toHaveBeenCalledTimes(3);
-    expect(executor.isSettled).toBe(false);
-    expect(executor.value).toBe(undefined);
+    test('aborts pending task and preserves it as a latestTask', () => {
+      const taskMock = jest.fn((_signal, _executor) => 'aaa');
 
-    await expect(promise2).resolves.toEqual(222);
+      executor.execute(taskMock).catch(noop);
+      executor.reject('bbb');
 
-    await expect(promise1).rejects.toEqual(new DOMException('The operation was aborted.', 'AbortError'));
+      expect(taskMock).toHaveBeenCalledTimes(1);
+      expect(taskMock.mock.calls[0][0].aborted).toBe(true);
+      expect(taskMock.mock.calls[0][1]).toBe(executor);
 
-    expect(listenerMock).toHaveBeenCalledTimes(4);
-    expect(executor.value).toBe(222);
+      expect(executor.isFulfilled).toBe(false);
+      expect(executor.isRejected).toBe(true);
+      expect(executor.isStale).toBe(false);
+      expect(executor.value).toBeUndefined();
+      expect(executor.reason).toBe('bbb');
+      expect(executor.latestTask).toBe(taskMock);
+      expect(executor._promise).toBeNull();
+
+      expect(listenerMock).toHaveBeenCalledTimes(3);
+      expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'pending', target: executor });
+      expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'aborted', target: executor });
+      expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'rejected', target: executor });
+    });
+
+    test('resets the stale flag', () => {
+      executor.resolve('aaa');
+      executor.invalidate();
+
+      expect(executor.isStale).toBe(true);
+
+      executor.reject('bbb');
+
+      expect(executor.isStale).toBe(false);
+    });
   });
 
-  test('synchronously resolves', () => {
-    executor.resolve(111);
+  describe('retry', () => {
+    test('no-op if there is no latestTask', () => {
+      executor.retry();
 
-    expect(listenerMock).toHaveBeenCalledTimes(1);
-    expect(executor.isPending).toBe(false);
-    expect(executor.isFulfilled).toBe(true);
-    expect(executor.isRejected).toBe(false);
-    expect(executor.value).toBe(111);
-    expect(executor.reason).toBe(undefined);
-    expect(executor._promise).toBe(null);
+      expect(executor._promise).toBeNull();
+    });
+
+    test('no-op if there is a pending task', () => {
+      const task = () => 'aaa';
+      const promise = executor.execute(task);
+
+      executor.retry();
+
+      expect(executor.latestTask).toBe(task);
+      expect(executor._promise).toBe(promise);
+    });
+
+    test('executes the latestTask', async () => {
+      const taskMock = jest.fn(() => 'aaa');
+
+      await executor.execute(taskMock);
+
+      expect(taskMock).toHaveBeenCalledTimes(1);
+
+      executor.retry();
+
+      expect(taskMock).toHaveBeenCalledTimes(2);
+    });
   });
 
-  test('asynchronously resolves', async () => {
-    executor.resolve(Promise.resolve(111));
+  describe('clear', () => {
+    test('no-op if executor is not settled', () => {
+      executor.clear();
 
-    expect(listenerMock).toHaveBeenCalledTimes(1);
-    expect(executor.isPending).toBe(true);
-    expect(executor.isFulfilled).toBe(false);
-    expect(executor.isRejected).toBe(false);
-    expect(executor.value).toBe(undefined);
-    expect(executor.reason).toBe(undefined);
-    expect(executor._promise).toBeInstanceOf(Promise);
+      expect(listenerMock).toHaveBeenCalledTimes(0);
+    });
 
-    await executor._promise;
+    test('clears the executor', () => {
+      executor.resolve('aaa');
+      executor.invalidate();
+      executor.clear();
 
-    expect(listenerMock).toHaveBeenCalledTimes(2);
-    expect(executor.isPending).toBe(false);
-    expect(executor.isFulfilled).toBe(true);
-    expect(executor.isRejected).toBe(false);
-    expect(executor.value).toBe(111);
-    expect(executor.reason).toBe(undefined);
-    expect(executor._promise).toBe(null);
+      expect(executor.isFulfilled).toBe(false);
+      expect(executor.isRejected).toBe(false);
+      expect(executor.isStale).toBe(false);
+      expect(executor.value).toBeUndefined();
+      expect(executor.reason).toBeUndefined();
+      expect(executor._promise).toBeNull();
+
+      expect(listenerMock).toHaveBeenCalledTimes(3);
+      expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'fulfilled', target: executor });
+      expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'invalidated', target: executor });
+      expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'cleared', target: executor });
+    });
+
+    test('preserves the pending task intact', () => {
+      executor.resolve('aaa');
+
+      const promise = executor.execute(() => 'bbb');
+
+      executor.clear();
+
+      expect(executor.isFulfilled).toBe(false);
+      expect(executor.isRejected).toBe(false);
+      expect(executor.isStale).toBe(false);
+      expect(executor.value).toBeUndefined();
+      expect(executor.reason).toBeUndefined();
+      expect(executor._promise).toBe(promise);
+    });
   });
 
-  test('synchronously rejects', () => {
-    executor.reject(222);
+  describe('invalidate', () => {
+    test('no-op if executor is not settled', () => {
+      executor.invalidate();
 
-    expect(listenerMock).toHaveBeenCalledTimes(1);
-    expect(executor.isPending).toBe(false);
-    expect(executor.isFulfilled).toBe(false);
-    expect(executor.isRejected).toBe(true);
-    expect(executor.value).toBe(undefined);
-    expect(executor.reason).toBe(222);
-    expect(executor._promise).toBe(null);
+      expect(listenerMock).toHaveBeenCalledTimes(0);
+    });
+
+    test('marks executor as stale only once', () => {
+      executor.resolve('aaa');
+      executor.invalidate();
+      executor.invalidate();
+      executor.invalidate();
+
+      expect(executor.isFulfilled).toBe(true);
+      expect(executor.isRejected).toBe(false);
+      expect(executor.isStale).toBe(true);
+      expect(executor.value).toBe('aaa');
+      expect(executor.reason).toBeUndefined();
+      expect(executor._promise).toBeNull();
+
+      expect(listenerMock).toHaveBeenCalledTimes(2);
+      expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'fulfilled', target: executor });
+      expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'invalidated', target: executor });
+    });
   });
 
-  test('stores only the last value', () => {
-    executor.reject(222);
-    executor.resolve(111);
+  describe('abort', () => {
+    test('no-op if there is no pending task', () => {
+      executor.abort();
 
-    expect(listenerMock).toHaveBeenCalledTimes(2);
-    expect(executor.isPending).toBe(false);
-    expect(executor.isFulfilled).toBe(true);
-    expect(executor.isRejected).toBe(false);
-    expect(executor.value).toBe(111);
-    expect(executor.reason).toBe(undefined);
-    expect(executor._promise).toBe(null);
+      expect(listenerMock).toHaveBeenCalledTimes(0);
+    });
+
+    test('aborts the pending task', async () => {
+      const taskMock = jest.fn(_signal => 'aaa');
+
+      executor.execute(taskMock).catch(noop);
+      executor.abort('bbb');
+
+      expect(executor.latestTask).toBe(taskMock);
+
+      expect(taskMock).toHaveBeenCalledTimes(1);
+      expect(taskMock.mock.calls[0][0].aborted).toBe(true);
+
+      expect(listenerMock).toHaveBeenCalledTimes(2);
+      expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'pending', target: executor });
+      expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'aborted', target: executor });
+
+      expect(executor._promise).toBeNull();
+    });
+
+    test('abort preserves the value intact', () => {
+      executor.resolve('aaa');
+      executor.execute(() => 'bbb').catch(noop);
+      executor.abort();
+
+      expect(executor.isFulfilled).toBe(true);
+      expect(executor.isRejected).toBe(false);
+      expect(executor.value).toBe('aaa');
+      expect(executor.reason).toBeUndefined();
+      expect(executor._promise).toBeNull();
+    });
+
+    test('abort preserves reason intact', () => {
+      executor.reject(reason);
+      executor.execute(() => 'bbb').catch(noop);
+      executor.abort();
+
+      expect(listenerMock).toHaveBeenCalledTimes(3);
+      expect(executor.isPending).toBe(false);
+      expect(executor.isFulfilled).toBe(false);
+      expect(executor.isRejected).toBe(true);
+      expect(executor.value).toBeUndefined();
+      expect(executor.reason).toBe(reason);
+      expect(executor._promise).toBeNull();
+    });
   });
 
-  test('stores only the last reason', () => {
-    executor.resolve(111);
-    executor.reject(222);
+  describe('activate', () => {
+    test('marks executor as activated', () => {
+      executor.activate();
+      executor.activate();
+      executor.activate();
 
-    expect(listenerMock).toHaveBeenCalledTimes(2);
-    expect(executor.isPending).toBe(false);
-    expect(executor.isFulfilled).toBe(false);
-    expect(executor.isRejected).toBe(true);
-    expect(executor.value).toBe(undefined);
-    expect(executor.reason).toBe(222);
-    expect(executor._promise).toBe(null);
+      expect(executor._activeCount).toBe(3);
+
+      expect(listenerMock).toHaveBeenCalledTimes(1);
+      expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'activated', target: executor });
+    });
+
+    test('marks executor as deactivated', () => {
+      const deactivate = executor.activate();
+
+      deactivate();
+      deactivate();
+      deactivate();
+
+      expect(executor._activeCount).toBe(0);
+
+      expect(listenerMock).toHaveBeenCalledTimes(2);
+      expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'activated', target: executor });
+      expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'deactivated', target: executor });
+    });
   });
 
-  test('preserves the previous value on execute', () => {
-    executor.resolve(111);
-    const promise = executor.execute(() => Promise.resolve(333));
+  describe('then', () => {
+    test('resolves with the value if an executor is fulfilled', async () => {
+      executor.resolve('aaa');
 
-    expect(listenerMock).toHaveBeenCalledTimes(2);
-    expect(executor.isPending).toBe(true);
-    expect(executor.isFulfilled).toBe(true);
-    expect(executor.isRejected).toBe(false);
-    expect(executor.value).toBe(111);
-    expect(executor.reason).toBe(undefined);
-    expect(executor._promise).toBe(promise);
-  });
+      await expect(executor.then()).resolves.toBe('aaa');
+    });
 
-  test('preserves the previous reason on execute', () => {
-    executor.reject(222);
-    const promise = executor.execute(() => Promise.resolve(111));
+    test('rejects with the reason if an executor is fulfilled', async () => {
+      executor.reject(reason);
 
-    expect(listenerMock).toHaveBeenCalledTimes(2);
-    expect(executor.isPending).toBe(true);
-    expect(executor.isFulfilled).toBe(false);
-    expect(executor.isRejected).toBe(true);
-    expect(executor.value).toBe(undefined);
-    expect(executor.reason).toBe(222);
-    expect(executor._promise).toBe(promise);
-  });
+      await expect(executor.then()).rejects.toBe(reason);
+    });
 
-  // test('does not invoke listener if a value did not change after resolve', () => {
-  //   executor.resolve(111);
-  //   executor.resolve(111);
-  //
-  //   expect(listenerMock).toHaveBeenCalledTimes(2);
-  // });
+    test('calls onFulfilled callback', async () => {
+      const onFulfilledMock = jest.fn(_value => 'bbb');
+      const onRejectedMock = jest.fn();
 
-  // test('does not invoke listener if a reason did not change after reject', () => {
-  //   executor.reject(222);
-  //   executor.reject(222);
-  //
-  //   expect(listenerMock).toHaveBeenCalledTimes(1);
-  // });
+      executor.resolve('aaa');
 
-  test('clears after resolve', () => {
-    executor.resolve(111);
-    executor.clear();
+      await expect(executor.then(onFulfilledMock, onRejectedMock)).resolves.toBe('bbb');
 
-    expect(listenerMock).toHaveBeenCalledTimes(2);
-    expect(executor.isPending).toBe(false);
-    expect(executor.isFulfilled).toBe(false);
-    expect(executor.isRejected).toBe(false);
-    expect(executor.value).toBe(undefined);
-    expect(executor.reason).toBe(undefined);
-    expect(executor._promise).toBe(null);
-  });
+      expect(onFulfilledMock).toHaveBeenCalledTimes(1);
+      expect(onFulfilledMock.mock.calls[0][0]).toBe('aaa');
+      expect(onRejectedMock).toHaveBeenCalledTimes(0);
+    });
 
-  test('clears after reject', () => {
-    executor.reject(222);
-    executor.clear();
+    test('calls onRejected callback', async () => {
+      const onFulfilledMock = jest.fn();
+      const onRejectedMock = jest.fn(_reason => 'aaa');
 
-    expect(listenerMock).toHaveBeenCalledTimes(2);
-    expect(executor.isPending).toBe(false);
-    expect(executor.isFulfilled).toBe(false);
-    expect(executor.isRejected).toBe(false);
-    expect(executor.value).toBe(undefined);
-    expect(executor.reason).toBe(undefined);
-    expect(executor._promise).toBe(null);
-  });
+      executor.reject(reason);
 
-  test('clear does not interrupt execution', async () => {
-    executor.resolve(111);
-    const promise = executor.execute(() => Promise.resolve(333));
-    executor.clear();
+      await expect(executor.then(onFulfilledMock, onRejectedMock)).resolves.toBe('aaa');
 
-    expect(listenerMock).toHaveBeenCalledTimes(3);
-    expect(executor.isPending).toBe(true);
-    expect(executor.isFulfilled).toBe(false);
-    expect(executor.isRejected).toBe(false);
-    expect(executor.value).toBe(undefined);
-    expect(executor.reason).toBe(undefined);
-    expect(executor._promise).toBe(promise);
+      expect(onFulfilledMock).toHaveBeenCalledTimes(0);
+      expect(onRejectedMock).toHaveBeenCalledTimes(1);
+      expect(onRejectedMock.mock.calls[0][0]).toBe(reason);
+    });
 
-    await promise;
+    test('waits for the executor to be fulfilled', async () => {
+      const promise = executor.then();
 
-    expect(listenerMock).toHaveBeenCalledTimes(4);
-    expect(executor.isPending).toBe(false);
-    expect(executor.isFulfilled).toBe(true);
-    expect(executor.isRejected).toBe(false);
-    expect(executor.value).toBe(333);
-    expect(executor.reason).toBe(undefined);
-    expect(executor._promise).toBe(null);
-  });
+      executor.resolve('aaa');
 
-  test('abort preserves the value intact', () => {
-    executor.resolve(111);
-    executor.execute(() => Promise.resolve(333)).catch(noop);
-    executor.abort();
+      await expect(promise).resolves.toBe('aaa');
+    });
 
-    expect(listenerMock).toHaveBeenCalledTimes(3);
-    expect(executor.isPending).toBe(false);
-    expect(executor.isFulfilled).toBe(true);
-    expect(executor.isRejected).toBe(false);
-    expect(executor.value).toBe(111);
-    expect(executor.reason).toBe(undefined);
-    expect(executor._promise).toBe(null);
-  });
+    test('waits for the executor to be rejected', async () => {
+      const promise = executor.then();
 
-  test('abort preserves reason intact', () => {
-    executor.reject(222);
-    executor.execute(() => Promise.resolve(111)).catch(noop);
-    executor.abort();
+      executor.reject(reason);
 
-    expect(listenerMock).toHaveBeenCalledTimes(3);
-    expect(executor.isPending).toBe(false);
-    expect(executor.isFulfilled).toBe(false);
-    expect(executor.isRejected).toBe(true);
-    expect(executor.value).toBe(undefined);
-    expect(executor.reason).toBe(222);
-    expect(executor._promise).toBe(null);
-  });
+      await expect(promise).rejects.toBe(reason);
+    });
 
-  test('aborts a pending execution', async () => {
-    executor.resolve(111);
-    const promise = executor.execute(() => Promise.resolve(333));
-    executor.abort();
-    await promise.catch(noop);
+    test('waits until the executor is settled and non-pending', async () => {
+      executor.resolve('aaa');
+      executor.execute(() => 'bbb').catch(noop);
 
-    expect(listenerMock).toHaveBeenCalledTimes(3);
-    expect(executor.isPending).toBe(false);
-    expect(executor.isFulfilled).toBe(true);
-    expect(executor.isRejected).toBe(false);
-    expect(executor.value).toBe(111);
-    expect(executor.reason).toBe(undefined);
-    expect(executor._promise).toBe(null);
-  });
+      const promise = executor.then();
 
-  test('returns a default value if an executor is not fulfilled', () => {
-    expect(executor.getOrDefault(222)).toBe(222);
-  });
+      executor.execute(() => 'ccc');
 
-  test('returns a value if an executor is fulfilled', () => {
-    executor.resolve(111);
-    expect(executor.getOrDefault(222)).toBe(111);
+      await expect(promise).resolves.toBe('ccc');
+    });
   });
 });

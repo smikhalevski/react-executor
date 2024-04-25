@@ -47,6 +47,10 @@ export interface ExecutorEvent<Value = any> {
    *   If executor is still {@link Executor.isPending pending} when abort event is published then the currently pending
    *   task is being replaced with a new task.
    *
+   *   Calling {@link Executor.execute} when handling an abort event may lead to stack overflow. If you need to
+   *   do this anyway, execute a new task from async context using
+   *   [`queueMicrotask`](https://developer.mozilla.org/en-US/docs/Web/API/queueMicrotask) or similar API.
+   *
    *   </dd>
    *
    *   <dt><i>"cleared"</i></dt>

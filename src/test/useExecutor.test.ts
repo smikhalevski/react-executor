@@ -21,9 +21,9 @@ describe('useExecutor', () => {
   //     expect(executor.isPending).toBe(false);
   //     expect(executor.isFulfilled).toBe(false);
   //     expect(executor.isRejected).toBe(false);
-  //     expect(executor.value).toBe(undefined);
-  //     expect(executor.reason).toBe(undefined);
-  //     expect(executor.promise).toBe(null);
+  //     expect(executor.value).toBeUndefined();
+  //     expect(executor.reason).toBeUndefined();
+  //     expect(executor.promise).toBeNull();
   //   });
   //
   //   test('creates an executor with non-function initial result', () => {
@@ -34,8 +34,8 @@ describe('useExecutor', () => {
   //     expect(executor.isFulfilled).toBe(true);
   //     expect(executor.isRejected).toBe(false);
   //     expect(executor.value).toBe(111);
-  //     expect(executor.reason).toBe(undefined);
-  //     expect(executor.promise).toBe(null);
+  //     expect(executor.reason).toBeUndefined();
+  //     expect(executor.promise).toBeNull();
   //   });
   //
   //   test('creates an executor with synchronous function initial result', async () => {
@@ -45,8 +45,8 @@ describe('useExecutor', () => {
   //     expect(executor.isPending).toBe(true);
   //     expect(executor.isFulfilled).toBe(false);
   //     expect(executor.isRejected).toBe(false);
-  //     expect(executor.value).toBe(undefined);
-  //     expect(executor.reason).toBe(undefined);
+  //     expect(executor.value).toBeUndefined();
+  //     expect(executor.reason).toBeUndefined();
   //     expect(executor.promise).toBeInstanceOf(Promise);
   //
   //     await act(() => executor.promise);
@@ -60,8 +60,8 @@ describe('useExecutor', () => {
   //     expect(executor.isPending).toBe(true);
   //     expect(executor.isFulfilled).toBe(false);
   //     expect(executor.isRejected).toBe(false);
-  //     expect(executor.value).toBe(undefined);
-  //     expect(executor.reason).toBe(undefined);
+  //     expect(executor.value).toBeUndefined();
+  //     expect(executor.reason).toBeUndefined();
   //     expect(executor.promise).toBeInstanceOf(Promise);
   //
   //     await act(() => executor.promise);
@@ -71,8 +71,8 @@ describe('useExecutor', () => {
   //     expect(executor.isFulfilled).toBe(true);
   //     expect(executor.isRejected).toBe(false);
   //     expect(executor.value).toBe(111);
-  //     expect(executor.reason).toBe(undefined);
-  //     expect(executor.promise).toBe(null);
+  //     expect(executor.reason).toBeUndefined();
+  //     expect(executor.promise).toBeNull();
   //   });
   //
   //   test('re-renders after resolve', () => {
