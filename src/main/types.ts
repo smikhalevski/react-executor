@@ -1,4 +1,4 @@
-import type { AbortablePromise, Awaitable } from 'parallel-universe';
+import type { AbortablePromise } from 'parallel-universe';
 import type { ExecutorManager } from './ExecutorManager';
 
 /**
@@ -12,37 +12,78 @@ export interface ExecutorEvent<Value = any> {
    *
    * <dl>
    *   <dt><i>"configured"</i></dt>
-   *   <dd><p>The executor was just created and plugins were applied to it.</p></dd>
+   *   <dd>
+   *
+   *   The executor was just created and plugins were applied to it.
+   *
+   *   </dd>
    *
    *   <dt><i>"pending"</i></dt>
-   *   <dd><p>The executor started a {@link Executor.latestTask task} execution.</p></dd>
+   *   <dd>
+   *
+   *   The executor started a {@link Executor.latestTask task} execution.
+   *
+   *   </dd>
    *
    *   <dt><i>"fulfilled"</i></dt>
-   *   <dd><p>The executor was {@link Executor.isFulfilled fulfilled} with a {@link Executor.value value}.</p></dd>
+   *   <dd>
+   *
+   *   The executor was {@link Executor.isFulfilled fulfilled} with a {@link Executor.value value}.
+   *
+   *   </dd>
    *
    *   <dt><i>"rejected"</i></dt>
-   *   <dd><p>The executor was {@link Executor.isRejected rejected} with a {@link Executor.reason reason}.</p></dd>
+   *   <dd>
+   *
+   *   The executor was {@link Executor.isRejected rejected} with a {@link Executor.reason reason}.
+   *
+   *   </dd>
    *
    *   <dt><i>"aborted"</i></dt>
-   *   <dd><p>The latest task was aborted.</p></dd>
+   *   <dd>
+   *
+   *   The {@link Executor.latestTask latest task} was aborted.
+   *
+   *   If executor is still {@link Executor.isPending pending} when abort event is published then the currently pending
+   *   task is being replaced with a new task.
+   *
+   *   </dd>
    *
    *   <dt><i>"cleared"</i></dt>
    *   <dd><p>The executor was cleared and now isn't {@link Executor.isSettled settled}.</p></dd>
    *
    *   <dt><i>"invalidated"</i></dt>
-   *   <dd><p>The executor was {@link Executor.isStale invalidated}.</p></dd>
+   *   <dd>
+   *
+   *   The executor was {@link Executor.invalidate invalidated} and its result is now {@link Executor.isStale stale}.
+   *
+   *   </dd>
    *
    *   <dt><i>"activated"</i></dt>
-   *   <dd><p>The executor was inactive and became {@link Executor.isActive active}. This means that there are consumers
-   *   that observe the state of the executor.</p></dd>
+   *   <dd>
+   *
+   *   The executor was inactive and became {@link Executor.isActive active}. This means that there are consumers that
+   *   observe the state of the executor.
+   *
+   *   </dd>
    *
    *   <dt><i>"deactivated"</i></dt>
-   *   <dd><p>The executor was {@link Executor.isActive active} and became inactive. This means that there are no
-   *   consumers that observe the state of the executor.</p></dd>
+   *   <dd>
+   *
+   *   The executor was {@link Executor.isActive active} and became inactive. This means that there are no consumers
+   *   that observe the state of the executor.
+   *
+   *   </dd>
    *
    *   <dt><i>"disposed"</i></dt>
-   *   <dd><p>The executor was just {@link ExecutorManager.dispose disposed}: plugin cleanup callbacks were invoked, and
-   *   the {@link Executor.key executor key} isn't known to the manager anymore.</p></dd>
+   *   <dd>
+   *
+   *   The executor was just {@link ExecutorManager.dispose disposed}: plugin cleanup callbacks were invoked, and
+   *   the {@link Executor.key executor key} isn't known to the manager anymore.
+   *
+   *   All executor subscribers are unsubscribed after the disposal.
+   *
+   *   </dd>
    * </dl>
    */
   type:
@@ -81,7 +122,7 @@ export type ExecutorPlugin<Value = any> = (executor: Executor<Value>) => void;
  * @returns The value that the executor must be fulfilled with.
  * @template Value The value stored by the executor.
  */
-export type ExecutorTask<Value = any> = (signal: AbortSignal, executor: Executor<Value>) => Awaitable<Value>;
+export type ExecutorTask<Value = any> = (signal: AbortSignal, executor: Executor<Value>) => PromiseLike<Value> | Value;
 
 /**
  * Manages the async task execution process and provides ways to access execution results, abort or replace a task
@@ -89,7 +130,7 @@ export type ExecutorTask<Value = any> = (signal: AbortSignal, executor: Executor
  *
  * @template Value The value stored by the executor.
  */
-export interface Executor<Value = any> {
+export interface Executor<Value = any> extends PromiseLike<Value> {
   /**
    * The key of this executor, unique in scope of the {@link manager}.
    */
@@ -147,15 +188,6 @@ export interface Executor<Value = any> {
   readonly latestTask: ExecutorTask<Value> | null;
 
   /**
-   * The promise that is settled with the executor result.
-   *
-   * For a non-{@link isPending pending} and {@link isSettled settled} executor, the promise is resolved with the
-   * available {@link value}, or rejected with the available {@link reason}. Otherwise, the promise waits for the
-   * executor to become settled and then settles as well.
-   */
-  readonly promise: Promise<Value>;
-
-  /**
    * The timestamp when the executor was last settled, or 0 if it wasn't settled yet.
    */
   readonly timestamp: number;
@@ -172,6 +204,24 @@ export interface Executor<Value = any> {
    * @param defaultValue The default value.
    */
   getOrDefault(defaultValue: Value): Value;
+
+  /**
+   * Attaches callbacks for the fulfillment and/or rejection of the executor.
+   *
+   * For a non-{@link isPending pending} and {@link isSettled settled} executor, the promise is resolved with the
+   * available {@link value}, or rejected with the available {@link reason}. Otherwise, the promise waits for the
+   * executor to become settled and then settles as well.
+   *
+   * @param onFulfilled The callback to execute when the executor is fulfilled.
+   * @param onRejected The callback to execute when the executor is rejected.
+   * @returns A promise for the completion of whichever callback is executed.
+   * @template Result1 The result of the fulfillment callback.
+   * @template Result2 The result of the rejection callback.
+   */
+  then<Result1 = Value, Result2 = never>(
+    onFulfilled?: ((value: Value) => PromiseLike<Result1> | Result1) | null,
+    onRejected?: ((reason: any) => PromiseLike<Result2> | Result2) | null
+  ): Promise<Result1 | Result2>;
 
   /**
    * Executes a task and populates the executor with the returned result.
@@ -222,7 +272,7 @@ export interface Executor<Value = any> {
    * @param value The value.
    * @param timestamp The timestamp when the value was acquired. If value is a promise then the timestamp is ignored.
    */
-  resolve(value: Awaitable<Value>, timestamp?: number): this;
+  resolve(value: PromiseLike<Value> | Value, timestamp?: number): this;
 
   /**
    * Instantly aborts pending execution and rejects the executor with the reason.

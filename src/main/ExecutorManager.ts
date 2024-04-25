@@ -2,8 +2,18 @@ import { PubSub } from 'parallel-universe';
 import { ExecutorImpl } from './ExecutorImpl';
 import type { Executor, ExecutorEvent, ExecutorPlugin, ExecutorTask } from './types';
 
-export class ExecutorManager {
-  private _executors = new Map<unknown, ExecutorImpl>();
+/**
+ * Creates executors and manages their lifecycle.
+ */
+export class ExecutorManager implements Iterable<Executor> {
+  /**
+   * The map from a key to an executor.
+   */
+  private _executors = new Map<string, ExecutorImpl>();
+
+  /**
+   * The pubsub that handles the manager subscriptions.
+   */
   private _pubSub = new PubSub<ExecutorEvent>();
 
   /**
@@ -57,14 +67,10 @@ export class ExecutorManager {
   }
 
   /**
-   * Returns all executors created by this manager.
-   */
-  getAll(): Executor[] {
-    return Array.from(this._executors.values());
-  }
-
-  /**
    * Deletes the non-{@link Executor.isActive active} executor from the manager.
+   *
+   * If the disposed executor is {@link Executor.isPending pending} then it _is not_ aborted. Subscribe to the
+   * {@link ExecutorEvent.type dispose} event on either manager or an executor and abort it manually.
    *
    * @param key The key of the executor to delete.
    * @returns `true` if the executor was disposed, or `false` if there's no such executor, or the executor is active.
@@ -79,8 +85,7 @@ export class ExecutorManager {
     this._executors.delete(key);
 
     executor._pubSub.publish({ type: 'disposed', target: executor });
-
-    // executor._pubSub.unsubscribeAll()
+    executor._pubSub.unsubscribeAll();
 
     return true;
   }
@@ -93,5 +98,12 @@ export class ExecutorManager {
    */
   subscribe(listener: (event: ExecutorEvent) => void): () => void {
     return this._pubSub.subscribe(listener);
+  }
+
+  /**
+   * Iterates over executors created by the manager.
+   */
+  [Symbol.iterator](): IterableIterator<Executor> {
+    return this._executors.values();
   }
 }

@@ -2,7 +2,7 @@ import { ExecutorImpl } from '../main/ExecutorImpl';
 
 export function noop(): void {}
 
-describe.skip('ExecutorImpl', () => {
+describe('ExecutorImpl', () => {
   let listenerMock: jest.Mock;
   let executor: ExecutorImpl<string | number>;
 
@@ -20,7 +20,7 @@ describe.skip('ExecutorImpl', () => {
     expect(executor.isRejected).toBe(false);
     expect(executor.value).toBe(undefined);
     expect(executor.reason).toBe(undefined);
-    expect(executor._taskPromise).toBe(null);
+    expect(executor._promise).toBe(null);
   });
 
   test('invokes a callback with a signal', async () => {
@@ -41,7 +41,7 @@ describe.skip('ExecutorImpl', () => {
     expect(executor.isRejected).toBe(false);
     expect(executor.value).toBe(undefined);
     expect(executor.reason).toBe(undefined);
-    expect(executor._taskPromise).toBe(promise);
+    expect(executor._promise).toBe(promise);
 
     await expect(promise).resolves.toBe(111);
 
@@ -51,7 +51,7 @@ describe.skip('ExecutorImpl', () => {
     expect(executor.isRejected).toBe(false);
     expect(executor.value).toBe(111);
     expect(executor.reason).toBe(undefined);
-    expect(executor._taskPromise).toBe(null);
+    expect(executor._promise).toBe(null);
   });
 
   test('rejects execution', async () => {
@@ -63,7 +63,7 @@ describe.skip('ExecutorImpl', () => {
     expect(executor.isRejected).toBe(false);
     expect(executor.value).toBe(undefined);
     expect(executor.reason).toBe(undefined);
-    expect(executor._taskPromise).toBe(promise);
+    expect(executor._promise).toBe(promise);
 
     await expect(promise).rejects.toEqual(222);
 
@@ -73,7 +73,7 @@ describe.skip('ExecutorImpl', () => {
     expect(executor.isRejected).toBe(true);
     expect(executor.value).toBe(undefined);
     expect(executor.reason).toBe(222);
-    expect(executor._taskPromise).toBe(null);
+    expect(executor._promise).toBe(null);
   });
 
   test('notifies the listener on sequential executions', () => {
@@ -112,7 +112,7 @@ describe.skip('ExecutorImpl', () => {
     expect(executor.isRejected).toBe(false);
     expect(executor.value).toBe(111);
     expect(executor.reason).toBe(undefined);
-    expect(executor._taskPromise).toBe(null);
+    expect(executor._promise).toBe(null);
   });
 
   test('asynchronously resolves', async () => {
@@ -124,9 +124,9 @@ describe.skip('ExecutorImpl', () => {
     expect(executor.isRejected).toBe(false);
     expect(executor.value).toBe(undefined);
     expect(executor.reason).toBe(undefined);
-    expect(executor._taskPromise).toBeInstanceOf(Promise);
+    expect(executor._promise).toBeInstanceOf(Promise);
 
-    await executor._taskPromise;
+    await executor._promise;
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
     expect(executor.isPending).toBe(false);
@@ -134,7 +134,7 @@ describe.skip('ExecutorImpl', () => {
     expect(executor.isRejected).toBe(false);
     expect(executor.value).toBe(111);
     expect(executor.reason).toBe(undefined);
-    expect(executor._taskPromise).toBe(null);
+    expect(executor._promise).toBe(null);
   });
 
   test('synchronously rejects', () => {
@@ -146,7 +146,7 @@ describe.skip('ExecutorImpl', () => {
     expect(executor.isRejected).toBe(true);
     expect(executor.value).toBe(undefined);
     expect(executor.reason).toBe(222);
-    expect(executor._taskPromise).toBe(null);
+    expect(executor._promise).toBe(null);
   });
 
   test('stores only the last value', () => {
@@ -159,7 +159,7 @@ describe.skip('ExecutorImpl', () => {
     expect(executor.isRejected).toBe(false);
     expect(executor.value).toBe(111);
     expect(executor.reason).toBe(undefined);
-    expect(executor._taskPromise).toBe(null);
+    expect(executor._promise).toBe(null);
   });
 
   test('stores only the last reason', () => {
@@ -172,7 +172,7 @@ describe.skip('ExecutorImpl', () => {
     expect(executor.isRejected).toBe(true);
     expect(executor.value).toBe(undefined);
     expect(executor.reason).toBe(222);
-    expect(executor._taskPromise).toBe(null);
+    expect(executor._promise).toBe(null);
   });
 
   test('preserves the previous value on execute', () => {
@@ -185,7 +185,7 @@ describe.skip('ExecutorImpl', () => {
     expect(executor.isRejected).toBe(false);
     expect(executor.value).toBe(111);
     expect(executor.reason).toBe(undefined);
-    expect(executor._taskPromise).toBe(promise);
+    expect(executor._promise).toBe(promise);
   });
 
   test('preserves the previous reason on execute', () => {
@@ -198,7 +198,7 @@ describe.skip('ExecutorImpl', () => {
     expect(executor.isRejected).toBe(true);
     expect(executor.value).toBe(undefined);
     expect(executor.reason).toBe(222);
-    expect(executor._taskPromise).toBe(promise);
+    expect(executor._promise).toBe(promise);
   });
 
   // test('does not invoke listener if a value did not change after resolve', () => {
@@ -225,7 +225,7 @@ describe.skip('ExecutorImpl', () => {
     expect(executor.isRejected).toBe(false);
     expect(executor.value).toBe(undefined);
     expect(executor.reason).toBe(undefined);
-    expect(executor._taskPromise).toBe(null);
+    expect(executor._promise).toBe(null);
   });
 
   test('clears after reject', () => {
@@ -238,7 +238,7 @@ describe.skip('ExecutorImpl', () => {
     expect(executor.isRejected).toBe(false);
     expect(executor.value).toBe(undefined);
     expect(executor.reason).toBe(undefined);
-    expect(executor._taskPromise).toBe(null);
+    expect(executor._promise).toBe(null);
   });
 
   test('clear does not interrupt execution', async () => {
@@ -252,7 +252,7 @@ describe.skip('ExecutorImpl', () => {
     expect(executor.isRejected).toBe(false);
     expect(executor.value).toBe(undefined);
     expect(executor.reason).toBe(undefined);
-    expect(executor._taskPromise).toBe(promise);
+    expect(executor._promise).toBe(promise);
 
     await promise;
 
@@ -262,7 +262,7 @@ describe.skip('ExecutorImpl', () => {
     expect(executor.isRejected).toBe(false);
     expect(executor.value).toBe(333);
     expect(executor.reason).toBe(undefined);
-    expect(executor._taskPromise).toBe(null);
+    expect(executor._promise).toBe(null);
   });
 
   test('abort preserves the value intact', () => {
@@ -276,7 +276,7 @@ describe.skip('ExecutorImpl', () => {
     expect(executor.isRejected).toBe(false);
     expect(executor.value).toBe(111);
     expect(executor.reason).toBe(undefined);
-    expect(executor._taskPromise).toBe(null);
+    expect(executor._promise).toBe(null);
   });
 
   test('abort preserves reason intact', () => {
@@ -290,7 +290,7 @@ describe.skip('ExecutorImpl', () => {
     expect(executor.isRejected).toBe(true);
     expect(executor.value).toBe(undefined);
     expect(executor.reason).toBe(222);
-    expect(executor._taskPromise).toBe(null);
+    expect(executor._promise).toBe(null);
   });
 
   test('aborts a pending execution', async () => {
@@ -305,7 +305,7 @@ describe.skip('ExecutorImpl', () => {
     expect(executor.isRejected).toBe(false);
     expect(executor.value).toBe(111);
     expect(executor.reason).toBe(undefined);
-    expect(executor._taskPromise).toBe(null);
+    expect(executor._promise).toBe(null);
   });
 
   test('returns a default value if an executor is not fulfilled', () => {

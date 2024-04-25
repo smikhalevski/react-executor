@@ -1,4 +1,4 @@
-import { AbortablePromise, Awaitable, Deferred, PubSub } from 'parallel-universe';
+import { AbortablePromise, PubSub } from 'parallel-universe';
 import type { ExecutorManager } from './ExecutorManager';
 import type { Executor, ExecutorEvent, ExecutorTask } from './types';
 
@@ -14,34 +14,33 @@ export class ExecutorImpl<Value = any> implements Executor {
   value: Value | undefined = undefined;
   reason: any = undefined;
   latestTask: ExecutorTask<Value> | null = null;
-  promise = new Deferred<Value>();
   timestamp = 0;
 
   /**
    * The promise of the pending task execution, or `null` if there's no pending task execution.
    */
-  _taskPromise: AbortablePromise<Value> | null = null;
+  _promise: AbortablePromise<Value> | null = null;
 
   /**
-   * The number of active consumers.
+   * The number times the executor was activated.
    */
-  _consumerCount = 0;
+  _activeCount = 0;
 
   /**
    * The pubsub that handles the executor subscriptions.
    */
   _pubSub = new PubSub<ExecutorEvent>();
 
-  get isSettled() {
+  get isSettled(): boolean {
     return this.isFulfilled || this.isRejected;
   }
 
-  get isActive() {
-    return this._consumerCount !== 0;
+  get isActive(): boolean {
+    return this._activeCount !== 0;
   }
 
-  get isPending() {
-    return this._taskPromise !== null;
+  get isPending(): boolean {
+    return this._promise !== null;
   }
 
   constructor(
@@ -56,62 +55,88 @@ export class ExecutorImpl<Value = any> implements Executor {
     if (this.isRejected) {
       throw this.reason;
     }
-    throw new Error('Executor is not settled');
+    throw new Error('The executor is not settled');
   }
 
   getOrDefault(defaultValue: Value): Value {
     return this.isFulfilled ? this.value! : defaultValue;
   }
 
-  execute(task: ExecutorTask<Value>): AbortablePromise<Value> {
-    const taskPromise = new AbortablePromise<Value>((resolve, reject, signal) => {
-      signal.addEventListener('abort', () => {
-        if (this._taskPromise === taskPromise) {
-          this._taskPromise = null;
+  then<Result1 = Value, Result2 = never>(
+    onFulfilled?: ((value: Value) => PromiseLike<Result1> | Result1) | null,
+    onRejected?: ((reason: any) => PromiseLike<Result2> | Result2) | null
+  ): Promise<Result1 | Result2> {
+    return new Promise<Value>((resolve, reject) => {
+      if (this.isSettled && !this.isPending) {
+        resolve(this.get());
+        return;
+      }
 
-          if (this.isFulfilled) {
-            this.promise.resolve(this.value!);
+      const unsubscribe = this.subscribe(event => {
+        if (event.type === 'disposed') {
+          unsubscribe();
+          reject(new DOMException('The executor was disposed', 'AbortError'));
+          return;
+        }
+
+        if (this.isSettled && !this.isPending) {
+          unsubscribe();
+          try {
+            resolve(this.get());
+          } catch (error) {
+            reject(error);
           }
-          if (this.isRejected) {
-            this.promise.reject(this.reason);
-          }
+        }
+      });
+    }).then(onFulfilled, onRejected);
+  }
+
+  execute(task: ExecutorTask<Value>): AbortablePromise<Value> {
+    const promise = new AbortablePromise<Value>((resolve, reject, signal) => {
+      signal.addEventListener('abort', () => {
+        if (this._promise === promise) {
+          this._promise = null;
         }
         this._pubSub.publish({ type: 'aborted', target: this });
       });
 
       new Promise<Value>(resolve => {
-        resolve(task(signal, this));
+        const value = task(signal, this);
+        resolve(value instanceof AbortablePromise ? value.withSignal(signal) : value);
       }).then(
         value => {
-          if (!signal.aborted) {
-            this._resolve(value, Date.now(), false);
-            resolve(value);
+          if (signal.aborted) {
+            return;
           }
+          this._promise = null;
+          this.resolve(value);
+          resolve(value);
         },
+
         reason => {
-          if (!signal.aborted) {
-            this._reject(reason, Date.now(), false);
-            reject(reason);
+          if (signal.aborted) {
+            return;
           }
+          this._promise = null;
+          this.reject(reason);
+          reject(reason);
         }
       );
     });
 
-    const prevTaskPromise = this._taskPromise;
+    const prevPromise = this._promise;
+    this._promise = promise;
 
-    this._taskPromise = taskPromise;
-
-    if (prevTaskPromise !== null) {
-      prevTaskPromise.abort();
-    } else if (this.isSettled) {
-      this.promise = new Deferred();
+    if (prevPromise !== null) {
+      prevPromise.abort();
     }
 
-    this.latestTask = task;
+    if (this._promise === promise) {
+      this.latestTask = task;
+      this._pubSub.publish({ type: 'pending', target: this });
+    }
 
-    this._pubSub.publish({ type: 'pending', target: this });
-
-    return taskPromise;
+    return promise;
   }
 
   retry(): this {
@@ -131,8 +156,8 @@ export class ExecutorImpl<Value = any> implements Executor {
   }
 
   abort(reason?: unknown): this {
-    if (this._taskPromise !== null) {
-      this._taskPromise.abort(reason);
+    if (this._promise !== null) {
+      this._promise.abort(reason);
     }
     return this;
   }
@@ -144,50 +169,17 @@ export class ExecutorImpl<Value = any> implements Executor {
     return this;
   }
 
-  resolve(value: Awaitable<Value>, timestamp = Date.now()): this {
-    this._resolve(value, timestamp, true);
-    return this;
-  }
-
-  reject(reason: any, timestamp = Date.now()): this {
-    this._reject(reason, timestamp, true);
-    return this;
-  }
-
-  activate(): () => void {
-    let isActive = true;
-
-    if (this._consumerCount++ === 0) {
-      this._pubSub.publish({ type: 'activated', target: this });
-    }
-
-    return () => {
-      if (isActive) {
-        isActive = false;
-
-        if (--this._consumerCount === 0) {
-          this._pubSub.publish({ type: 'deactivated', target: this });
-        }
-      }
-    };
-  }
-
-  subscribe(listener: (event: ExecutorEvent) => void): () => void {
-    return this._pubSub.subscribe(listener);
-  }
-
-  _resolve(value: Awaitable<Value>, timestamp: number, isOrphan: boolean): void {
+  resolve(value: PromiseLike<Value> | Value, timestamp = Date.now()): this {
     if (value !== null && typeof value === 'object' && 'then' in value) {
       this.execute(() => value);
-      return;
+      return this;
     }
 
-    const taskPromise = this._taskPromise;
-    this._taskPromise = null;
+    const promise = this._promise;
+    this._promise = null;
 
-    if (isOrphan) {
-      taskPromise?.abort();
-      this.promise = new Deferred();
+    if (promise !== null) {
+      promise.abort();
     }
 
     this.isFulfilled = true;
@@ -196,18 +188,17 @@ export class ExecutorImpl<Value = any> implements Executor {
     this.reason = undefined;
     this.timestamp = timestamp;
 
-    this.promise.resolve(value);
-
     this._pubSub.publish({ type: 'fulfilled', target: this });
+
+    return this;
   }
 
-  _reject(reason: any, timestamp: number, isOrphan: boolean): void {
-    const taskPromise = this._taskPromise;
-    this._taskPromise = null;
+  reject(reason: any, timestamp = Date.now()): this {
+    const promise = this._promise;
+    this._promise = null;
 
-    if (isOrphan) {
-      taskPromise?.abort();
-      this.promise = new Deferred();
+    if (promise !== null) {
+      promise.abort();
     }
 
     this.isFulfilled = this.isStale = false;
@@ -216,8 +207,30 @@ export class ExecutorImpl<Value = any> implements Executor {
     this.reason = reason;
     this.timestamp = timestamp;
 
-    this.promise.reject(reason);
-
     this._pubSub.publish({ type: 'rejected', target: this });
+
+    return this;
+  }
+
+  activate(): () => void {
+    let isActive = true;
+
+    if (this._activeCount++ === 0) {
+      this._pubSub.publish({ type: 'activated', target: this });
+    }
+
+    return () => {
+      if (isActive) {
+        isActive = false;
+
+        if (--this._activeCount === 0) {
+          this._pubSub.publish({ type: 'deactivated', target: this });
+        }
+      }
+    };
+  }
+
+  subscribe(listener: (event: ExecutorEvent) => void): () => void {
+    return this._pubSub.subscribe(listener);
   }
 }
