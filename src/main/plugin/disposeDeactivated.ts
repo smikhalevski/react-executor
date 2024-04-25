@@ -3,7 +3,7 @@ import type { ExecutorPlugin } from '../types';
 /**
  * Disposes a deactivated executor after the timeout.
  *
- * @param ms The timeout in milliseconds after which the executor is disposed if it is still deactivated.
+ * @param ms The timeout in milliseconds after which the executor is disposed.
  */
 export default function disposeDeactivated(ms = 0): ExecutorPlugin {
   return executor => {

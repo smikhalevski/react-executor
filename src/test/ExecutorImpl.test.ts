@@ -4,7 +4,7 @@ import { ExecutorImpl } from '../main/ExecutorImpl';
 export function noop(): void {}
 
 describe('ExecutorImpl', () => {
-  const reason = new Error('expected');
+  const expectedReason = new Error('expected');
 
   let listenerMock: jest.Mock;
   let executor: ExecutorImpl<string | number>;
@@ -39,9 +39,9 @@ describe('ExecutorImpl', () => {
     });
 
     test('throws the reason of a rejected executor', () => {
-      executor.reject(reason);
+      executor.reject(expectedReason);
 
-      expect(() => executor.get()).toThrow(reason);
+      expect(() => executor.get()).toThrow(expectedReason);
     });
   });
 
@@ -57,7 +57,7 @@ describe('ExecutorImpl', () => {
     });
 
     test('returns the default value is the executor is rejected', () => {
-      executor.reject(reason);
+      executor.reject(expectedReason);
 
       expect(executor.getOrDefault('aaa')).toBe('aaa');
     });
@@ -127,7 +127,7 @@ describe('ExecutorImpl', () => {
 
     test('rejects if a task throws an error', async () => {
       const taskMock = jest.fn(() => {
-        throw reason;
+        throw expectedReason;
       });
       const promise = executor.execute(taskMock);
 
@@ -136,7 +136,7 @@ describe('ExecutorImpl', () => {
 
       expect(executor._promise).toBe(promise);
 
-      await expect(promise).rejects.toBe(reason);
+      await expect(promise).rejects.toBe(expectedReason);
 
       expect(listenerMock).toHaveBeenCalledTimes(2);
       expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'rejected', target: executor });
@@ -144,7 +144,7 @@ describe('ExecutorImpl', () => {
       expect(executor.isFulfilled).toBe(false);
       expect(executor.isRejected).toBe(true);
       expect(executor.value).toBeUndefined();
-      expect(executor.reason).toBe(reason);
+      expect(executor.reason).toBe(expectedReason);
       expect(executor._promise).toBeNull();
     });
 
@@ -295,7 +295,7 @@ describe('ExecutorImpl', () => {
     test('preserves the previous reason when a new task is executed', async () => {
       await executor
         .execute(() => {
-          throw reason;
+          throw expectedReason;
         })
         .catch(noop);
 
@@ -304,7 +304,7 @@ describe('ExecutorImpl', () => {
       expect(executor.isFulfilled).toBe(false);
       expect(executor.isRejected).toBe(true);
       expect(executor.value).toBeUndefined();
-      expect(executor.reason).toBe(reason);
+      expect(executor.reason).toBe(expectedReason);
       expect(executor._promise).toBe(promise);
 
       await promise;
@@ -576,7 +576,7 @@ describe('ExecutorImpl', () => {
     });
 
     test('abort preserves reason intact', () => {
-      executor.reject(reason);
+      executor.reject(expectedReason);
       executor.execute(() => 'bbb').catch(noop);
       executor.abort();
 
@@ -585,7 +585,7 @@ describe('ExecutorImpl', () => {
       expect(executor.isFulfilled).toBe(false);
       expect(executor.isRejected).toBe(true);
       expect(executor.value).toBeUndefined();
-      expect(executor.reason).toBe(reason);
+      expect(executor.reason).toBe(expectedReason);
       expect(executor._promise).toBeNull();
     });
   });
@@ -625,9 +625,9 @@ describe('ExecutorImpl', () => {
     });
 
     test('rejects with the reason if an executor is fulfilled', async () => {
-      executor.reject(reason);
+      executor.reject(expectedReason);
 
-      await expect(executor.then()).rejects.toBe(reason);
+      await expect(executor.then()).rejects.toBe(expectedReason);
     });
 
     test('calls onFulfilled callback', async () => {
@@ -647,13 +647,13 @@ describe('ExecutorImpl', () => {
       const onFulfilledMock = jest.fn();
       const onRejectedMock = jest.fn(_reason => 'aaa');
 
-      executor.reject(reason);
+      executor.reject(expectedReason);
 
       await expect(executor.then(onFulfilledMock, onRejectedMock)).resolves.toBe('aaa');
 
       expect(onFulfilledMock).toHaveBeenCalledTimes(0);
       expect(onRejectedMock).toHaveBeenCalledTimes(1);
-      expect(onRejectedMock.mock.calls[0][0]).toBe(reason);
+      expect(onRejectedMock.mock.calls[0][0]).toBe(expectedReason);
     });
 
     test('waits for the executor to be fulfilled', async () => {
@@ -667,9 +667,9 @@ describe('ExecutorImpl', () => {
     test('waits for the executor to be rejected', async () => {
       const promise = executor.then();
 
-      executor.reject(reason);
+      executor.reject(expectedReason);
 
-      await expect(promise).rejects.toBe(reason);
+      await expect(promise).rejects.toBe(expectedReason);
     });
 
     test('waits until the executor is settled and non-pending', async () => {

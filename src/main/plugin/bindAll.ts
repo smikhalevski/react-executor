@@ -8,9 +8,9 @@ export default function bindAll(): ExecutorPlugin {
 }
 
 const plugin: ExecutorPlugin = (executor: any) => {
-  const { prototype } = executor.constructor.prototype;
+  const { prototype } = executor.constructor;
 
-  for (const key in prototype) {
+  for (const key of Object.getOwnPropertyNames(prototype)) {
     if (typeof prototype[key] === 'function') {
       executor[key] = prototype[key].bind(executor);
     }
