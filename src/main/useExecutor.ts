@@ -20,12 +20,21 @@ export function useExecutor<Value>(
   const executor = useExecutorManager().getOrCreate(key, initialValue, plugins);
 
   useEffect(() => {
+    const unsubscribe = executor.subscribe(event => {
+      if (
+        event.type !== 'configured' &&
+        event.type !== 'activated' &&
+        event.type !== 'deactivated' &&
+        event.type !== 'disposed'
+      ) {
+        rerender();
+      }
+    });
     const deactivate = executor.activate();
-    const unsubscribe = executor.subscribe(rerender);
 
     return () => {
-      deactivate();
       unsubscribe();
+      deactivate();
     };
   }, [executor]);
 
