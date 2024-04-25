@@ -1,9 +1,22 @@
 import type { ExecutorPlugin } from '../types';
 
+/**
+ * Serializes and deserializes values persisted in a storage.
+ *
+ * @template Value The value persisted in the storage.
+ */
 export interface Serializer<Value> {
   serialize(value: Value): string;
 
   deserialize(str: string): Value;
+}
+
+export interface Storage {
+  getItem(key: string): string | null;
+
+  removeItem(key: string): void;
+
+  setItem(key: string, value: string): void;
 }
 
 /**
@@ -11,6 +24,7 @@ export interface Serializer<Value> {
  *
  * @param storage The storage where executor value is persisted.
  * @param serializer The value serializer.
+ * @template Value The value persisted in the storage.
  */
 export default function syncStorage<Value = any>(
   storage: Storage,
@@ -31,12 +45,12 @@ export default function syncStorage<Value = any>(
     }
 
     const handleStorage = (event: StorageEvent) => {
-      if (event.storageArea !== storage) {
-        // Unrelated storage
+      if (event.storageArea !== storage && event.key === executor.key) {
+        // Unrelated storage or key
         return;
       }
 
-      const str = storage.getItem(executor.key);
+      const str = event.newValue;
 
       if (str === null) {
         executor.clear();
