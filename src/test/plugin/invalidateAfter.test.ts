@@ -9,6 +9,7 @@ describe('invalidateAfter', () => {
 
   beforeEach(() => {
     listenerMock = jest.fn();
+
     manager = new ExecutorManager();
     manager.subscribe(listenerMock);
   });

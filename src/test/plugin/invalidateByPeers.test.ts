@@ -4,13 +4,10 @@ import invalidateByPeers from '../../main/plugin/invalidateByPeers';
 jest.useFakeTimers();
 
 describe('invalidateByPeers', () => {
-  let listenerMock: jest.Mock;
   let manager: ExecutorManager;
 
   beforeEach(() => {
-    listenerMock = jest.fn();
     manager = new ExecutorManager();
-    manager.subscribe(listenerMock);
   });
 
   test('invalidates an executor if a peer executor with the matching key is fulfilled', () => {

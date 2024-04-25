@@ -8,6 +8,7 @@ describe('disposeDeactivated', () => {
 
   beforeEach(() => {
     listenerMock = jest.fn();
+
     manager = new ExecutorManager();
     manager.subscribe(listenerMock);
   });
