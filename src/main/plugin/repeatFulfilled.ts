@@ -21,7 +21,7 @@ export default function repeatFulfilled<Value = any>(
         case 'fulfilled':
           clearTimeout(timer);
 
-          if (executor.isActive && executor.isFulfilled && index < count) {
+          if (!executor.isPending && executor.isActive && executor.isFulfilled && index < count) {
             timer = setTimeout(
               () => {
                 index++;

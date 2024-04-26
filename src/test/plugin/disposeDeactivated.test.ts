@@ -14,7 +14,7 @@ describe('disposeDeactivated', () => {
   });
 
   test('disposes a deactivated executor', async () => {
-    const executor = manager.getOrCreate('xxx', undefined, [disposeDeactivated()]);
+    const executor = manager.getOrCreate('xxx', undefined, [disposeDeactivated(0)]);
     const deactivate = executor.activate();
     const taskMock = jest.fn(_signal => delay(100, 'aaa'));
     const promise = executor.execute(taskMock);
@@ -32,7 +32,7 @@ describe('disposeDeactivated', () => {
   });
 
   test('does not dispose if the executor was reactivated', async () => {
-    const executor = manager.getOrCreate('xxx', undefined, [disposeDeactivated()]);
+    const executor = manager.getOrCreate('xxx', undefined, [disposeDeactivated(0)]);
     const deactivate = executor.activate();
     const taskMock = jest.fn(_signal => delay(100, 'aaa'));
     const promise = executor.execute(taskMock);

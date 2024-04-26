@@ -21,7 +21,7 @@ export default function retryRejected<Value = any>(
         case 'rejected':
           clearTimeout(timer);
 
-          if (executor.isActive && executor.isRejected && index < count) {
+          if (!executor.isPending && executor.isActive && executor.isRejected && index < count) {
             timer = setTimeout(
               () => {
                 index++;
