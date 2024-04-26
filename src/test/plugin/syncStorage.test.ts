@@ -2,6 +2,8 @@ import { fireEvent } from '@testing-library/react';
 import { ExecutorManager } from '../../main';
 import syncStorage from '../../main/plugin/syncStorage';
 
+Date.now = jest.fn(() => 20240101);
+
 describe('syncStorage', () => {
   let manager: ExecutorManager;
 
@@ -18,7 +20,7 @@ describe('syncStorage', () => {
   });
 
   test('reads the executor value from a storage', () => {
-    localStorage.setItem('xxx', '"aaa"');
+    localStorage.setItem('xxx', '{"value":"aaa","timestamp":0}');
 
     const executor = manager.getOrCreate('xxx', undefined, [syncStorage(localStorage)]);
 
@@ -34,7 +36,7 @@ describe('syncStorage', () => {
     ]);
 
     expect(executor.value).toBe('aaa');
-    expect(localStorage.getItem('xxx')).toBe('"aaa"');
+    expect(localStorage.getItem('xxx')).toBe('{"value":"aaa","timestamp":20240101}');
   });
 
   test('does not update storage or executor if executor is pending from plugin', async () => {
@@ -53,10 +55,10 @@ describe('syncStorage', () => {
 
     expect(executor.isPending).toBe(false);
     expect(executor.value).toBe('aaa');
-    expect(localStorage.getItem('xxx')).toBe('"aaa"');
+    expect(localStorage.getItem('xxx')).toBe('{"value":"aaa","timestamp":20240101}');
   });
 
-  test('resolves executor value when storage item is set', () => {
+  test('resolves executor value when the storage item is set', () => {
     const executor = manager.getOrCreate('xxx', undefined, [syncStorage(localStorage)]);
 
     expect(executor.value).toBeUndefined();
@@ -66,7 +68,7 @@ describe('syncStorage', () => {
       new StorageEvent('storage', {
         key: executor.key,
         storageArea: localStorage,
-        newValue: '"aaa"',
+        newValue: '{"value":"aaa","timestamp":20240101}',
       })
     );
 

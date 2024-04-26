@@ -1,14 +1,29 @@
 import type { ExecutorPlugin } from '../types';
 
 /**
- * Serializes and deserializes values persisted in a storage.
+ * Serializes and deserializes values as a string.
  *
- * @template Value The value persisted in the storage.
+ * @template Value The value to serialize.
  */
 export interface Serializer<Value> {
-  serialize(value: Value): string;
+  serialize(record: Value): string;
 
   deserialize(str: string): Value;
+}
+
+/**
+ * The record persisted in {@link Storage}.
+ */
+export interface StorageRecord<Value> {
+  /**
+   * The executor value.
+   */
+  value: Value;
+
+  /**
+   * The timestamp when the {@link value} was acquired.
+   */
+  timestamp: number;
 }
 
 export interface Storage {
@@ -23,24 +38,26 @@ export interface Storage {
  * Persists the executor value in the synchronous storage.
  *
  * @param storage The storage where executor value is persisted.
- * @param serializer The value serializer.
+ * @param serializer The storage record serializer.
  * @template Value The value persisted in the storage.
  */
 export default function syncStorage<Value = any>(
   storage: Storage,
-  serializer: Serializer<Value> = naturalSerializer
+  serializer: Serializer<StorageRecord<Value>> = naturalSerializer
 ): ExecutorPlugin<Value> {
   return executor => {
     if (executor.isSettled || executor.isPending) {
       if (executor.isFulfilled) {
         // Synchronize storage
-        storage.setItem(executor.key, serializer.serialize(executor.get()));
+        storage.setItem(executor.key, serializer.serialize({ value: executor.get(), timestamp: executor.timestamp }));
       }
     } else {
       const str = storage.getItem(executor.key);
 
       if (str !== null) {
-        executor.resolve(serializer.deserialize(str));
+        const record = serializer.deserialize(str);
+
+        executor.resolve(record.value, record.timestamp);
       }
     }
 
@@ -54,8 +71,13 @@ export default function syncStorage<Value = any>(
 
       if (str === null) {
         executor.clear();
-      } else if (executor.value === undefined || serializer.serialize(executor.value) !== str) {
-        executor.resolve(serializer.deserialize(str));
+        return;
+      }
+
+      const record = serializer.deserialize(str);
+
+      if (record.timestamp > executor.timestamp) {
+        executor.resolve(record.value, record.timestamp);
       }
     };
 
@@ -66,13 +88,12 @@ export default function syncStorage<Value = any>(
     executor.subscribe(event => {
       switch (event.type) {
         case 'fulfilled':
-        case 'rejected':
         case 'cleared':
           if (executor.value === undefined) {
             storage.removeItem(executor.key);
-          } else {
-            storage.setItem(executor.key, serializer.serialize(executor.value));
+            break;
           }
+          storage.setItem(executor.key, serializer.serialize({ value: executor.value, timestamp: executor.timestamp }));
           break;
 
         case 'disposed':
