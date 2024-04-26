@@ -1,7 +1,7 @@
 import type { Executor, ExecutorPlugin } from '../types';
 
 /**
- * Retries the last task if execution has failed.
+ * Retries the last task after the execution has failed.
  *
  * @param count The number of times the task must be repeated if rejected.
  * @param ms The delay in milliseconds after which the retry is scheduled.
