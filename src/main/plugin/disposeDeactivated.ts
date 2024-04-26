@@ -11,17 +11,17 @@ export default function disposeDeactivated(ms = 0): ExecutorPlugin {
 
     executor.subscribe(event => {
       switch (event.type) {
-        case 'activated':
-        case 'disposed':
-          clearTimeout(timer);
-          break;
-
         case 'deactivated':
           clearTimeout(timer);
 
           timer = setTimeout(() => {
             executor.manager.dispose(executor.key);
           }, ms);
+          break;
+
+        case 'activated':
+        case 'disposed':
+          clearTimeout(timer);
           break;
       }
     });

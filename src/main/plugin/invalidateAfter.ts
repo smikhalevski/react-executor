@@ -11,18 +11,22 @@ export default function invalidateAfter(ms: number): ExecutorPlugin {
 
     executor.subscribe(event => {
       switch (event.type) {
+        case 'activated':
         case 'fulfilled':
         case 'rejected':
           clearTimeout(timer);
 
-          timer = setTimeout(
-            () => {
-              executor.invalidate();
-            },
-            ms - Date.now() + executor.timestamp
-          );
+          if (executor.isActive && executor.isSettled) {
+            timer = setTimeout(
+              () => {
+                executor.invalidate();
+              },
+              ms - Date.now() + executor.timestamp
+            );
+          }
           break;
 
+        case 'deactivated':
         case 'disposed':
           clearTimeout(timer);
           break;

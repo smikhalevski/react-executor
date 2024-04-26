@@ -11,17 +11,17 @@ export default function abortDeactivated(ms = 0): ExecutorPlugin {
 
     executor.subscribe(event => {
       switch (event.type) {
-        case 'activated':
-        case 'disposed':
-          clearTimeout(timer);
-          break;
-
         case 'deactivated':
           clearTimeout(timer);
 
           timer = setTimeout(() => {
             executor.abort();
           }, ms);
+          break;
+
+        case 'activated':
+        case 'disposed':
+          clearTimeout(timer);
           break;
       }
     });

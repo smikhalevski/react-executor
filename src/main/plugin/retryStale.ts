@@ -8,10 +8,6 @@ export default function retryStale(): ExecutorPlugin {
 }
 
 const plugin: ExecutorPlugin = executor => {
-  if (executor.isStale) {
-    executor.retry();
-  }
-
   executor.subscribe(event => {
     if ((event.type === 'invalidated' && executor.isActive) || (event.type === 'activated' && executor.isStale)) {
       executor.retry();
