@@ -4,14 +4,14 @@ import { useExecutor } from '../main';
 
 describe('useExecutor', () => {
   let testIndex = 0;
-  let executorId: string;
+  let executorKey: string;
 
   beforeEach(() => {
-    executorId = 'executor' + testIndex++;
+    executorKey = 'executor' + testIndex++;
   });
 
   test('returns the same executor on every render', () => {
-    const hook = renderHook(() => useExecutor(executorId), { wrapper: StrictMode });
+    const hook = renderHook(() => useExecutor(executorKey), { wrapper: StrictMode });
     const executor1 = hook.result.current;
 
     hook.rerender();
@@ -22,7 +22,7 @@ describe('useExecutor', () => {
   });
 
   test('creates a blank Executor instance', () => {
-    const renderMock = jest.fn(() => useExecutor(executorId));
+    const renderMock = jest.fn(() => useExecutor(executorKey));
 
     const hook = renderHook(renderMock, { wrapper: StrictMode });
     const executor = hook.result.current;
@@ -38,7 +38,7 @@ describe('useExecutor', () => {
   });
 
   test('creates an executor with the initial value', () => {
-    const renderMock = jest.fn(() => useExecutor(executorId, 'aaa'));
+    const renderMock = jest.fn(() => useExecutor(executorKey, 'aaa'));
 
     const hook = renderHook(renderMock, { wrapper: StrictMode });
     const executor = hook.result.current;
@@ -56,7 +56,7 @@ describe('useExecutor', () => {
 
   test('creates an executor with the initial task', async () => {
     const taskMock = jest.fn(() => 'aaa');
-    const renderMock = jest.fn(() => useExecutor(executorId, taskMock));
+    const renderMock = jest.fn(() => useExecutor(executorKey, taskMock));
 
     const hook = renderHook(renderMock, { wrapper: StrictMode });
     const executor = hook.result.current;
@@ -85,7 +85,7 @@ describe('useExecutor', () => {
   });
 
   test('re-renders after resolve', () => {
-    const renderMock = jest.fn(() => useExecutor(executorId));
+    const renderMock = jest.fn(() => useExecutor(executorKey));
     const hook = renderHook(renderMock, { wrapper: StrictMode });
 
     act(() => void hook.result.current.resolve('aaa'));
@@ -94,7 +94,7 @@ describe('useExecutor', () => {
   });
 
   test('re-renders after reject', () => {
-    const renderMock = jest.fn(() => useExecutor(executorId));
+    const renderMock = jest.fn(() => useExecutor(executorKey));
     const hook = renderHook(renderMock, { wrapper: StrictMode });
 
     act(() => void hook.result.current.reject(new Error('expected')));
@@ -104,7 +104,7 @@ describe('useExecutor', () => {
 
   test('re-renders after task execute', async () => {
     const task = () => 'aaa';
-    const renderMock = jest.fn(() => useExecutor(executorId));
+    const renderMock = jest.fn(() => useExecutor(executorKey));
     const hook = renderHook(renderMock, { wrapper: StrictMode });
     const executor = hook.result.current;
 
@@ -118,5 +118,46 @@ describe('useExecutor', () => {
     expect(executor.latestTask).toBe(task);
 
     expect(renderMock).toHaveBeenCalledTimes(4);
+  });
+
+  test('re-renders task when dependencies are changed', async () => {
+    const renderMock = jest.fn(dependencies =>
+      useExecutor({
+        key: executorKey,
+        task: () => dependencies[0],
+        dependencies,
+      })
+    );
+    const hook = renderHook(renderMock, { wrapper: StrictMode, initialProps: ['aaa'] });
+    const executor = hook.result.current;
+
+    expect(executor.isPending).toBe(true);
+    expect(executor.isFulfilled).toBe(false);
+    expect(executor.isRejected).toBe(false);
+
+    await act(() => executor);
+
+    expect(executor.isPending).toBe(false);
+    expect(executor.isFulfilled).toBe(true);
+    expect(executor.value).toBe('aaa');
+    expect(executor.reason).toBeUndefined();
+    expect(executor.latestTask).not.toBeNull();
+
+    hook.rerender(['aaa']);
+
+    expect(executor.isPending).toBe(false);
+
+    hook.rerender(['bbb']);
+
+    expect(executor.isPending).toBe(true);
+    expect(executor.isFulfilled).toBe(true);
+
+    await act(() => executor);
+
+    expect(executor.isPending).toBe(false);
+    expect(executor.isFulfilled).toBe(true);
+    expect(executor.value).toBe('bbb');
+
+    expect(renderMock).toHaveBeenCalledTimes(14);
   });
 });
