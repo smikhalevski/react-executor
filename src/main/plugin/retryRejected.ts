@@ -8,8 +8,8 @@ import type { Executor, ExecutorPlugin } from '../types';
  * @template Value The value stored by the executor.
  */
 export default function retryRejected<Value = any>(
-  count = 5,
-  ms: number | ((index: number, executor: Executor<Value>) => number) = 0
+  count = 3,
+  ms: number | ((index: number, executor: Executor<Value>) => number) = exponentialDelay
 ): ExecutorPlugin<Value> {
   return executor => {
     let timer: NodeJS.Timeout;
@@ -41,4 +41,8 @@ export default function retryRejected<Value = any>(
       }
     });
   };
+}
+
+function exponentialDelay(index: number): number {
+  return 1000 * 1.8 ** index;
 }

@@ -9,7 +9,7 @@ import type { Executor, ExecutorPlugin } from '../types';
  */
 export default function retryFulfilled<Value = any>(
   count = Infinity,
-  ms: number | ((index: number, executor: Executor<Value>) => number) = 0
+  ms: number | ((index: number, executor: Executor<Value>) => number) = 5_000
 ): ExecutorPlugin<Value> {
   return executor => {
     let timer: NodeJS.Timeout;
