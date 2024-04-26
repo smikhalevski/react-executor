@@ -1,7 +1,6 @@
 import { AbortablePromise } from 'parallel-universe';
 import { ExecutorImpl } from '../main/ExecutorImpl';
-
-export function noop(): void {}
+import { noop } from '../main/utils';
 
 describe('ExecutorImpl', () => {
   const expectedReason = new Error('expected');

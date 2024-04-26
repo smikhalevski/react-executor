@@ -35,7 +35,6 @@ export default function retryFulfilled<Value = any>(
         case 'rejected':
         case 'aborted':
         case 'deactivated':
-        case 'disposed':
           index = 0;
           clearTimeout(timer);
           break;

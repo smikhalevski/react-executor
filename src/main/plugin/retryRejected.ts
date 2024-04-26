@@ -35,7 +35,6 @@ export default function retryRejected<Value = any>(
         case 'fulfilled':
         case 'aborted':
         case 'deactivated':
-        case 'disposed':
           index = 0;
           clearTimeout(timer);
           break;

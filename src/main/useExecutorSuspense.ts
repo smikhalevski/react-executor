@@ -1,4 +1,5 @@
 import type { Executor } from './types';
+import { noop } from './utils';
 
 /**
  * Suspends rendering until the provided executor is settled.
@@ -42,5 +43,3 @@ function reducePending(promises: PromiseLike<unknown>[] | null, executor: Execut
   }
   return promises;
 }
-
-function noop() {}
