@@ -32,7 +32,7 @@ describe('invalidateByPeers', () => {
     expect(executor1.isStale).toBe(true);
   });
 
-  test('invalidates an executor if a peer executor is created with a value', () => {
+  test('invalidates an executor if a peer executor is created with an initial value', () => {
     const executor1 = manager.getOrCreate('xxx', 'aaa', [invalidateByPeers(['yyy'])]);
 
     manager.getOrCreate('yyy', 'bbb');

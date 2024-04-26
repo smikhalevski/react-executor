@@ -13,18 +13,22 @@ const plugin: ExecutorPlugin = executor => {
   }
 
   const handleFocus = () => {
-    if (window.document.visibilityState === 'visible' && executor.isActive) {
+    if (window.document.visibilityState === 'visible') {
       executor.retry();
     }
   };
 
-  window.addEventListener('visibilitychange', handleFocus, false);
-  window.addEventListener('focus', handleFocus, false);
-
   executor.subscribe(event => {
-    if (event.type === 'disposed') {
-      window.removeEventListener('visibilitychange', handleFocus, false);
-      window.removeEventListener('focus', handleFocus, false);
+    switch (event.type) {
+      case 'activated':
+        window.addEventListener('visibilitychange', handleFocus, false);
+        window.addEventListener('focus', handleFocus, false);
+        break;
+
+      case 'deactivated':
+        window.removeEventListener('visibilitychange', handleFocus, false);
+        window.removeEventListener('focus', handleFocus, false);
+        break;
     }
   });
 };

@@ -14,22 +14,25 @@ describe('invalidateAfter', () => {
     manager.subscribe(listenerMock);
   });
 
-  test('invalidates an executor after the timeout', async () => {
+  test('invalidates an executor after a timeout', async () => {
     const executor = manager.getOrCreate('xxx', undefined, [invalidateAfter(100)]);
+    executor.activate();
     executor.resolve('aaa');
 
     jest.runAllTimers();
 
     expect(executor.isStale).toBe(true);
 
-    expect(listenerMock).toHaveBeenCalledTimes(3);
+    expect(listenerMock).toHaveBeenCalledTimes(4);
     expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor });
-    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'fulfilled', target: executor });
-    expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'invalidated', target: executor });
+    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'activated', target: executor });
+    expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor });
+    expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'invalidated', target: executor });
   });
 
   test('delays invalidation every time an executor is fulfilled', async () => {
     const executor = manager.getOrCreate('xxx', undefined, [invalidateAfter(100)]);
+    executor.activate();
     executor.resolve('aaa');
 
     jest.advanceTimersByTime(99);
@@ -38,9 +41,10 @@ describe('invalidateAfter', () => {
 
     jest.advanceTimersByTime(99);
 
-    expect(listenerMock).toHaveBeenCalledTimes(3);
+    expect(listenerMock).toHaveBeenCalledTimes(4);
     expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor });
-    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'fulfilled', target: executor });
+    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'activated', target: executor });
     expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor });
+    expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'fulfilled', target: executor });
   });
 });

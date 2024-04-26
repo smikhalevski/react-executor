@@ -13,8 +13,8 @@ describe('abortDeactivated', () => {
     manager.subscribe(listenerMock);
   });
 
-  test('aborts the pending execution', async () => {
-    const executor = manager.getOrCreate('xxx', undefined, [abortDeactivated()]);
+  test('aborts a deactivated executor', async () => {
+    const executor = manager.getOrCreate('xxx', undefined, [abortDeactivated(0)]);
     const deactivate = executor.activate();
     const taskMock = jest.fn(_signal => delay(100));
     const promise = executor.execute(taskMock);
@@ -33,8 +33,8 @@ describe('abortDeactivated', () => {
     expect(listenerMock).toHaveBeenNthCalledWith(5, { type: 'aborted', target: executor });
   });
 
-  test('does not abort if the executor was reactivated', async () => {
-    const executor = manager.getOrCreate('xxx', undefined, [abortDeactivated()]);
+  test('cancels abortion of an activated executor', async () => {
+    const executor = manager.getOrCreate('xxx', undefined, [abortDeactivated(0)]);
     const deactivate = executor.activate();
     const taskMock = jest.fn(_signal => delay(100, 'aaa'));
     const promise = executor.execute(taskMock);

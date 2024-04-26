@@ -9,7 +9,7 @@ describe('retryFocused', () => {
     manager = new ExecutorManager();
   });
 
-  test('retries the invalidated active executor', async () => {
+  test('retries an invalidated active executor', async () => {
     const taskMock = jest.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
     const executor = manager.getOrCreate('xxx', taskMock, [retryFocused()]);
 
