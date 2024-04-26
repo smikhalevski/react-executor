@@ -14,7 +14,6 @@ export default function invalidateAfter(ms: number): ExecutorPlugin {
         case 'activated':
         case 'fulfilled':
         case 'rejected':
-        case 'aborted':
           clearTimeout(timer);
 
           if (!executor.isPending && executor.isActive && executor.isSettled) {
@@ -28,7 +27,6 @@ export default function invalidateAfter(ms: number): ExecutorPlugin {
           break;
 
         case 'deactivated':
-        case 'disposed':
           clearTimeout(timer);
           break;
       }

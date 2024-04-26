@@ -8,11 +8,11 @@ import type { ExecutorPlugin } from '../types';
 export default function invalidateByPeers(keys: Array<RegExp | string>): ExecutorPlugin {
   return executor => {
     const unsubscribe = executor.manager.subscribe(event => {
-      const targetKey = event.target.key;
+      const peerKey = event.target.key;
 
       if (
         (event.type === 'invalidated' || event.type === 'fulfilled') &&
-        keys.some(key => (typeof key === 'string' ? key === targetKey : key.test(targetKey)))
+        keys.some(key => (typeof key === 'string' ? key === peerKey : key.test(peerKey)))
       ) {
         executor.invalidate();
       }

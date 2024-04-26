@@ -68,7 +68,7 @@ unsubscribe();
 ```ts
 useExecutor(`order-${orderId}`, initialValue, [
   // Persists the executor value in the synchronous storage.
-  syncStorage(localStorage),
+  synchronizeStorage(localStorage),
 
   // Instantly aborts pending task when executor is deactivated (has no active consumers). 
   abortDeactivated(),

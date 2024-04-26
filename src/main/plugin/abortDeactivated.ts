@@ -20,7 +20,6 @@ export default function abortDeactivated(ms = 0): ExecutorPlugin {
           break;
 
         case 'activated':
-        case 'disposed':
           clearTimeout(timer);
           break;
       }

@@ -31,7 +31,7 @@ describe('disposeDeactivated', () => {
     expect(listenerMock).toHaveBeenNthCalledWith(5, { type: 'disposed', target: executor });
   });
 
-  test('does not dispose if the executor was reactivated', async () => {
+  test('cancels deactivation of an activated executor', async () => {
     const executor = manager.getOrCreate('xxx', undefined, [disposeDeactivated(0)]);
     const deactivate = executor.activate();
     const taskMock = jest.fn(_signal => delay(100, 'aaa'));

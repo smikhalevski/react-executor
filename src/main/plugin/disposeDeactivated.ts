@@ -20,7 +20,6 @@ export default function disposeDeactivated(ms = 5_000): ExecutorPlugin {
           break;
 
         case 'activated':
-        case 'disposed':
           clearTimeout(timer);
           break;
       }

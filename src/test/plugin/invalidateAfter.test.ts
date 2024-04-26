@@ -14,7 +14,7 @@ describe('invalidateAfter', () => {
     manager.subscribe(listenerMock);
   });
 
-  test('invalidates an executor after the timeout', async () => {
+  test('invalidates an executor after a timeout', async () => {
     const executor = manager.getOrCreate('xxx', undefined, [invalidateAfter(100)]);
     executor.activate();
     executor.resolve('aaa');
