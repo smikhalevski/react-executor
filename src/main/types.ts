@@ -187,14 +187,14 @@ export interface Executor<Value = any> extends PromiseLike<Value> {
   readonly reason: any;
 
   /**
-   * The latest task that was executed, or `null` if the executor was cleared, or {@link execute} wasn't called yet.
-   */
-  readonly latestTask: ExecutorTask<Value> | null;
-
-  /**
    * The timestamp when the executor was last settled, or 0 if it wasn't settled yet.
    */
   readonly timestamp: number;
+
+  /**
+   * The latest task that was passed to {@link execute}, or `null` if the executor didn't execute a task.
+   */
+  readonly latestTask: ExecutorTask<Value> | null;
 
   /**
    * Returns a {@link value} if the executor is {@link isFulfilled fulfilled}. Otherwise, throws the {@link reason} if
