@@ -150,6 +150,7 @@ export class ExecutorImpl<Value = any> implements Executor {
     if (this.isSettled) {
       this.isFulfilled = this.isRejected = this.isStale = false;
       this.value = this.reason = undefined;
+      this.timestamp = 0;
       this._pubSub.publish({ type: 'cleared', target: this });
     }
     return this;
@@ -185,7 +186,6 @@ export class ExecutorImpl<Value = any> implements Executor {
     this.isFulfilled = true;
     this.isRejected = this.isStale = false;
     this.value = value;
-    this.reason = undefined;
     this.timestamp = timestamp;
 
     this._pubSub.publish({ type: 'fulfilled', target: this });
@@ -203,7 +203,6 @@ export class ExecutorImpl<Value = any> implements Executor {
 
     this.isFulfilled = this.isStale = false;
     this.isRejected = true;
-    this.value = undefined;
     this.reason = reason;
     this.timestamp = timestamp;
 
