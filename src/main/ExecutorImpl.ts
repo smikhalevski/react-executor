@@ -1,6 +1,7 @@
 import { AbortablePromise, PubSub } from 'parallel-universe';
 import type { ExecutorManager } from './ExecutorManager';
 import type { Executor, ExecutorEvent, ExecutorTask } from './types';
+import { AbortError } from './utils';
 
 /**
  * The {@link Executor} implementation returned by the {@link ExecutorManager}.
@@ -72,7 +73,7 @@ export class ExecutorImpl<Value = any> implements Executor {
       const unsubscribe = this.subscribe(event => {
         if (event.type === 'disposed') {
           unsubscribe();
-          reject(new DOMException('The executor was disposed', 'AbortError'));
+          reject(AbortError('The executor was disposed: ' + this.key));
           return;
         }
 
@@ -127,7 +128,7 @@ export class ExecutorImpl<Value = any> implements Executor {
     this._promise = promise;
 
     if (prevPromise !== null) {
-      prevPromise.abort();
+      prevPromise.abort(AbortError('The task was replaced: ' + this.key));
     }
 
     if (this._promise === promise) {
@@ -153,7 +154,7 @@ export class ExecutorImpl<Value = any> implements Executor {
     }
   }
 
-  abort(reason?: unknown): void {
+  abort(reason: unknown = AbortError('The executor was aborted: ' + this.key)): void {
     if (this._promise !== null) {
       this._promise.abort(reason);
     }

@@ -36,7 +36,7 @@ npm install --save-prod react-executor
 [**Cookbook**](#cookbook)
 
 - [Optimistic updates](#optimistic-updates)
-- [Dependent executors](#dependent-executors)
+- [Dependent tasks](#dependent-tasks)
 - [Paging and infinite loading](#paging-and-infinite-loading)
 
 # Introduction
@@ -707,7 +707,7 @@ const handleEnableReaction = () => {
 };
 ```
 
-## Dependent executors
+## Dependent tasks
 
 You can pause a task until another executor is settled: 
 
@@ -724,7 +724,7 @@ const shoppingCartExecutor = useExecutor('shoppingCart', async signal => {
 ```
 
 In this example, the component would be subscribed to both account and a shopping cart executors, and would be
-re-rendered is their state is changed. To avoid unnecessary re-renders, you can acquire an executor through the
+re-rendered if their state is changed. To avoid unnecessary re-renders, you can acquire an executor through the
 manager available in the context:
 
 ```tsx

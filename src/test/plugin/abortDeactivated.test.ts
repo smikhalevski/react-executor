@@ -1,6 +1,7 @@
 import { delay } from 'parallel-universe';
 import { ExecutorManager } from '../../main';
 import abortDeactivated from '../../main/plugin/abortDeactivated';
+import { AbortError } from '../../main/utils';
 
 describe('abortDeactivated', () => {
   let listenerMock: jest.Mock;
@@ -21,7 +22,7 @@ describe('abortDeactivated', () => {
 
     deactivate();
 
-    await expect(promise).rejects.toEqual(new DOMException('The operation was aborted.', 'AbortError'));
+    await expect(promise).rejects.toEqual(AbortError('The executor was aborted: xxx'));
 
     expect(taskMock.mock.calls[0][0].aborted).toBe(true);
 

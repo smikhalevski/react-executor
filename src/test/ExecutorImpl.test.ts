@@ -1,6 +1,6 @@
 import { AbortablePromise } from 'parallel-universe';
 import { ExecutorImpl } from '../main/ExecutorImpl';
-import { noop } from '../main/utils';
+import { AbortError, noop } from '../main/utils';
 
 describe('ExecutorImpl', () => {
   const expectedReason = new Error('expected');
@@ -10,7 +10,7 @@ describe('ExecutorImpl', () => {
 
   beforeEach(() => {
     listenerMock = jest.fn();
-    executor = new ExecutorImpl('', null!);
+    executor = new ExecutorImpl('xxx', null!);
     executor.subscribe(listenerMock);
   });
 
@@ -113,7 +113,7 @@ describe('ExecutorImpl', () => {
 
       await expect(promise2).resolves.toEqual('bbb');
 
-      await expect(promise1).rejects.toEqual(new DOMException('The operation was aborted.', 'AbortError'));
+      await expect(promise1).rejects.toEqual(AbortError('The task was replaced: xxx'));
 
       expect(listenerMock).toHaveBeenCalledTimes(4);
       expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'fulfilled', target: executor });
@@ -265,7 +265,7 @@ describe('ExecutorImpl', () => {
       expect(taskMock1).toHaveBeenCalledTimes(1);
       expect(taskMock1.mock.calls[0][0].aborted).toBe(true);
 
-      await expect(promise1).rejects.toEqual(new DOMException('The operation was aborted.', 'AbortError'));
+      await expect(promise1).rejects.toEqual(AbortError('The task was replaced: xxx'));
       await expect(promise2).resolves.toBe('bbb');
 
       expect(executor.isFulfilled).toBe(true);
