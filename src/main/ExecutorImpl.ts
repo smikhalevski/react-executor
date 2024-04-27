@@ -62,11 +62,8 @@ export class ExecutorImpl<Value = any> implements Executor {
     return this.isFulfilled ? this.value! : defaultValue;
   }
 
-  then<Result1 = Value, Result2 = never>(
-    onFulfilled?: ((value: Value) => PromiseLike<Result1> | Result1) | null,
-    onRejected?: ((reason: any) => PromiseLike<Result2> | Result2) | null
-  ): Promise<Result1 | Result2> {
-    return new Promise<Value>((resolve, reject) => {
+  toPromise(): AbortablePromise<Value> {
+    return new AbortablePromise((resolve, reject, signal) => {
       if (this.isSettled && !this.isPending) {
         resolve(this.get());
         return;
@@ -88,7 +85,9 @@ export class ExecutorImpl<Value = any> implements Executor {
           }
         }
       });
-    }).then(onFulfilled, onRejected);
+
+      signal.addEventListener('abort', unsubscribe);
+    });
   }
 
   execute(task: ExecutorTask<Value>): AbortablePromise<Value> {

@@ -91,7 +91,7 @@ describe('synchronizeStorage', () => {
     expect(executor.value).toBeUndefined();
     expect(localStorage.getItem('executor/xxx')).toBeNull();
 
-    await executor;
+    await executor.toPromise();
 
     expect(executor.isPending).toBe(false);
     expect(executor.value).toBe('aaa');

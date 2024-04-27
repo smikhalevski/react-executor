@@ -1,4 +1,4 @@
-import { PubSub } from 'parallel-universe';
+import { AbortablePromise, PubSub } from 'parallel-universe';
 import { ExecutorImpl } from './ExecutorImpl';
 import type { Executor, ExecutorEvent, ExecutorPlugin, ExecutorTask } from './types';
 
@@ -68,6 +68,31 @@ export class ExecutorManager implements Iterable<Executor> {
       executor.resolve(initialValue);
     }
     return executor;
+  }
+
+  /**
+   * Resolves with the existing executor or waits for an executor to be created.
+   *
+   * @param key The executor key to wait for.
+   */
+  waitFor(key: string): AbortablePromise<Executor> {
+    return new AbortablePromise((resolve, _reject, signal) => {
+      const executor = this._executors.get(key);
+
+      if (executor !== undefined) {
+        resolve(executor);
+        return;
+      }
+
+      const unsubscribe = this.subscribe(event => {
+        if (event.target.key === key && event.type === 'configured') {
+          unsubscribe();
+          resolve(event.target);
+        }
+      });
+
+      signal.addEventListener('abort', unsubscribe);
+    });
   }
 
   /**

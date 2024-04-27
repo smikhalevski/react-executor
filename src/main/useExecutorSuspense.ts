@@ -24,10 +24,10 @@ export function useExecutorSuspense(executors: Executor | Executor[]) {
     const promises = executors.reduce(reducePending, null);
 
     if (promises !== null) {
-      throw Promise.allSettled(promises).then(noop, noop);
+      throw Promise.all(promises).then(noop, noop);
     }
   } else if (executors.isPending) {
-    throw executors.then(noop, noop);
+    throw executors.toPromise().then(noop, noop);
   }
 
   return executors;
@@ -36,10 +36,9 @@ export function useExecutorSuspense(executors: Executor | Executor[]) {
 function reducePending(promises: PromiseLike<unknown>[] | null, executor: Executor): PromiseLike<unknown>[] | null {
   if (executor.isPending) {
     if (promises === null) {
-      promises = [executor];
-    } else {
-      promises.push(executor);
+      promises = [];
     }
+    promises.push(executor.toPromise().then(noop, noop));
   }
   return promises;
 }
