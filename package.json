@@ -1,6 +1,6 @@
 {
   "name": "react-executor",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Asynchronous task execution and state management for React.",
   "main": "./index.js",
   "module": "./index.mjs",
