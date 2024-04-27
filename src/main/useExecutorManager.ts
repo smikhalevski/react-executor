@@ -6,7 +6,7 @@ const ExecutorManagerContext = createContext(new ExecutorManager());
 /**
  * > — Big man in a suit of armour. Take that off, what are you?
  * >
- * > — Genius, billionaire, playboy, philanthropist.
+ * > — Executor, manager, provider.
  *
  * The provides the manager that retrieves and creates executors.
  */
