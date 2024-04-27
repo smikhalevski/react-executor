@@ -134,7 +134,7 @@ export type ExecutorTask<Value = any> = (signal: AbortSignal, executor: Executor
  *
  * @template Value The value stored by the executor.
  */
-export interface Executor<Value = any> extends PromiseLike<Value> {
+export interface Executor<Value = any> {
   /**
    * The key of this executor, unique in scope of the {@link manager}.
    */
@@ -210,22 +210,11 @@ export interface Executor<Value = any> extends PromiseLike<Value> {
   getOrDefault(defaultValue: Value): Value;
 
   /**
-   * Attaches callbacks for the fulfillment and/or rejection of the executor.
-   *
    * For a non-{@link isPending pending} and {@link isSettled settled} executor, the promise is resolved with the
    * available {@link value}, or rejected with the available {@link reason}. Otherwise, the promise waits for the
    * executor to become settled and then settles as well.
-   *
-   * @param onFulfilled The callback to execute when the executor is fulfilled.
-   * @param onRejected The callback to execute when the executor is rejected.
-   * @returns A promise for the completion of whichever callback is executed.
-   * @template Result1 The result of the fulfillment callback.
-   * @template Result2 The result of the rejection callback.
    */
-  then<Result1 = Value, Result2 = never>(
-    onFulfilled?: ((value: Value) => PromiseLike<Result1> | Result1) | null,
-    onRejected?: ((reason: any) => PromiseLike<Result2> | Result2) | null
-  ): Promise<Result1 | Result2>;
+  toPromise(): AbortablePromise<Value>;
 
   /**
    * Executes a task and populates the executor with the returned result.

@@ -83,7 +83,7 @@ describe('ExecutorManager', () => {
       expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor });
       expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'pending', target: executor });
 
-      await expect(executor.then()).resolves.toBe(111);
+      await expect(executor.toPromise()).resolves.toBe(111);
 
       expect(executor.isPending).toBe(false);
       expect(executor.isFulfilled).toBe(true);
@@ -136,7 +136,7 @@ describe('ExecutorManager', () => {
       expect(listenerMock).toHaveBeenCalledTimes(1);
       expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor });
 
-      await executor;
+      await executor.toPromise();
 
       expect(executor.value).toBe(222);
 
@@ -169,6 +169,19 @@ describe('ExecutorManager', () => {
 
       expect(manager.get('aaa')).toBeInstanceOf(ExecutorImpl);
       expect(manager.get('aaa')).toBe(manager.get('aaa'));
+    });
+  });
+
+  describe('waitFor', () => {
+    test('waits for an executor', async () => {
+      await expect(manager.waitFor('aaa')).resolves.toBe(manager.getOrCreate('aaa'));
+    });
+
+    test('resolves with the existing executor', async () => {
+      const executor = manager.getOrCreate('aaa');
+      const executorPromise = manager.waitFor('aaa');
+
+      await expect(executorPromise).resolves.toBe(executor);
     });
   });
 

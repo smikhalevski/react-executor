@@ -22,19 +22,19 @@ describe('retryFulfilled', () => {
 
     executor.activate();
     expect(executor.isPending).toBe(true);
-    await executor;
+    await executor.toPromise();
     expect(executor.isPending).toBe(false);
 
     // Retry 1
     jest.runAllTimers();
     expect(executor.isPending).toBe(true);
-    await executor;
+    await executor.toPromise();
     expect(executor.isPending).toBe(false);
 
     // Retry 2
     jest.runAllTimers();
     expect(executor.isPending).toBe(true);
-    await executor;
+    await executor.toPromise();
     expect(executor.isPending).toBe(false);
 
     // Retry 3
@@ -50,7 +50,7 @@ describe('retryFulfilled', () => {
 
     executor.activate();
     expect(executor.isPending).toBe(true);
-    await executor;
+    await executor.toPromise();
     expect(executor.isPending).toBe(false);
 
     // Retry 1
@@ -73,7 +73,7 @@ describe('retryFulfilled', () => {
 
     executor.activate();
     expect(executor.isPending).toBe(true);
-    await executor;
+    await executor.toPromise();
     expect(executor.isPending).toBe(false);
 
     // Retry 1
@@ -96,7 +96,7 @@ describe('retryFulfilled', () => {
 
     const deactivate = executor.activate();
     expect(executor.isPending).toBe(true);
-    await executor;
+    await executor.toPromise();
     expect(executor.isPending).toBe(false);
 
     // Retry 1
@@ -104,7 +104,7 @@ describe('retryFulfilled', () => {
     expect(executor.isPending).toBe(true);
 
     deactivate();
-    await executor;
+    await executor.toPromise();
 
     // Retry 2
     jest.runAllTimers();

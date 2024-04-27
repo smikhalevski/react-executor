@@ -72,7 +72,7 @@ describe('useExecutor', () => {
     expect(taskMock).toHaveBeenCalledTimes(1);
     expect(renderMock).toHaveBeenCalledTimes(2);
 
-    await act(() => executor.then());
+    await act(() => executor.toPromise());
 
     expect(executor.isPending).toBe(false);
     expect(executor.isFulfilled).toBe(true);
@@ -135,7 +135,7 @@ describe('useExecutor', () => {
     expect(executor.isFulfilled).toBe(false);
     expect(executor.isRejected).toBe(false);
 
-    await act(() => executor);
+    await act(() => executor.toPromise());
 
     expect(executor.isPending).toBe(false);
     expect(executor.isFulfilled).toBe(true);
@@ -152,7 +152,7 @@ describe('useExecutor', () => {
     expect(executor.isPending).toBe(true);
     expect(executor.isFulfilled).toBe(true);
 
-    await act(() => executor);
+    await act(() => executor.toPromise());
 
     expect(executor.isPending).toBe(false);
     expect(executor.isFulfilled).toBe(true);

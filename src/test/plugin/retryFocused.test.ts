@@ -15,7 +15,7 @@ describe('retryFocused', () => {
 
     executor.activate();
 
-    await executor;
+    await executor.toPromise();
 
     expect(executor.value).toBe('aaa');
 
@@ -24,7 +24,7 @@ describe('retryFocused', () => {
     expect(executor.isPending).toBe(true);
     expect(executor.value).toBe('aaa');
 
-    await executor;
+    await executor.toPromise();
 
     expect(executor.isPending).toBe(false);
     expect(executor.value).toBe('bbb');

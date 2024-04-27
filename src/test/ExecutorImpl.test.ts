@@ -616,47 +616,21 @@ describe('ExecutorImpl', () => {
     });
   });
 
-  describe('then', () => {
+  describe('toPromise', () => {
     test('resolves with the value if an executor is fulfilled', async () => {
       executor.resolve('aaa');
 
-      await expect(executor.then()).resolves.toBe('aaa');
+      await expect(executor.toPromise()).resolves.toBe('aaa');
     });
 
     test('rejects with the reason if an executor is fulfilled', async () => {
       executor.reject(expectedReason);
 
-      await expect(executor.then()).rejects.toBe(expectedReason);
-    });
-
-    test('calls onFulfilled callback', async () => {
-      const onFulfilledMock = jest.fn(_value => 'bbb');
-      const onRejectedMock = jest.fn();
-
-      executor.resolve('aaa');
-
-      await expect(executor.then(onFulfilledMock, onRejectedMock)).resolves.toBe('bbb');
-
-      expect(onFulfilledMock).toHaveBeenCalledTimes(1);
-      expect(onFulfilledMock.mock.calls[0][0]).toBe('aaa');
-      expect(onRejectedMock).toHaveBeenCalledTimes(0);
-    });
-
-    test('calls onRejected callback', async () => {
-      const onFulfilledMock = jest.fn();
-      const onRejectedMock = jest.fn(_reason => 'aaa');
-
-      executor.reject(expectedReason);
-
-      await expect(executor.then(onFulfilledMock, onRejectedMock)).resolves.toBe('aaa');
-
-      expect(onFulfilledMock).toHaveBeenCalledTimes(0);
-      expect(onRejectedMock).toHaveBeenCalledTimes(1);
-      expect(onRejectedMock.mock.calls[0][0]).toBe(expectedReason);
+      await expect(executor.toPromise()).rejects.toBe(expectedReason);
     });
 
     test('waits for the executor to be fulfilled', async () => {
-      const promise = executor.then();
+      const promise = executor.toPromise();
 
       executor.resolve('aaa');
 
@@ -664,7 +638,7 @@ describe('ExecutorImpl', () => {
     });
 
     test('waits for the executor to be rejected', async () => {
-      const promise = executor.then();
+      const promise = executor.toPromise();
 
       executor.reject(expectedReason);
 
@@ -675,7 +649,7 @@ describe('ExecutorImpl', () => {
       executor.resolve('aaa');
       executor.execute(() => 'bbb').catch(noop);
 
-      const promise = executor.then();
+      const promise = executor.toPromise();
 
       executor.execute(() => 'ccc');
 

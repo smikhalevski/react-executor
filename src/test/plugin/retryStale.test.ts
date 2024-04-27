@@ -17,7 +17,7 @@ describe('retryStale', () => {
 
     executor.activate();
 
-    await executor;
+    await executor.toPromise();
 
     expect(executor.isPending).toBe(false);
     expect(executor.isStale).toBe(false);
@@ -29,7 +29,7 @@ describe('retryStale', () => {
     expect(executor.isStale).toBe(true);
     expect(executor.value).toBe('aaa');
 
-    await executor;
+    await executor.toPromise();
 
     expect(executor.isPending).toBe(false);
     expect(executor.isStale).toBe(false);
@@ -49,7 +49,7 @@ describe('retryStale', () => {
     const taskMock = jest.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
     const executor = manager.getOrCreate('xxx', taskMock, [retryStale()]);
 
-    await executor;
+    await executor.toPromise();
 
     expect(executor.isPending).toBe(false);
     expect(executor.isStale).toBe(false);
@@ -62,7 +62,7 @@ describe('retryStale', () => {
     expect(executor.isStale).toBe(true);
     expect(executor.value).toBe('aaa');
 
-    await executor;
+    await executor.toPromise();
 
     expect(executor.isPending).toBe(false);
     expect(executor.isStale).toBe(false);
