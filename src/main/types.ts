@@ -4,91 +4,93 @@ import type { ExecutorManager } from './ExecutorManager';
 /**
  * The lifecycle event published by the {@link Executor}.
  *
+ * <dl>
+ *   <dt><i>"configured"</i></dt>
+ *   <dd>
+ *
+ *   The executor was just created and plugins were applied to it.
+ *
+ *   </dd>
+ *
+ *   <dt><i>"pending"</i></dt>
+ *   <dd>
+ *
+ *   The executor started a {@link Executor.latestTask task} execution.
+ *
+ *   </dd>
+ *
+ *   <dt><i>"fulfilled"</i></dt>
+ *   <dd>
+ *
+ *   The executor was {@link Executor.isFulfilled fulfilled} with a {@link Executor.value value}.
+ *
+ *   </dd>
+ *
+ *   <dt><i>"rejected"</i></dt>
+ *   <dd>
+ *
+ *   The executor was {@link Executor.isRejected rejected} with a {@link Executor.reason reason}.
+ *
+ *   </dd>
+ *
+ *   <dt><i>"aborted"</i></dt>
+ *   <dd>
+ *
+ *   The {@link Executor.latestTask latest task} was aborted.
+ *
+ *   If executor is still {@link Executor.isPending pending} when abort event is published then the currently pending
+ *   task is being replaced with a new task.
+ *
+ *   Calling {@link Executor.execute} when handling an abort event may lead to stack overflow. If you need to
+ *   do this anyway, execute a new task from async context using
+ *   [`queueMicrotask`](https://developer.mozilla.org/en-US/docs/Web/API/queueMicrotask) or similar API.
+ *
+ *   </dd>
+ *
+ *   <dt><i>"cleared"</i></dt>
+ *   <dd><p>The executor was cleared and now isn't {@link Executor.isSettled settled}.</p></dd>
+ *
+ *   <dt><i>"invalidated"</i></dt>
+ *   <dd>
+ *
+ *   The executor was {@link Executor.invalidate invalidated} and its result is now {@link Executor.isStale stale}.
+ *
+ *   </dd>
+ *
+ *   <dt><i>"activated"</i></dt>
+ *   <dd>
+ *
+ *   The executor was inactive and became {@link Executor.isActive active}. This means that there are consumers that
+ *   observe the state of the executor.
+ *
+ *   </dd>
+ *
+ *   <dt><i>"deactivated"</i></dt>
+ *   <dd>
+ *
+ *   The executor was {@link Executor.isActive active} and became inactive. This means that there are no consumers
+ *   that observe the state of the executor.
+ *
+ *   </dd>
+ *
+ *   <dt><i>"disposed"</i></dt>
+ *   <dd>
+ *
+ *   The executor was just {@link ExecutorManager.dispose disposed}: plugin cleanup callbacks were invoked, and
+ *   the {@link Executor.key executor key} isn't known to the manager anymore.
+ *
+ *   All executor subscribers are unsubscribed after the disposal.
+ *
+ *   </dd>
+ * </dl>
+ *
  * @template Value The value stored by the executor.
  */
 export interface ExecutorEvent<Value = any> {
   /**
    * The type of the lifecycle event.
    *
-   * <dl>
-   *   <dt><i>"configured"</i></dt>
-   *   <dd>
-   *
-   *   The executor was just created and plugins were applied to it.
-   *
-   *   </dd>
-   *
-   *   <dt><i>"pending"</i></dt>
-   *   <dd>
-   *
-   *   The executor started a {@link Executor.latestTask task} execution.
-   *
-   *   </dd>
-   *
-   *   <dt><i>"fulfilled"</i></dt>
-   *   <dd>
-   *
-   *   The executor was {@link Executor.isFulfilled fulfilled} with a {@link Executor.value value}.
-   *
-   *   </dd>
-   *
-   *   <dt><i>"rejected"</i></dt>
-   *   <dd>
-   *
-   *   The executor was {@link Executor.isRejected rejected} with a {@link Executor.reason reason}.
-   *
-   *   </dd>
-   *
-   *   <dt><i>"aborted"</i></dt>
-   *   <dd>
-   *
-   *   The {@link Executor.latestTask latest task} was aborted.
-   *
-   *   If executor is still {@link Executor.isPending pending} when abort event is published then the currently pending
-   *   task is being replaced with a new task.
-   *
-   *   Calling {@link Executor.execute} when handling an abort event may lead to stack overflow. If you need to
-   *   do this anyway, execute a new task from async context using
-   *   [`queueMicrotask`](https://developer.mozilla.org/en-US/docs/Web/API/queueMicrotask) or similar API.
-   *
-   *   </dd>
-   *
-   *   <dt><i>"cleared"</i></dt>
-   *   <dd><p>The executor was cleared and now isn't {@link Executor.isSettled settled}.</p></dd>
-   *
-   *   <dt><i>"invalidated"</i></dt>
-   *   <dd>
-   *
-   *   The executor was {@link Executor.invalidate invalidated} and its result is now {@link Executor.isStale stale}.
-   *
-   *   </dd>
-   *
-   *   <dt><i>"activated"</i></dt>
-   *   <dd>
-   *
-   *   The executor was inactive and became {@link Executor.isActive active}. This means that there are consumers that
-   *   observe the state of the executor.
-   *
-   *   </dd>
-   *
-   *   <dt><i>"deactivated"</i></dt>
-   *   <dd>
-   *
-   *   The executor was {@link Executor.isActive active} and became inactive. This means that there are no consumers
-   *   that observe the state of the executor.
-   *
-   *   </dd>
-   *
-   *   <dt><i>"disposed"</i></dt>
-   *   <dd>
-   *
-   *   The executor was just {@link ExecutorManager.dispose disposed}: plugin cleanup callbacks were invoked, and
-   *   the {@link Executor.key executor key} isn't known to the manager anymore.
-   *
-   *   All executor subscribers are unsubscribed after the disposal.
-   *
-   *   </dd>
-   * </dl>
+   * See {@link ExecutorEvent} for more details.
    */
   type:
     | 'configured'
@@ -112,8 +114,6 @@ export interface ExecutorEvent<Value = any> {
  * The plugin callback that is invoked when the executor is created by the {@link ExecutorManager}.
  *
  * @param executor The executor that was just created.
- * @returns The cleanup callback that is invoked when the executor is {@link ExecutorManager.dispose disposed}, or
- * `undefined` if no cleanup is required.
  * @template Value The value stored by the executor.
  */
 export type ExecutorPlugin<Value = any> = (executor: Executor<Value>) => void;

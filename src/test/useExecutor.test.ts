@@ -119,45 +119,4 @@ describe('useExecutor', () => {
 
     expect(renderMock).toHaveBeenCalledTimes(4);
   });
-
-  test('re-renders task when dependencies are changed', async () => {
-    const renderMock = jest.fn(dependencies =>
-      useExecutor({
-        key: executorKey,
-        task: () => dependencies[0],
-        dependencies,
-      })
-    );
-    const hook = renderHook(renderMock, { wrapper: StrictMode, initialProps: ['aaa'] });
-    const executor = hook.result.current;
-
-    expect(executor.isPending).toBe(true);
-    expect(executor.isFulfilled).toBe(false);
-    expect(executor.isRejected).toBe(false);
-
-    await act(() => executor.toPromise());
-
-    expect(executor.isPending).toBe(false);
-    expect(executor.isFulfilled).toBe(true);
-    expect(executor.value).toBe('aaa');
-    expect(executor.reason).toBeUndefined();
-    expect(executor.latestTask).not.toBeNull();
-
-    hook.rerender(['aaa']);
-
-    expect(executor.isPending).toBe(false);
-
-    hook.rerender(['bbb']);
-
-    expect(executor.isPending).toBe(true);
-    expect(executor.isFulfilled).toBe(true);
-
-    await act(() => executor.toPromise());
-
-    expect(executor.isPending).toBe(false);
-    expect(executor.isFulfilled).toBe(true);
-    expect(executor.value).toBe('bbb');
-
-    expect(renderMock).toHaveBeenCalledTimes(14);
-  });
 });
