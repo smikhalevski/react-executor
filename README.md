@@ -37,6 +37,7 @@ npm install --save-prod react-executor
 
 - [Optimistic updates](#optimistic-updates)
 - [Dependent executors](#dependent-executors)
+- [Paging and infinite loading](#paging-and-infinite-loading)
 
 # Introduction
 
@@ -146,7 +147,7 @@ executor is [fulfilled](https://smikhalevski.github.io/react-executor/interfaces
 executor.isRejected;
 // ⮕ true
 
-// 🟡 But it still has a value.
+// 🟡 But executor still has a value.
 executor.value;
 // ⮕ 'Hello'
 ```
@@ -580,7 +581,7 @@ const UserDetails = (props: { userId: string }) => {
     // Fetch the user from the server.
   });
   
-  if (!executor.isSettled) {
+  if (executor.isPending) {
     return 'Loading…';
   }
   
@@ -737,6 +738,38 @@ const shoppingCartExecutor = useExecutor('shoppingCart', async (signal, executor
 
   // Fetch shopping cart for an account.
 });
+```
+
+## Paging and infinite loading
+
+Create a task that uses the current executor value to combine it with the data loaded from the server:
+
+```ts
+import type { ExecutorTask } from './types';
+
+interface Feed {
+  items: any[],
+  pageCount: 0
+}
+
+const feedExecutor = useExecutor<Feed>('feed', async (signal, executor) => {
+  const feed = executor.getOrDefault({ items: [], pageCount: 0 });
+
+  const pageItems = await fetchPageItems(feed.pageCount, signal);
+  
+  return {
+    items: feed.items.concat(pageItems),
+    pageCount: feed.pageCount + 1
+  };
+});
+```
+
+Now if user clicks a button to load more items to the feed, `feedExecutor` must retry its latest task:
+
+```ts
+const handleLoadMoreClick = () => {
+  feedExecutor.retry();
+};
 ```
 
 <hr/>
