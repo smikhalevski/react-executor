@@ -41,15 +41,25 @@
       "import": "./plugin/retryFocused.mjs",
       "require": "./plugin/retryFocused.js"
     },
+    "./plugin/retryFulfilled": {
+      "types": "./plugin/retryFulfilled.d.ts",
+      "import": "./plugin/retryFulfilled.mjs",
+      "require": "./plugin/retryFulfilled.js"
+    },
+    "./plugin/retryRejected": {
+      "types": "./plugin/retryRejected.d.ts",
+      "import": "./plugin/retryRejected.mjs",
+      "require": "./plugin/retryRejected.js"
+    },
     "./plugin/retryStale": {
       "types": "./plugin/retryStale.d.ts",
       "import": "./plugin/retryStale.mjs",
       "require": "./plugin/retryStale.js"
     },
-    "./plugin/syncStorage": {
-      "types": "./plugin/syncStorage.d.ts",
-      "import": "./plugin/syncStorage.mjs",
-      "require": "./plugin/syncStorage.js"
+    "./plugin/synchronizeStorage": {
+      "types": "./plugin/synchronizeStorage.d.ts",
+      "import": "./plugin/synchronizeStorage.mjs",
+      "require": "./plugin/synchronizeStorage.js"
     },
     "./package.json": "./package.json"
   },
