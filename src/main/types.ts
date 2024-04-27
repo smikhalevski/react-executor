@@ -245,14 +245,14 @@ export interface Executor<Value = any> extends PromiseLike<Value> {
    * If the executor isn't {@link isPending pending} then {@link latestTask latest task} is {@link execute executed}
    * again. If there's no latest task then no-op.
    */
-  retry(): this;
+  retry(): void;
 
   /**
    * Clears available results and doesn't affect the pending task execution.
    *
    * The executor can still be {@link retry retried} after being cleared.
    */
-  clear(): this;
+  clear(): void;
 
   /**
    * Instantly aborts pending execution and preserves available results as is. Value (or error) returned from pending
@@ -260,12 +260,12 @@ export interface Executor<Value = any> extends PromiseLike<Value> {
    *
    * @param reason The abort reason that is used for rejection of the pending task promise.
    */
-  abort(reason?: unknown): this;
+  abort(reason?: unknown): void;
 
   /**
    * If the executor is settled then its value is marked as {@link isStale stale}.
    */
-  invalidate(): this;
+  invalidate(): void;
 
   /**
    * Aborts pending execution and fulfills the executor with the value.
@@ -276,7 +276,7 @@ export interface Executor<Value = any> extends PromiseLike<Value> {
    * @param value The value.
    * @param timestamp The timestamp when the value was acquired. If value is a promise then the timestamp is ignored.
    */
-  resolve(value: PromiseLike<Value> | Value, timestamp?: number): this;
+  resolve(value: PromiseLike<Value> | Value, timestamp?: number): void;
 
   /**
    * Instantly aborts pending execution and rejects the executor with the reason.
@@ -284,7 +284,7 @@ export interface Executor<Value = any> extends PromiseLike<Value> {
    * @param reason The reason of failure.
    * @param timestamp The timestamp when the reason was acquired.
    */
-  reject(reason: any, timestamp?: number): this;
+  reject(reason: any, timestamp?: number): void;
 
   /**
    * Marks the executor as being actively monitored by an external consumer.

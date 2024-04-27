@@ -139,41 +139,37 @@ export class ExecutorImpl<Value = any> implements Executor {
     return promise;
   }
 
-  retry(): this {
+  retry(): void {
     if (this.latestTask !== null && !this.isPending) {
       this.execute(this.latestTask);
     }
-    return this;
   }
 
-  clear(): this {
+  clear(): void {
     if (this.isSettled) {
       this.isFulfilled = this.isRejected = this.isStale = false;
       this.value = this.reason = undefined;
       this.timestamp = 0;
       this._pubSub.publish({ type: 'cleared', target: this });
     }
-    return this;
   }
 
-  abort(reason?: unknown): this {
+  abort(reason?: unknown): void {
     if (this._promise !== null) {
       this._promise.abort(reason);
     }
-    return this;
   }
 
-  invalidate(): this {
+  invalidate(): void {
     if (this.isStale !== (this.isStale = this.isSettled)) {
       this._pubSub.publish({ type: 'invalidated', target: this });
     }
-    return this;
   }
 
-  resolve(value: PromiseLike<Value> | Value, timestamp = Date.now()): this {
+  resolve(value: PromiseLike<Value> | Value, timestamp = Date.now()): void {
     if (value !== null && typeof value === 'object' && 'then' in value) {
       this.execute(() => value);
-      return this;
+      return;
     }
 
     const promise = this._promise;
@@ -189,11 +185,9 @@ export class ExecutorImpl<Value = any> implements Executor {
     this.timestamp = timestamp;
 
     this._pubSub.publish({ type: 'fulfilled', target: this });
-
-    return this;
   }
 
-  reject(reason: any, timestamp = Date.now()): this {
+  reject(reason: any, timestamp = Date.now()): void {
     const promise = this._promise;
     this._promise = null;
 
@@ -207,8 +201,6 @@ export class ExecutorImpl<Value = any> implements Executor {
     this.timestamp = timestamp;
 
     this._pubSub.publish({ type: 'rejected', target: this });
-
-    return this;
   }
 
   activate(): () => void {
