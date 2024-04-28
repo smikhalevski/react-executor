@@ -8,7 +8,7 @@ const ExecutorManagerContext = createContext(new ExecutorManager());
  * >
  * > — Executor, manager, provider.
  *
- * The provides the manager that retrieves and creates executors.
+ * Provides the {@link ExecutorManager} to underlying components.
  */
 export const ExecutorManagerProvider = ExecutorManagerContext.Provider;
 
