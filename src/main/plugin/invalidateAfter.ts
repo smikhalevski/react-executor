@@ -1,3 +1,15 @@
+/**
+ * The plugin that invalidates the settled executor result after the timeout.
+ *
+ * ```ts
+ * import invalidateAfter from 'react-executor/plugin/invalidateAfter';
+ *
+ * const executor = useExecutor('test', 42, [invalidateAfter(5_000)]);
+ * ```
+ *
+ * @module plugin/invalidateAfter
+ */
+
 import type { ExecutorPlugin } from '../types';
 
 /**

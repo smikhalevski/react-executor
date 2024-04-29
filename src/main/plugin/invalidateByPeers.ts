@@ -1,3 +1,18 @@
+/**
+ * The plugin that invalidates the settled executor result if another executor with a matching key is fulfilled or
+ * invalidated.
+ *
+ * ```ts
+ * import invalidateByPeers from 'react-executor/plugin/invalidateByPeers';
+ *
+ * const executor = useExecutor('test', 42, [
+ *   invalidateByPeers([/executor_key_pattern/, 'exact_executor_key'])
+ * ]);
+ * ```
+ *
+ * @module plugin/invalidateByPeers
+ */
+
 import type { ExecutorPlugin } from '../types';
 
 /**
