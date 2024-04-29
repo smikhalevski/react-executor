@@ -46,9 +46,10 @@ npm install --save-prod react-executor
 
 An executor handles the task execution process and provides ways to access results later on.
 
-An [`Executor`](https://smikhalevski.github.io/react-executor/interfaces/Executor.html) is created and managed by
-an [`ExecutorManager`](https://smikhalevski.github.io/react-executor/classes/ExecutorManager.html) which controls its
-lifecycle:
+An [`Executor`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html) is created and
+managed by
+an [`ExecutorManager`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html) which
+controls its lifecycle:
 
 ```ts
 import { ExecutorManager } from 'react-executor';
@@ -61,11 +62,11 @@ const executor = executorManager.getOrCreate('rex');
 
 Each executor has a unique key in scope of the manager. Here we created the new executor with the key `'rex'`. Now each
 consequent call
-to [`getOrCreate`](https://smikhalevski.github.io/react-executor/classes/ExecutorManager.html#getOrCreate) would return
-the same executor.
+to [`getOrCreate`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html#getOrCreate)
+would return the same executor.
 
 If you want to retrieve an existing executor and avoid creating a new one, use
-[`get`](https://smikhalevski.github.io/react-executor/classes/ExecutorManager.html#getOrCreate):
+[`get`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html#getOrCreate):
 
 ```ts
 executorManager.get('rex');
@@ -129,8 +130,9 @@ The task receives an [`AbortSignal`](https://developer.mozilla.org/en-US/docs/We
 instance. Signal is aborted if a task is [aborted](#abort-a-task) or [replaced](#replace-a-task).
 
 While tasks can be synchronous or asynchronous, executors always handle them in an asynchronous fashion. The executor is
-marked as [pending](https://smikhalevski.github.io/react-executor/interfaces/Executor.html#isPending) after
-[`execute`](https://smikhalevski.github.io/react-executor/interfaces/Executor.html#execute) was called:
+marked as [pending](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#isPending)
+after
+[`execute`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#execute) was called:
 
 ```ts
 // The executor is waiting for the task to complete
@@ -156,7 +158,8 @@ executor.value;
 ```
 
 The executor keeps track of
-the [latest task](https://smikhalevski.github.io/react-executor/interfaces/Executor.html#latestTask) it has executed:
+the [latest task](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#latestTask) it
+has executed:
 
 ```ts
 executor.latestTask;
@@ -179,9 +182,11 @@ executor.reason;
 ```
 
 An executor preserves the latest value and the latest reason when it is rejected or resolved respectively. Check if the
-executor is [fulfilled](https://smikhalevski.github.io/react-executor/interfaces/Executor.html#isFulfilled),
-[rejected](https://smikhalevski.github.io/react-executor/interfaces/Executor.html#isRejected), or
-[settled](https://smikhalevski.github.io/react-executor/interfaces/Executor.html#isSettled) to act accordingly.
+executor
+is [fulfilled](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#isFulfilled),
+[rejected](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#isRejected), or
+[settled](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#isSettled) to act
+accordingly.
 
 ```ts
 // The executor is rejected
@@ -195,9 +200,10 @@ executor.value;
 
 ## Abort a task
 
-The promise returned by the [`execute`](https://smikhalevski.github.io/react-executor/interfaces/Executor.html#execute)
-method is [abortable](https://smikhalevski.github.io/parallel-universe/classes/AbortablePromise.html) so the task can
-be prematurely aborted. Results of the aborted task are discarded:
+The promise returned by
+the [`execute`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#execute)
+method is [abortable](https://smikhalevski.github.io/parallel-universe/classes/react_executor.AbortablePromise.html) so
+the task can be prematurely aborted. Results of the aborted task are discarded:
 
 ```ts
 promise.abort();
@@ -246,9 +252,9 @@ executor.value;
 ## Wait for a task to complete
 
 In the [Execute a task](#execute-a-task) section we used a promise that is returned from
-[`Executor.execute`](https://smikhalevski.github.io/react-executor/interfaces/Executor.html#execute) to wait for a task
-execution to complete. While this approach allows to wait for a given task execution to settle, it is usually required
-to wait for an executor become settled.
+[`Executor.execute`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#execute) to
+wait for a task execution to complete. While this approach allows to wait for a given task execution to settle, it is
+usually required to wait for an executor become settled.
 
 Let's consider the scenario where a task is replaced with another task:
 
@@ -283,8 +289,9 @@ executor.execute(() => 'Hello');
 
 ## Retry the latest task
 
-To retry the [latest task](https://smikhalevski.github.io/react-executor/interfaces/Executor.html#latestTask),
-use [`retry`](https://smikhalevski.github.io/react-executor/interfaces/Executor.html#retry):
+To retry
+the [latest task](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#latestTask),
+use [`retry`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#retry):
 
 ```ts
 const planets = ['Mars', 'Venus'];
@@ -307,7 +314,7 @@ While tasks are always handled in an asynchronous fashion, there are cases when 
 synchronously.
 
 Executor can be synchronously fulfilled via
-[`resolve`](https://smikhalevski.github.io/react-executor/interfaces/Executor.html#resolve):
+[`resolve`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#resolve):
 
 ```ts
 executor.resolve('Venus');
@@ -319,7 +326,8 @@ executor.value;
 // ⮕ 'Venus'
 ```
 
-Or rejected via [`reject`](https://smikhalevski.github.io/react-executor/interfaces/Executor.html#reject):
+Or rejected
+via [`reject`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#reject):
 
 ```ts
 executor.reject(new Error('Ooops!'));
@@ -352,23 +360,25 @@ executor.value;
 
 ## Clear an executor
 
-After the executor becomes [settled](https://smikhalevski.github.io/react-executor/interfaces/Executor.html#isSettled),
+After the executor
+becomes [settled](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#isSettled),
 it remains settled until it is cleared.
 
 You can reset the executor back to its unsettled state
-using [`clear`](https://smikhalevski.github.io/react-executor/interfaces/Executor.html#clear):
+using [`clear`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#clear):
 
 ```ts
 executor.clear();
 ```
 
 Clearing an executor removes the stored value and reason, but _doesn't_ affect the pending task execution and preserves
-the [latest task](https://smikhalevski.github.io/react-executor/interfaces/Executor.html#latestTask) that was executed. 
+the [latest task](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#latestTask) that
+was executed.
 
 # Lifecycle
 
 Executors publish various events when their state changes. To subscribe to executor events use the
-[`subscribe`](https://smikhalevski.github.io/react-executor/interfaces/Executor.html#subscribe) method:
+[`subscribe`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#subscribe) method:
 
 ```ts
 const unsubscribe = executor.subscribe(event => {
@@ -381,7 +391,8 @@ unsubscribe();
 ```
 
 Executors may have multiple subscribers and each subscriber receives
-[events](https://smikhalevski.github.io/react-executor/interfaces/ExecutorEvent.html) with following types: 
+[events](https://smikhalevski.github.io/react-executor/interfaces/react_executor.ExecutorEvent.html) with following
+types:
 
 <dl>
 <dt>configured</dt>
@@ -396,7 +407,8 @@ The executor was just [created](#clear-an-executor) and plugins were applied to 
 <dd>
 
 The executor started [a task execution](#execute-a-task). You can find the latest task the executor handled in the
-[`Executor.latestTask`](https://smikhalevski.github.io/react-executor/interfaces/Executor.html#latestTask) property.
+[`Executor.latestTask`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#latestTask)
+property.
 
 </dd>
 
@@ -419,12 +431,13 @@ The executor was rejected with a reason.
 
 The [task was aborted](#abort-a-task).
 
-If executor is still [pending](https://smikhalevski.github.io/react-executor/interfaces/Executor.html#isPending) when
+If executor is
+still [pending](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#isPending) when
 an `'aborted'` event is published then the currently pending task is being replaced with a new task.
 
-Calling [`Executor.execute`](https://smikhalevski.github.io/react-executor/interfaces/Executor.html#execute) when
-handling an abort event may lead to stack overflow. If you need to do this anyway, execute a new task from async context
-using [`queueMicrotask`](https://developer.mozilla.org/en-US/docs/Web/API/queueMicrotask) or a similar API.
+Calling [`Executor.execute`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#execute)
+when handling an abort event may lead to stack overflow. If you need to do this anyway, execute a new task from async
+context using [`queueMicrotask`](https://developer.mozilla.org/en-US/docs/Web/API/queueMicrotask) or a similar API.
 
 </dd>
 
@@ -465,7 +478,8 @@ anymore. Read more in the [Dispose an executor](#dispose-an-executor) section.
 
 ## Activate an executor
 
-Executors have an [active](https://smikhalevski.github.io/react-executor/interfaces/Executor.html#isActive) status that
+Executors have
+an [active](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#isActive) status that
 tells whether executor is actively used by a consumer.
 
 ```ts
@@ -522,13 +536,15 @@ executor.isStale;
 ```
 
 Without [plugins](#plugins), invalidating an executor has no effect except marking executor
-as [stale](https://smikhalevski.github.io/react-executor/interfaces/Executor.html#isStale).
+as [stale](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#isStale).
 
 ## Dispose an executor
 
 By default, executors that a manager has created are preserved indefinitely and are always available though
-[`get`](https://smikhalevski.github.io/react-executor/classes/ExecutorManager.html#getOrCreate). This isn't always optimal, and you may want to dispose an executor when it isn't needed anymore.
-Use [`dispose`](https://smikhalevski.github.io/react-executor/classes/ExecutorManager.html#dispose) in such case:
+[`get`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html#getOrCreate). This
+isn't always optimal, and you may want to dispose an executor when it isn't needed anymore.
+Use [`dispose`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html#dispose) in
+such case:
 
 ```ts
 const executor = executorManager.getOrCreate('test');
@@ -556,7 +572,7 @@ const disposePlugin: ExecutorPlugin = executor => {
 ```
 
 To apply a plugin, pass it to the
-[`ExecutorManager.getOrCreate`](https://smikhalevski.github.io/react-executor/classes/ExecutorManager.html#getOrCreate):
+[`ExecutorManager.getOrCreate`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html#getOrCreate):
 
 ```ts
 const executor = executorManager.getOrCreate('test', undefined, [disposePlugin]);
@@ -611,7 +627,8 @@ executorManager.getOrCreate('rex', initialValue, [
 # React integration
 
 To use executors in React you don't need any additional configuration, just use
-the [`useExecutor`](https://smikhalevski.github.io/react-executor/functions/useExecutor.html) hook right away:
+the [`useExecutor`](https://smikhalevski.github.io/react-executor/functions/react_executor.useExecutor.html) hook right
+away:
 
 ```tsx
 import { useExecutor } from 'react-executor';
@@ -629,11 +646,12 @@ Every time the executor's state is changed, the component is re-rendered. The ex
 [activated](#activate-an-executor) after mount and deactivated on unmount.
 
 The hook has the exact same signature as
-the [`ExecutorManager.getOrCreate`](https://smikhalevski.github.io/react-executor/classes/ExecutorManager.html#getOrCreate)
+the [`ExecutorManager.getOrCreate`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html#getOrCreate)
 method, described in the [Introduction](#introduction) section.
 
 If you want to have access to an executor, but don't need to re-render the component when the executor's state is
-changed, use [`useExecutorManager`](https://smikhalevski.github.io/react-executor/functions/useExecutorManager.html)
+changed,
+use [`useExecutorManager`](https://smikhalevski.github.io/react-executor/functions/react_executor.useExecutorManager.html)
 hook:
 
 ```ts
@@ -651,7 +669,8 @@ const handleClick = () => {
 ```
 
 You can use executors both inside and outside the rendering process. To do this, provide a custom
-[`ExecutorManager`](https://smikhalevski.github.io/react-executor/classes/ExecutorManager.html) through the context:
+[`ExecutorManager`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html) through
+the context:
 
 ```tsx
 import { ExecutorManager, ExecutorManagerProvider } from 'react-executor';
@@ -682,7 +701,7 @@ const User = (props: { userId: string }) => {
 ```
 
 If the task itself doesn't depend on a rendered value, but must be re-executed anyway when a rendered value is changed,
-use [`retry`](https://smikhalevski.github.io/react-executor/interfaces/Executor.html#retry):
+use [`retry`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#retry):
 
 ```ts
 useEffect(() => executor.retry(), [props.userId]);
@@ -692,7 +711,8 @@ useEffect(() => executor.retry(), [props.userId]);
 
 Executors support fetch-as-you-render approach and can be integrated with React Suspense. To facilitate the rendering
 suspension, use the
-[`useExecutorSuspense`](https://smikhalevski.github.io/react-executor/functions/useExecutorSuspense.html) hook:
+[`useExecutorSuspense`](https://smikhalevski.github.io/react-executor/functions/react_executor.useExecutorSuspense.html)
+hook:
 
 ```tsx
 import { useExecutorSuspense } from 'react-executor';
@@ -832,9 +852,9 @@ const handleLoadMoreClick = () => {
 
 ## Invalidate all executors
 
-[`ExecutorManager`](https://smikhalevski.github.io/react-executor/classes/ExecutorManager.html#_iterator_) is iterable
-and provides access to all executors that it has created. You can perform bach operations with all executors in
-for-loop:
+[`ExecutorManager`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html#_iterator_)
+is iterable and provides access to all executors that it has created. You can perform bach operations with all executors
+in for-loop:
 
 ```ts
 const executorManager = useExecutorManager();
@@ -846,7 +866,7 @@ for (const executor of executorManager) {
 
 By default, invalidating an executor has no additional effect. If you want to
 [retry the latest task](#retry-the-latest-task) that each executor has executed, use
-[`retry`](https://smikhalevski.github.io/react-executor/interface/Executor.html#retry):
+[`retry`](https://smikhalevski.github.io/react-executor/interface/react_executor.Executor.html#retry):
 
 ```ts
 for (const executor of executorManager) {
@@ -855,7 +875,7 @@ for (const executor of executorManager) {
 ```
 
 It isn't optimal to retry all executors, even if they aren't [actively used](#activate-an-executor). Use the
-[`retryStale`](https://smikhalevski.github.io/react-executor/interface/Executor.html#retry)
+[`retryStale`](https://smikhalevski.github.io/react-executor/interface/react_executor.Executor.html#retry)
 
 
 ## Prefetching
