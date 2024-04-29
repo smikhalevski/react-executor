@@ -10,6 +10,8 @@
 npm install --save-prod react-executor
 ```
 
+[**Try executors live**](https://codesandbox.io/p/sandbox/react-executor-example-ltflgy?file=%2Fsrc%2FApp.tsx%3A25%2C1)&ensp;🔥
+
 [**Introduction**](#introduction)
 
 - [Execute a task](#execute-a-task)
