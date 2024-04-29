@@ -135,7 +135,7 @@ export type ExecutorTask<Value = any> = (signal: AbortSignal, executor: Executor
  */
 export interface ExecutorState<Value = any> {
   /**
-   * The key of this executor, unique in scope of the {@link manager}.
+   * The key of this executor, unique in scope of the {@link Executor.manager}.
    */
   readonly key: string;
 
@@ -150,8 +150,8 @@ export interface ExecutorState<Value = any> {
   readonly isRejected: boolean;
 
   /**
-   * `true` if {@link invalidate} was called on a {@link isSettled settled} executor and a new settlement hasn't
-   * occurred yet.
+   * `true` if {@link Executor.invalidate} was called on a {@link Executor.isSettled settled} executor and a new
+   * settlement hasn't occurred yet.
    */
   readonly isStale: boolean;
 

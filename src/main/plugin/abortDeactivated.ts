@@ -1,5 +1,5 @@
 /**
- * The plugin that aborts pending task after the timeout when the executor is deactivated.
+ * The plugin that aborts the pending task after the timeout when the executor is deactivated.
  *
  * ```ts
  * import abortDeactivated from 'react-executor/plugin/abortDeactivated';
@@ -13,7 +13,7 @@
 import type { ExecutorPlugin } from '../types';
 
 /**
- * Aborts pending task after the timeout when the executor is deactivated.
+ * Aborts the pending task after the timeout when the executor is deactivated.
  *
  * @param ms The timeout in milliseconds after which the task is aborted.
  */
