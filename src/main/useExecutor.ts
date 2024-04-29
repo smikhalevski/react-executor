@@ -16,7 +16,7 @@ import { useExecutorManager } from './useExecutorManager';
  * @returns The executor associated with the key.
  * @template Value The value stored by the executor.
  */
-export function useExecutor<Value>(
+export function useExecutor<Value = any>(
   key: string,
   initialValue: undefined,
   plugins?: ExecutorPlugin<Value>[]
@@ -36,7 +36,7 @@ export function useExecutor<Value>(
  * @returns The executor associated with the key.
  * @template Value The value stored by the executor.
  */
-export function useExecutor<Value>(
+export function useExecutor<Value = any>(
   key: string,
   initialValue?: ExecutorTask<Value> | PromiseLike<Value> | Value,
   plugins?: ExecutorPlugin<Value>[]

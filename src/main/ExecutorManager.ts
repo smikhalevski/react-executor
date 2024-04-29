@@ -51,11 +51,22 @@ export class ExecutorManager implements Iterable<Executor> {
    * @param initialValue The initial executor value.
    * @param plugins The array of plugins that are applied to the newly created executor.
    */
+  getOrCreate<Value = any>(key: string, initialValue: undefined, plugins?: ExecutorPlugin<Value>[]): Executor<Value>;
+
+  /**
+   * Returns an existing executor or creates a new one.
+   *
+   * @param key The unique executor key.
+   * @param initialValue The initial executor value.
+   * @param plugins The array of plugins that are applied to the newly created executor.
+   */
   getOrCreate<Value = any>(
     key: string,
     initialValue?: ExecutorTask<Value> | PromiseLike<Value> | Value,
     plugins?: ExecutorPlugin<Value>[]
-  ): Executor<Value> {
+  ): Executor<Value>;
+
+  getOrCreate(key: string, initialValue?: unknown, plugins?: ExecutorPlugin[]): Executor {
     let executor = this._executors.get(key);
 
     if (executor !== undefined) {
@@ -84,7 +95,7 @@ export class ExecutorManager implements Iterable<Executor> {
       return executor;
     }
     if (typeof initialValue === 'function') {
-      executor.execute(initialValue as ExecutorTask<Value>);
+      executor.execute(initialValue as ExecutorTask);
     } else {
       executor.resolve(initialValue);
     }
