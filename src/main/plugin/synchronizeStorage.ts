@@ -26,21 +26,21 @@ export interface Serializer<Value> {
    *
    * @param value The value to serialize.
    */
-  serialize(value: Value): string;
+  stringify(value: Value): string;
 
   /**
-   * Deserializes the serialized value.
+   * Deserializes the stringified value.
    *
-   * @param serializedValue The serialized value.
+   * @param serializedValue The stringified value.
    */
-  deserialize(serializedValue: string): Value;
+  parse(serializedValue: string): Value;
 }
 
 /**
  * Persists the executor value in the synchronous storage.
  *
- * Synchronization is enabled only for activated executors. If executor is disposed, corresponding item is removed from
- * the storage.
+ * Synchronization is enabled only for activated executors. If executor is disposed, then the corresponding item is
+ * removed from the storage.
  *
  * @param storage The storage where executor value is persisted, usually a `localStorage` or a `sessionStorage`.
  * @param serializer The storage record serializer.
@@ -48,7 +48,7 @@ export interface Serializer<Value> {
  */
 export default function synchronizeStorage<Value = any>(
   storage: Pick<Storage, 'setItem' | 'getItem' | 'removeItem'>,
-  serializer: Serializer<ExecutorState<Value>> = naturalSerializer
+  serializer: Serializer<ExecutorState<Value>> = JSON
 ): ExecutorPlugin<Value> {
   return executor => {
     // The key corresponds to the executor state in the storage
@@ -65,11 +65,8 @@ export default function synchronizeStorage<Value = any>(
 
       latestSerializedState = serializedState;
 
-      if (
-        serializedState === null ||
-        (record = serializer.deserialize(serializedState)).timestamp < executor.timestamp
-      ) {
-        storage.setItem(storageKey, serializer.serialize(executor.toJSON()));
+      if (serializedState === null || (record = serializer.parse(serializedState)).timestamp < executor.timestamp) {
+        storage.setItem(storageKey, serializer.stringify(executor.toJSON()));
         return;
       }
       if (record.timestamp === executor.timestamp) {
@@ -115,7 +112,7 @@ export default function synchronizeStorage<Value = any>(
           if (!executor.isActive) {
             break;
           }
-          const serializedState = serializer.serialize(executor.toJSON());
+          const serializedState = serializer.stringify(executor.toJSON());
 
           if (latestSerializedState !== serializedState) {
             storage.setItem(storageKey, serializedState);
@@ -135,8 +132,3 @@ export default function synchronizeStorage<Value = any>(
     });
   };
 }
-
-const naturalSerializer: Serializer<any> = {
-  serialize: value => JSON.stringify(value),
-  deserialize: serializedValue => JSON.parse(serializedValue),
-};
