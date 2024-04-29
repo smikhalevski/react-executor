@@ -37,7 +37,10 @@ npm install --save-prod react-executor
 
 - [Optimistic updates](#optimistic-updates)
 - [Dependent tasks](#dependent-tasks)
-- [Paging and infinite loading](#paging-and-infinite-loading)
+- [Pagination](#pagination)
+- [Infinite scroll](#infinite-scroll)
+- [Invalidate all executors](#invalidate-all-executors)
+- [Prefetching](#prefetching)
 
 # Introduction
 
@@ -622,12 +625,20 @@ function User(props: { userId: string }) {
 };
 ```
 
-Every time the executor state is changed, the component is re-rendered. The executor returned from the hook is
+Every time the executor's state is changed, the component is re-rendered. The executor returned from the hook is
 [activated](#activate-an-executor) after mount and deactivated on unmount.
 
 The hook has the exact same signature as
 the [`ExecutorManager.getOrCreate`](https://smikhalevski.github.io/react-executor/classes/ExecutorManager.html#getOrCreate)
 method, described in the [Introduction](#introduction) section.
+
+If you want to have access to an executor, but don't need to re-render the component when the executor's state is
+changed, use [`useExecutorManager`](https://smikhalevski.github.io/react-executor/functions/useExecutorManager.html)
+hook:
+
+```ts
+const executor = useExecutorManager().getOrCreate('account');
+```
 
 You can execute a task in response a user action, for example when user clicks a button:
 
@@ -662,7 +673,7 @@ If a task must be re-executed when a value changes between re-renders, you can u
 
 ```ts
 const User = (props: { userId: string }) => {
-  const executor = useExecutor('user');
+  const executor = useExecutor(`user-${props.userId}`);
 
   useEffect(() => {
     executor.execute(async signal => getUserById(props.userId, signal));
@@ -780,7 +791,26 @@ const shoppingCartExecutor = useExecutor('shoppingCart', async (signal, executor
 });
 ```
 
-## Paging and infinite loading
+## Pagination
+
+Create an executor that would store the current page contents:
+
+```ts
+const fetchPage = async (pageIndex: number, signal: AbortSignal) => {
+  // Request the data from the server here
+};
+
+const pageExecutor = useExecutor('page', signal => fetchPage(0, signal));
+
+const handleGoToPageClick = (pageIndex: number) => {
+  pageExecutor.execute(signal => fetchPage(pageIndex, signal));
+};
+```
+
+The executor preserves the latest value it was resolved with, so you can render page contents using `executor.value`,
+and render a spinner when `executor.isPending`. 
+
+## Infinite scroll
 
 Create a task that uses the current executor value to combine it with the data loaded from the server:
 
@@ -798,6 +828,62 @@ Now if a user clicks on a button to load more items, `itemsExecutor` must retry 
 const handleLoadMoreClick = () => {
   itemsExecutor.retry();
 };
+```
+
+## Invalidate all executors
+
+[`ExecutorManager`](https://smikhalevski.github.io/react-executor/classes/ExecutorManager.html#_iterator_) is iterable
+and provides access to all executors that it has created. You can perform bach operations with all executors in
+for-loop:
+
+```ts
+const executorManager = useExecutorManager();
+
+for (const executor of executorManager) {
+  executor.invalidate();
+}
+```
+
+By default, invalidating an executor has no additional effect. If you want to
+[retry the latest task](#retry-the-latest-task) that each executor has executed, use
+[`retry`](https://smikhalevski.github.io/react-executor/interface/Executor.html#retry):
+
+```ts
+for (const executor of executorManager) {
+  executor.retry();
+}
+```
+
+It isn't optimal to retry all executors, even if they aren't [actively used](#activate-an-executor). Use the
+[`retryStale`](https://smikhalevski.github.io/react-executor/interface/Executor.html#retry)
+
+
+## Prefetching
+
+In some cases, you can initialize an executor before its data is required for the first time:
+
+```ts
+function User() {
+  useExecutorManager().getOrCreate('shoppingCart', fetchShoppingCart);
+}
+```
+
+In this example, the executor with the `'shoppingCart'` key is initialized once the component is rendered for the first
+time. The `User` component _won't be re-rendered_ if the shopping cart executor's state is changed.
+
+To do prefetching before the application is even rendered, create an executor manager beforehand:
+
+```tsx
+const executorManager = new ExecutorManager();
+
+// 🟡 Prefetch the shopping cart
+executorManager.getOrCreate('shoppingCart', fetchShoppingCart);
+
+const App = () => (
+  <ExecutorManagerProvider value={executorManager}>
+    {/* Render you app here */}
+  </ExecutorManagerProvider>
+)
 ```
 
 <hr/>
