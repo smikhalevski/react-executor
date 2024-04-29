@@ -1,3 +1,15 @@
+/**
+ * The plugin that retries the latest task of the active executor if the window gains focus.
+ *
+ * ```ts
+ * import retryFocused from 'react-executor/plugin/retryFocused';
+ *
+ * const executor = useExecutor('test', 42, [retryFocused()]);
+ * ```
+ *
+ * @module plugin/retryFocused
+ */
+
 import type { ExecutorPlugin } from '../types';
 
 /**

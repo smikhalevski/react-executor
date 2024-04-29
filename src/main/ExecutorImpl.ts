@@ -1,6 +1,6 @@
 import { AbortablePromise, PubSub } from 'parallel-universe';
 import type { ExecutorManager } from './ExecutorManager';
-import type { Executor, ExecutorEvent, ExecutorTask } from './types';
+import type { Executor, ExecutorEvent, ExecutorState, ExecutorTask } from './types';
 import { AbortError } from './utils';
 
 /**
@@ -223,5 +223,17 @@ export class ExecutorImpl<Value = any> implements Executor {
 
   subscribe(listener: (event: ExecutorEvent) => void): () => void {
     return this._pubSub.subscribe(listener);
+  }
+
+  toJSON(): ExecutorState<Value> {
+    return {
+      key: this.key,
+      isFulfilled: this.isFulfilled,
+      isRejected: this.isRejected,
+      isStale: this.isStale,
+      value: this.value,
+      reason: this.reason,
+      timestamp: this.timestamp,
+    };
   }
 }

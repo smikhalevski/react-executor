@@ -1,3 +1,17 @@
+/**
+ * The plugin that persists the executor value in the synchronous storage.
+ *
+ * ```ts
+ * import synchronizeStorage from 'react-executor/plugin/synchronizeStorage';
+ *
+ * const executor = useExecutor('test', 42, [
+ *   synchronizeStorage(localStorage)
+ * ]);
+ * ```
+ *
+ * @module plugin/synchronizeStorage
+ */
+
 import type { ExecutorPlugin } from '../types';
 
 /**

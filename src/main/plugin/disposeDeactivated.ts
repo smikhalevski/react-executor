@@ -1,3 +1,15 @@
+/**
+ * The plugin that disposes a deactivated executor after the timeout.
+ *
+ * ```ts
+ * import disposeDeactivated from 'react-executor/plugin/disposeDeactivated';
+ *
+ * const executor = useExecutor('test', 42, [disposeDeactivated()]);
+ * ```
+ *
+ * @module plugin/disposeDeactivated
+ */
+
 import type { ExecutorPlugin } from '../types';
 
 /**

@@ -1,3 +1,15 @@
+/**
+ * The plugin that retries the last task after the execution has failed.
+ *
+ * ```ts
+ * import retryRejected from 'react-executor/plugin/retryRejected';
+ *
+ * const executor = useExecutor('test', 42, [retryRejected()]);
+ * ```
+ *
+ * @module plugin/retryRejected
+ */
+
 import type { Executor, ExecutorPlugin } from '../types';
 
 /**

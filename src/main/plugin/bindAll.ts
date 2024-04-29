@@ -1,3 +1,15 @@
+/**
+ * The plugin that binds all executor methods to the instance.
+ *
+ * ```ts
+ * import bindAll from 'react-executor/plugin/bindAll';
+ *
+ * const executor = useExecutor('test', 42, [bindAll()]);
+ * ```
+ *
+ * @module plugin/bindAll
+ */
+
 import type { ExecutorPlugin } from '../types';
 
 /**

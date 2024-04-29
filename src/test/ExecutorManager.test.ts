@@ -1,6 +1,8 @@
 import { ExecutorManager } from '../main';
 import { ExecutorImpl } from '../main/ExecutorImpl';
 
+Date.now = jest.fn(() => 50);
+
 describe('ExecutorManager', () => {
   let listenerMock: jest.Mock;
   let manager: ExecutorManager;
@@ -9,6 +11,27 @@ describe('ExecutorManager', () => {
     listenerMock = jest.fn();
     manager = new ExecutorManager();
     manager.subscribe(listenerMock);
+  });
+
+  describe('constructor', () => {
+    const manager = new ExecutorManager([
+      {
+        isFulfilled: true,
+        isRejected: false,
+        isStale: false,
+        key: 'xxx',
+        timestamp: 50,
+        value: 111,
+        reason: undefined,
+      },
+    ]);
+
+    expect(manager.get('xxx')).toBeUndefined();
+
+    const executor = manager.getOrCreate('xxx');
+
+    expect(executor.value).toBe(111);
+    expect(executor.timestamp).toBe(50);
   });
 
   describe('getOrCreate', () => {
@@ -229,6 +252,31 @@ describe('ExecutorManager', () => {
       const executor2 = manager.getOrCreate('bbb');
 
       expect(Array.from(manager)).toEqual([executor1, executor2]);
+    });
+  });
+
+  describe('toJSON', () => {
+    test('returns an executor manager state', () => {
+      manager.getOrCreate('xxx', 111);
+
+      expect(manager.toJSON()).toEqual([
+        {
+          isFulfilled: true,
+          isRejected: false,
+          isStale: false,
+          key: 'xxx',
+          timestamp: 50,
+          value: 111,
+        },
+      ]);
+    });
+
+    test('used by JSON.stringify', () => {
+      manager.getOrCreate('xxx', 111);
+
+      expect(JSON.stringify(manager)).toBe(
+        '[{"key":"xxx","isFulfilled":true,"isRejected":false,"isStale":false,"value":111,"timestamp":50}]'
+      );
     });
   });
 });

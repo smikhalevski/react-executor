@@ -1,3 +1,15 @@
+/**
+ * The plugin that repeats the last task after the execution was fulfilled.
+ *
+ * ```ts
+ * import retryFulfilled from 'react-executor/plugin/retryFulfilled';
+ *
+ * const executor = useExecutor('test', 42, [retryFulfilled()]);
+ * ```
+ *
+ * @module plugin/retryFulfilled
+ */
+
 import type { Executor, ExecutorPlugin } from '../types';
 
 /**

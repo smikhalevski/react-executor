@@ -2,6 +2,8 @@ import { AbortablePromise } from 'parallel-universe';
 import { ExecutorImpl } from '../main/ExecutorImpl';
 import { AbortError, noop } from '../main/utils';
 
+Date.now = jest.fn(() => 50);
+
 describe('ExecutorImpl', () => {
   const expectedReason = new Error('expected');
 
@@ -654,6 +656,30 @@ describe('ExecutorImpl', () => {
       executor.execute(() => 'ccc');
 
       await expect(promise).resolves.toBe('ccc');
+    });
+  });
+
+  describe('toJSON', () => {
+    test('returns an executor state', () => {
+      executor.resolve(111);
+
+      expect(executor.toJSON()).toStrictEqual({
+        isFulfilled: true,
+        isRejected: false,
+        isStale: false,
+        key: 'xxx',
+        timestamp: 50,
+        value: 111,
+        reason: undefined,
+      });
+    });
+
+    test('used by JSON.stringify', () => {
+      executor.resolve(111);
+
+      expect(JSON.stringify(executor)).toBe(
+        '{"key":"xxx","isFulfilled":true,"isRejected":false,"isStale":false,"value":111,"timestamp":50}'
+      );
     });
   });
 });

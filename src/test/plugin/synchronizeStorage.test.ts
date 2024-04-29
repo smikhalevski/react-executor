@@ -61,7 +61,7 @@ describe('synchronizeStorage', () => {
   });
 
   test('sets storage item if executor was resolved from plugin', () => {
-    const executor = manager.getOrCreate<any>('xxx', undefined, [
+    const executor = manager.getOrCreate('xxx', undefined, [
       executor => {
         executor.resolve('aaa');
       },
@@ -78,7 +78,7 @@ describe('synchronizeStorage', () => {
   });
 
   test('does not set storage item or resolve an executor if an executor is pending', async () => {
-    const executor = manager.getOrCreate<any>('xxx', undefined, [
+    const executor = manager.getOrCreate('xxx', undefined, [
       executor => {
         executor.execute(() => 'aaa');
       },
