@@ -129,21 +129,15 @@ export type ExecutorPlugin<Value = any> = (executor: Executor<Value>) => void;
 export type ExecutorTask<Value = any> = (signal: AbortSignal, executor: Executor<Value>) => PromiseLike<Value> | Value;
 
 /**
- * Manages the async task execution process and provides ways to access execution results, abort or replace a task
- * execution, and subscribe to an execution state changes.
+ * The serializable state of the {@link Executor}.
  *
  * @template Value The value stored by the executor.
  */
-export interface Executor<Value = any> {
+export interface ExecutorState<Value = any> {
   /**
    * The key of this executor, unique in scope of the {@link manager}.
    */
   readonly key: string;
-
-  /**
-   * The manager that created the executor.
-   */
-  readonly manager: ExecutorManager;
 
   /**
    * `true` if the executor was fulfilled with a {@link value}, or `false` otherwise.
@@ -156,25 +150,10 @@ export interface Executor<Value = any> {
   readonly isRejected: boolean;
 
   /**
-   * `true` if result was {@link isFulfilled fulfilled} or {@link isRejected rejected}, or `false` otherwise.
-   */
-  readonly isSettled: boolean;
-
-  /**
    * `true` if {@link invalidate} was called on a {@link isSettled settled} executor and a new settlement hasn't
    * occurred yet.
    */
   readonly isStale: boolean;
-
-  /**
-   * `true` if the executor was activated more times {@link activate activated} then deactivated.
-   */
-  readonly isActive: boolean;
-
-  /**
-   * `true` if an execution is currently pending, or `false` otherwise.
-   */
-  readonly isPending: boolean;
 
   /**
    * The value of the last fulfillment, or `undefined` if executor isn't {@link isFulfilled fulfilled}.
@@ -190,6 +169,34 @@ export interface Executor<Value = any> {
    * The timestamp when the executor was last settled, or 0 if it wasn't settled yet.
    */
   readonly timestamp: number;
+}
+
+/**
+ * Manages the async task execution process and provides ways to access execution results, abort or replace a task
+ * execution, and subscribe to an execution state changes.
+ *
+ * @template Value The value stored by the executor.
+ */
+export interface Executor<Value = any> extends ExecutorState<Value> {
+  /**
+   * The manager that created the executor.
+   */
+  readonly manager: ExecutorManager;
+
+  /**
+   * `true` if result was {@link isFulfilled fulfilled} or {@link isRejected rejected}, or `false` otherwise.
+   */
+  readonly isSettled: boolean;
+
+  /**
+   * `true` if the executor was activated more times {@link activate activated} then deactivated.
+   */
+  readonly isActive: boolean;
+
+  /**
+   * `true` if an execution is currently pending, or `false` otherwise.
+   */
+  readonly isPending: boolean;
 
   /**
    * The latest task that was passed to {@link execute}, or `null` if the executor didn't execute a task.
@@ -291,4 +298,9 @@ export interface Executor<Value = any> {
    * @returns The callback that unsubscribes the listener.
    */
   subscribe(listener: (event: ExecutorEvent<Value>) => void): () => void;
+
+  /**
+   * Returns serializable executor state.
+   */
+  toJSON(): ExecutorState<Value>;
 }

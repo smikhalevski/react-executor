@@ -1,6 +1,6 @@
 import { AbortablePromise, PubSub } from 'parallel-universe';
 import { ExecutorImpl } from './ExecutorImpl';
-import type { Executor, ExecutorEvent, ExecutorPlugin, ExecutorTask } from './types';
+import type { Executor, ExecutorEvent, ExecutorPlugin, ExecutorState, ExecutorTask } from './types';
 
 /**
  * Creates executors and manages their lifecycle.
@@ -15,6 +15,25 @@ export class ExecutorManager implements Iterable<Executor> {
    * The pubsub that handles the manager subscriptions.
    */
   private _pubSub = new PubSub<ExecutorEvent>();
+
+  /**
+   * The map from a key to an initial state that must be set to an executor before plugins are applied. Entries from
+   * this map are deleted after the executor was initialized.
+   */
+  private _initialStates = new Map<string, ExecutorState>();
+
+  /**
+   * Creates a new executor manager.
+   *
+   * @param initialState The initial state of executors that are created via {@link getOrCreate}.
+   */
+  constructor(initialState?: ExecutorState[]) {
+    if (initialState !== undefined) {
+      for (const state of initialState) {
+        this._initialStates.set(state.key, state);
+      }
+    }
+  }
 
   /**
    * Returns an executor by its key, or `undefined` if there's no such executor.
@@ -43,7 +62,9 @@ export class ExecutorManager implements Iterable<Executor> {
       return executor;
     }
 
-    executor = new ExecutorImpl(key, this);
+    executor = Object.assign(new ExecutorImpl(key, this), this._initialStates.get(key));
+
+    this._initialStates.delete(key);
 
     if (plugins !== undefined) {
       for (const plugin of plugins) {
@@ -134,5 +155,12 @@ export class ExecutorManager implements Iterable<Executor> {
    */
   [Symbol.iterator](): IterableIterator<Executor> {
     return this._executors.values();
+  }
+
+  /**
+   * Returns serializable executor manager state.
+   */
+  toJSON(): ExecutorState[] {
+    return Array.from(this).map(executor => executor.toJSON());
   }
 }

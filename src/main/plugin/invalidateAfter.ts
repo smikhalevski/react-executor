@@ -38,6 +38,7 @@ export default function invalidateAfter(ms: number): ExecutorPlugin {
           }
           break;
 
+        case 'invalidated':
         case 'deactivated':
           clearTimeout(timer);
           break;

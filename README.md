@@ -41,6 +41,7 @@ npm install --save-prod react-executor
 - [Infinite scroll](#infinite-scroll)
 - [Invalidate all executors](#invalidate-all-executors)
 - [Prefetching](#prefetching)
+- [Server rendering](#server-rendering)
 
 # Introduction
 
@@ -904,6 +905,33 @@ const App = () => (
     {/* Render you app here */}
   </ExecutorManagerProvider>
 )
+```
+
+## Server rendering
+
+Both [`Executor`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html) and [`ExecutorManager`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html) are JSON-serializable. After server rendering is competed, serialize
+the executor manager and send its state to the client:
+
+```ts
+response.write(`<script>window.__EXECUTORS__ = ${JSON.serialize(executorManager)}</script>`);
+```
+
+On the client, deserialize the initial state and pass to the `ExecutorManager` constructor:
+
+```ts
+const executorManager = new ExecutorManager(JSON.parse(window.__EXECUTORS__));
+```
+
+Now when would you create a new executor using
+[`getOrCreate`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html#getOrCreate)
+it would be initialized with the state delivered from the server.
+
+If during SSR you need to wait for all executors to settle:
+
+```ts
+await Promise.allSettled(
+  Array.from(executorManager).map(executor => executor.toPromise())
+);
 ```
 
 <hr/>

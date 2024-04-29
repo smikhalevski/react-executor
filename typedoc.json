@@ -20,6 +20,7 @@
     "./src/main/plugin/disposeDeactivated.ts",
     "./src/main/plugin/invalidateAfter.ts",
     "./src/main/plugin/invalidateByPeers.ts",
+    "./src/main/plugin/invalidatePeers.ts",
     "./src/main/plugin/retryFocused.ts",
     "./src/main/plugin/retryFulfilled.ts",
     "./src/main/plugin/retryRejected.ts",
