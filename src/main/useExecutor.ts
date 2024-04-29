@@ -1,4 +1,4 @@
-import { useEffect, useReducer } from 'react';
+import { useDebugValue, useEffect, useReducer } from 'react';
 import type { Executor, ExecutorPlugin, ExecutorTask } from './types';
 import { useExecutorManager } from './useExecutorManager';
 
@@ -62,6 +62,8 @@ export function useExecutor(
   const executor =
     typeof keyOrExecutor === 'string' ? manager.getOrCreate(keyOrExecutor, initialValue, plugins) : keyOrExecutor;
 
+  useDebugValue(executor, toJSON);
+
   useEffect(() => {
     const deactivate = executor.activate();
     const unsubscribe = executor.subscribe(rerender);
@@ -75,6 +77,10 @@ export function useExecutor(
   return executor;
 }
 
-function reduceCount(count: number): number {
+function reduceCount(count: number) {
   return count + 1;
+}
+
+function toJSON(executor: Executor) {
+  return executor.toJSON();
 }
