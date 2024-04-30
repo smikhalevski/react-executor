@@ -38,6 +38,7 @@ describe('ExecutorImpl', () => {
         'reason',
         'latestTask',
         'timestamp',
+        'version',
       ]);
     });
   });

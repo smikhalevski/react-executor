@@ -16,6 +16,7 @@ export class ExecutorImpl<Value = any> implements Executor {
   reason: any = undefined;
   latestTask: ExecutorTask<Value> | null = null;
   timestamp = 0;
+  version = 0;
 
   /**
    * The promise of the pending task execution, or `null` if there's no pending task execution.
@@ -101,7 +102,7 @@ export class ExecutorImpl<Value = any> implements Executor {
         if (this._promise === promise) {
           this._promise = null;
         }
-        this._pubSub.publish({ type: 'aborted', target: this });
+        notify(this, 'aborted');
       });
 
       new Promise<Value>(resolve => {
@@ -137,7 +138,7 @@ export class ExecutorImpl<Value = any> implements Executor {
 
     if (this._promise === promise) {
       this.latestTask = task;
-      this._pubSub.publish({ type: 'pending', target: this });
+      notify(this, 'pending');
     }
 
     return promise;
@@ -154,7 +155,7 @@ export class ExecutorImpl<Value = any> implements Executor {
       this.isFulfilled = this.isRejected = this.isStale = false;
       this.value = this.reason = undefined;
       this.timestamp = 0;
-      this._pubSub.publish({ type: 'cleared', target: this });
+      notify(this, 'cleared');
     }
   }
 
@@ -166,7 +167,7 @@ export class ExecutorImpl<Value = any> implements Executor {
 
   invalidate(): void {
     if (this.isStale !== (this.isStale = this.isSettled)) {
-      this._pubSub.publish({ type: 'invalidated', target: this });
+      notify(this, 'invalidated');
     }
   }
 
@@ -188,7 +189,7 @@ export class ExecutorImpl<Value = any> implements Executor {
     this.value = value;
     this.timestamp = timestamp;
 
-    this._pubSub.publish({ type: 'fulfilled', target: this });
+    notify(this, 'fulfilled');
   }
 
   reject(reason: any, timestamp = Date.now()): void {
@@ -204,14 +205,14 @@ export class ExecutorImpl<Value = any> implements Executor {
     this.reason = reason;
     this.timestamp = timestamp;
 
-    this._pubSub.publish({ type: 'rejected', target: this });
+    notify(this, 'rejected');
   }
 
   activate(): () => void {
     let isActive = true;
 
     if (this._activeCount++ === 0) {
-      this._pubSub.publish({ type: 'activated', target: this });
+      notify(this, 'activated');
     }
 
     return () => {
@@ -219,7 +220,7 @@ export class ExecutorImpl<Value = any> implements Executor {
         isActive = false;
 
         if (--this._activeCount === 0) {
-          this._pubSub.publish({ type: 'deactivated', target: this });
+          notify(this, 'deactivated');
         }
       }
     };
@@ -240,4 +241,9 @@ export class ExecutorImpl<Value = any> implements Executor {
       timestamp: this.timestamp,
     };
   }
+}
+
+function notify(executor: ExecutorImpl, eventType: ExecutorEvent['type']): void {
+  executor.version++;
+  executor._pubSub.publish({ type: eventType, target: executor });
 }

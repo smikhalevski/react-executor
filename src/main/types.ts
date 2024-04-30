@@ -204,6 +204,11 @@ export interface Executor<Value = any> extends ExecutorState<Value> {
   readonly latestTask: ExecutorTask<Value> | null;
 
   /**
+   * The integer version that is incremented every time the executor is mutated.
+   */
+  readonly version: number;
+
+  /**
    * Returns a {@link value} if the executor is {@link isFulfilled fulfilled}. Otherwise, throws the {@link reason} if
    * the executor is {@link isRejected rejected}, or an {@link Error}.
    */
