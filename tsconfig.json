@@ -5,7 +5,6 @@
     "esModuleInterop": true,
     "isolatedModules": true,
     "noUnusedLocals": true,
-    "skipLibCheck": true,
     "downlevelIteration": true,
     "strict": true,
     "target": "ES6",
