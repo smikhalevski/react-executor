@@ -28,7 +28,7 @@ export default function invalidatePeers(keys: Array<RegExp | string>): ExecutorP
       }
 
       for (const peerExecutor of executor.manager) {
-        if (isMatchingPeerKey(keys, event.target.key)) {
+        if (isMatchingPeerKey(keys, peerExecutor.key)) {
           peerExecutor.invalidate();
         }
       }

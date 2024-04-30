@@ -12,3 +12,7 @@ export function isMatchingPeerKey(keys: Array<RegExp | string>, peerKey: string)
   }
   return false;
 }
+
+export function definePrivateProperty<T, K extends keyof T>(executor: T, key: K, value: T[K]): void {
+  Object.defineProperty(executor, key, { value, configurable: true, writable: true });
+}

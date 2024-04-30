@@ -1100,9 +1100,8 @@ const shoppingCartExecutor = useExecutor('shoppingCart', async signal => {
 });
 ```
 
-In this example, the component would be subscribed to both account and a shopping cart executors, and would be
-re-rendered if their state is changed. To avoid unnecessary re-renders, you can acquire an executor through the
-manager:
+In this example, the component is subscribed to both account and a shopping cart executors, and re-rendered if their
+state is changed. To avoid unnecessary re-renders, you can acquire an executor through the manager:
 
 ```tsx
 const shoppingCartExecutor = useExecutor('shoppingCart', async (signal, executor) => {

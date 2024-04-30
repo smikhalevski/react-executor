@@ -14,6 +14,24 @@ describe('invalidateAfter', () => {
     manager.subscribe(listenerMock);
   });
 
+  test('invalidates the initial value', async () => {
+    const manager = new ExecutorManager([
+      {
+        isFulfilled: true,
+        isRejected: false,
+        isStale: false,
+        key: 'xxx',
+        timestamp: 50,
+        value: 111,
+        reason: undefined,
+      },
+    ]);
+
+    const executor = manager.getOrCreate('xxx', undefined, [invalidateAfter(100)]);
+
+    expect(executor.isStale).toBe(true);
+  });
+
   test('invalidates an executor after a timeout', async () => {
     const executor = manager.getOrCreate('xxx', undefined, [invalidateAfter(100)]);
     executor.activate();

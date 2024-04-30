@@ -21,6 +21,10 @@ export default function invalidateAfter(ms: number): ExecutorPlugin {
   return executor => {
     let timer: NodeJS.Timeout;
 
+    if (executor.isSettled && Date.now() - executor.timestamp >= ms) {
+      executor.invalidate();
+    }
+
     executor.subscribe(event => {
       switch (event.type) {
         case 'activated':
@@ -28,7 +32,7 @@ export default function invalidateAfter(ms: number): ExecutorPlugin {
         case 'rejected':
           clearTimeout(timer);
 
-          if (!executor.isPending && executor.isActive && executor.isSettled) {
+          if (!executor.isStale && !executor.isPending && executor.isActive && executor.isSettled) {
             timer = setTimeout(
               () => {
                 executor.invalidate();

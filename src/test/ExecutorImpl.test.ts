@@ -26,6 +26,20 @@ describe('ExecutorImpl', () => {
       expect(executor.reason).toBeUndefined();
       expect(executor._promise).toBeNull();
     });
+
+    test('private properties are hidden', () => {
+      expect(Object.keys(executor)).toEqual([
+        'key',
+        'manager',
+        'isFulfilled',
+        'isRejected',
+        'isStale',
+        'value',
+        'reason',
+        'latestTask',
+        'timestamp',
+      ]);
+    });
   });
 
   describe('get', () => {

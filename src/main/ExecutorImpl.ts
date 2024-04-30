@@ -1,7 +1,7 @@
 import { AbortablePromise, PubSub } from 'parallel-universe';
 import type { ExecutorManager } from './ExecutorManager';
 import type { Executor, ExecutorEvent, ExecutorState, ExecutorTask } from './types';
-import { AbortError } from './utils';
+import { AbortError, definePrivateProperty } from './utils';
 
 /**
  * The {@link Executor} implementation returned by the {@link ExecutorManager}.
@@ -20,17 +20,17 @@ export class ExecutorImpl<Value = any> implements Executor {
   /**
    * The promise of the pending task execution, or `null` if there's no pending task execution.
    */
-  _promise: AbortablePromise<Value> | null = null;
+  declare _promise: AbortablePromise<Value> | null;
 
   /**
    * The number times the executor was activated.
    */
-  _activeCount = 0;
+  declare _activeCount: number;
 
   /**
    * The pubsub that handles the executor subscriptions.
    */
-  _pubSub = new PubSub<ExecutorEvent>();
+  declare _pubSub: PubSub<ExecutorEvent>;
 
   get isSettled(): boolean {
     return this.isFulfilled || this.isRejected;
@@ -47,7 +47,11 @@ export class ExecutorImpl<Value = any> implements Executor {
   constructor(
     public readonly key: string,
     public readonly manager: ExecutorManager
-  ) {}
+  ) {
+    definePrivateProperty(this, '_promise', null);
+    definePrivateProperty(this, '_activeCount', 0);
+    definePrivateProperty(this, '_pubSub', new PubSub());
+  }
 
   get(): Value {
     if (this.isFulfilled) {
