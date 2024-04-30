@@ -24,11 +24,11 @@ describe('disposeDeactivated', () => {
     await expect(promise).resolves.toBe('aaa');
 
     expect(listenerMock).toHaveBeenCalledTimes(5);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor });
-    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'activated', target: executor });
-    expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'pending', target: executor });
-    expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'deactivated', target: executor });
-    expect(listenerMock).toHaveBeenNthCalledWith(5, { type: 'disposed', target: executor });
+    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor, version: 0 });
+    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'activated', target: executor, version: 0 });
+    expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'pending', target: executor, version: 1 });
+    expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'deactivated', target: executor, version: 1 });
+    expect(listenerMock).toHaveBeenNthCalledWith(5, { type: 'disposed', target: executor, version: 1 });
   });
 
   test('cancels deactivation of an activated executor', async () => {
@@ -43,11 +43,11 @@ describe('disposeDeactivated', () => {
     await expect(promise).resolves.toBe('aaa');
 
     expect(listenerMock).toHaveBeenCalledTimes(6);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor });
-    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'activated', target: executor });
-    expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'pending', target: executor });
-    expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'deactivated', target: executor });
-    expect(listenerMock).toHaveBeenNthCalledWith(5, { type: 'activated', target: executor });
-    expect(listenerMock).toHaveBeenNthCalledWith(6, { type: 'fulfilled', target: executor });
+    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor, version: 0 });
+    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'activated', target: executor, version: 0 });
+    expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'pending', target: executor, version: 1 });
+    expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'deactivated', target: executor, version: 1 });
+    expect(listenerMock).toHaveBeenNthCalledWith(5, { type: 'activated', target: executor, version: 1 });
+    expect(listenerMock).toHaveBeenNthCalledWith(6, { type: 'fulfilled', target: executor, version: 2 });
   });
 });

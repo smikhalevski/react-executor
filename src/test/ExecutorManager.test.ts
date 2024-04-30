@@ -48,7 +48,7 @@ describe('ExecutorManager', () => {
       expect(executor.reason).toBeUndefined();
 
       expect(listenerMock).toHaveBeenCalledTimes(1);
-      expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor });
+      expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor, version: 0 });
     });
 
     test('returns the existing executor', () => {
@@ -84,8 +84,8 @@ describe('ExecutorManager', () => {
       expect(executor.reason).toBeUndefined();
 
       expect(listenerMock).toHaveBeenCalledTimes(2);
-      expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor });
-      expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'fulfilled', target: executor });
+      expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor, version: 0 });
+      expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'fulfilled', target: executor, version: 1 });
     });
 
     test('applies the initial task only once', async () => {
@@ -103,8 +103,8 @@ describe('ExecutorManager', () => {
       expect(taskMock).toHaveBeenCalledTimes(1);
 
       expect(listenerMock).toHaveBeenCalledTimes(2);
-      expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor });
-      expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'pending', target: executor });
+      expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor, version: 0 });
+      expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'pending', target: executor, version: 1 });
 
       await expect(executor.toPromise()).resolves.toBe(111);
 
@@ -115,7 +115,7 @@ describe('ExecutorManager', () => {
       expect(executor.reason).toBeUndefined();
 
       expect(listenerMock).toHaveBeenCalledTimes(3);
-      expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor });
+      expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor, version: 2 });
     });
 
     test('does not apply initial value if executor was resolved from a plugin', () => {
@@ -136,7 +136,7 @@ describe('ExecutorManager', () => {
       expect(taskMock).toHaveBeenCalledTimes(0);
 
       expect(listenerMock).toHaveBeenCalledTimes(1);
-      expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor });
+      expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor, version: 1 });
     });
 
     test('does not apply initial value if a task execution was started form a plugin', async () => {
@@ -157,14 +157,14 @@ describe('ExecutorManager', () => {
       expect(taskMock).toHaveBeenCalledTimes(0);
 
       expect(listenerMock).toHaveBeenCalledTimes(1);
-      expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor });
+      expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor, version: 1 });
 
       await executor.toPromise();
 
       expect(executor.value).toBe(222);
 
       expect(listenerMock).toHaveBeenCalledTimes(2);
-      expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'fulfilled', target: executor });
+      expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'fulfilled', target: executor, version: 2 });
     });
 
     test('events from the created executor are passed to the manager', async () => {
@@ -175,10 +175,10 @@ describe('ExecutorManager', () => {
       executor2.resolve(222);
 
       expect(listenerMock).toHaveBeenCalledTimes(4);
-      expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor1 });
-      expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'configured', target: executor2 });
-      expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor1 });
-      expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'fulfilled', target: executor2 });
+      expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor1, version: 0 });
+      expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'configured', target: executor2, version: 0 });
+      expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor1, version: 1 });
+      expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'fulfilled', target: executor2, version: 1 });
     });
   });
 
@@ -231,11 +231,11 @@ describe('ExecutorManager', () => {
       expect(manager.dispose('aaa')).toBe(true);
 
       expect(listenerMock).toHaveBeenCalledTimes(2);
-      expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor });
-      expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'disposed', target: executor });
+      expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor, version: 0 });
+      expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'disposed', target: executor, version: 0 });
 
       expect(executorListenerMock).toHaveBeenCalledTimes(1);
-      expect(executorListenerMock).toHaveBeenNthCalledWith(1, { type: 'disposed', target: executor });
+      expect(executorListenerMock).toHaveBeenNthCalledWith(1, { type: 'disposed', target: executor, version: 0 });
 
       executor.resolve(111);
 

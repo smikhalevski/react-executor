@@ -23,7 +23,7 @@ describe('synchronizeStorage', () => {
     expect(executor.isSettled).toBe(false);
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor });
+    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor, version: 0 });
   });
 
   test('resolves an executor if a fulfilled storage item exists', () => {
@@ -41,7 +41,7 @@ describe('synchronizeStorage', () => {
     expect(executor.timestamp).toBe(30);
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor });
+    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor, version: 1 });
   });
 
   test('rejects an executor if a rejected storage item exists', () => {
@@ -59,7 +59,7 @@ describe('synchronizeStorage', () => {
     expect(executor.timestamp).toBe(30);
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor });
+    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor, version: 1 });
   });
 
   test('preserves the initial state if it is newer', () => {
@@ -91,7 +91,7 @@ describe('synchronizeStorage', () => {
     expect(executor.timestamp).toBe(100);
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor });
+    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor, version: 0 });
   });
 
   test('sets storage item if it is stale when executor is created', () => {
@@ -107,9 +107,9 @@ describe('synchronizeStorage', () => {
     );
 
     expect(listenerMock).toHaveBeenCalledTimes(3);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor });
-    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'fulfilled', target: executor });
-    expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'activated', target: executor });
+    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor, version: 0 });
+    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'fulfilled', target: executor, version: 1 });
+    expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'activated', target: executor, version: 1 });
   });
 
   test('sets storage item if executor was resolved from plugin', () => {

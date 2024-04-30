@@ -42,10 +42,10 @@ describe('invalidateAfter', () => {
     expect(executor.isStale).toBe(true);
 
     expect(listenerMock).toHaveBeenCalledTimes(4);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor });
-    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'activated', target: executor });
-    expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor });
-    expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'invalidated', target: executor });
+    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor, version: 0 });
+    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'activated', target: executor, version: 0 });
+    expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor, version: 1 });
+    expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'invalidated', target: executor, version: 2 });
   });
 
   test('delays invalidation every time an executor is fulfilled', async () => {
@@ -60,9 +60,9 @@ describe('invalidateAfter', () => {
     jest.advanceTimersByTime(99);
 
     expect(listenerMock).toHaveBeenCalledTimes(4);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor });
-    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'activated', target: executor });
-    expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor });
-    expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'fulfilled', target: executor });
+    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor, version: 0 });
+    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'activated', target: executor, version: 0 });
+    expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor, version: 1 });
+    expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'fulfilled', target: executor, version: 2 });
   });
 });

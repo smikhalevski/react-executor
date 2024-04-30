@@ -34,7 +34,7 @@ describe('useExecutor', () => {
     expect(executor.value).toBeUndefined();
     expect(executor.reason).toBeUndefined();
 
-    expect(renderMock).toHaveBeenCalledTimes(4);
+    expect(renderMock).toHaveBeenCalledTimes(2);
   });
 
   test('creates an executor with the initial value', () => {
@@ -51,7 +51,7 @@ describe('useExecutor', () => {
     expect(executor.reason).toBeUndefined();
     expect(executor.latestTask).toBeNull();
 
-    expect(renderMock).toHaveBeenCalledTimes(4);
+    expect(renderMock).toHaveBeenCalledTimes(2);
   });
 
   test('creates an executor with the initial task', async () => {
@@ -70,7 +70,7 @@ describe('useExecutor', () => {
     expect(executor.latestTask).toBe(taskMock);
 
     expect(taskMock).toHaveBeenCalledTimes(1);
-    expect(renderMock).toHaveBeenCalledTimes(4);
+    expect(renderMock).toHaveBeenCalledTimes(2);
 
     await act(() => executor.toPromise());
 
@@ -81,7 +81,7 @@ describe('useExecutor', () => {
     expect(executor.reason).toBeUndefined();
     expect(executor.latestTask).toBe(taskMock);
 
-    expect(renderMock).toHaveBeenCalledTimes(6);
+    expect(renderMock).toHaveBeenCalledTimes(4);
   });
 
   test('re-renders after resolve', () => {
@@ -90,7 +90,7 @@ describe('useExecutor', () => {
 
     act(() => void hook.result.current.resolve('aaa'));
 
-    expect(renderMock).toHaveBeenCalledTimes(6);
+    expect(renderMock).toHaveBeenCalledTimes(4);
   });
 
   test('re-renders after reject', () => {
@@ -99,7 +99,7 @@ describe('useExecutor', () => {
 
     act(() => void hook.result.current.reject(new Error('expected')));
 
-    expect(renderMock).toHaveBeenCalledTimes(6);
+    expect(renderMock).toHaveBeenCalledTimes(4);
   });
 
   test('re-renders after task execute', async () => {
@@ -117,6 +117,6 @@ describe('useExecutor', () => {
     expect(executor.reason).toBeUndefined();
     expect(executor.latestTask).toBe(task);
 
-    expect(renderMock).toHaveBeenCalledTimes(6);
+    expect(renderMock).toHaveBeenCalledTimes(4);
   });
 });

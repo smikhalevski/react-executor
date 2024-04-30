@@ -108,6 +108,11 @@ export interface ExecutorEvent<Value = any> {
    * The executor for which the lifecycle event has occurred.
    */
   target: Executor<Value>;
+
+  /**
+   * The version of the executor for which this event was published.
+   */
+  version: number;
 }
 
 /**
@@ -202,6 +207,12 @@ export interface Executor<Value = any> extends ExecutorState<Value> {
    * The latest task that was passed to {@link execute}, or `null` if the executor didn't execute a task.
    */
   readonly latestTask: ExecutorTask<Value> | null;
+
+  /**
+   * The integer version of {@link ExecutorState the state of this executor} that is incremented every time it is
+   * mutated.
+   */
+  readonly version: number;
 
   /**
    * Returns a {@link value} if the executor is {@link isFulfilled fulfilled}. Otherwise, throws the {@link reason} if
