@@ -68,6 +68,8 @@ export function useExecutor(
     const deactivate = executor.activate();
     const unsubscribe = executor.subscribe(rerender);
 
+    rerender();
+
     return () => {
       unsubscribe();
       deactivate();
