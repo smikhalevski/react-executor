@@ -1,6 +1,6 @@
 import { AbortablePromise, PubSub } from 'parallel-universe';
 import { ExecutorImpl } from './ExecutorImpl';
-import type { Executor, ExecutorEvent, ExecutorPlugin, ExecutorState, ExecutorTask } from './types';
+import type { Executor, ExecutorEvent, ExecutorPlugin, ExecutorState, ExecutorTask, NoInfer } from './types';
 
 /**
  * Creates executors and manages their lifecycle.
@@ -67,7 +67,7 @@ export class ExecutorManager implements Iterable<Executor> {
   getOrCreate<Value = any>(
     key: string,
     initialValue?: ExecutorTask<Value> | PromiseLike<Value> | Value,
-    plugins?: Array<ExecutorPlugin<Value> | undefined | null>
+    plugins?: Array<ExecutorPlugin<NoInfer<Value>> | undefined | null>
   ): Executor<Value>;
 
   getOrCreate(key: string, initialValue?: unknown, plugins?: Array<ExecutorPlugin | undefined | null>): Executor {

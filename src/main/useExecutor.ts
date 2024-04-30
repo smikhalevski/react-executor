@@ -1,5 +1,5 @@
 import { useDebugValue, useEffect, useState } from 'react';
-import type { Executor, ExecutorPlugin, ExecutorTask } from './types';
+import type { Executor, ExecutorPlugin, ExecutorTask, NoInfer } from './types';
 import { useExecutorManager } from './useExecutorManager';
 
 /**
@@ -39,7 +39,7 @@ export function useExecutor<Value = any>(
 export function useExecutor<Value = any>(
   key: string,
   initialValue?: ExecutorTask<Value> | PromiseLike<Value> | Value,
-  plugins?: Array<ExecutorPlugin<Value> | undefined | null>
+  plugins?: Array<ExecutorPlugin<NoInfer<Value>> | undefined | null>
 ): Executor<Value>;
 
 /**

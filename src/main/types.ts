@@ -315,3 +315,10 @@ export interface Executor<Value = any> extends ExecutorState<Value> {
    */
   toJSON(): ExecutorState<Value>;
 }
+
+/**
+ * Poor Man's NoInfer polyfill.
+ */
+// https://www.typescriptlang.org/docs/handbook/release-notes/typescript-2-8.html#type-inference-in-conditional-types
+// https://devblogs.microsoft.com/typescript/announcing-typescript-5-4-beta/#the-noinfer-utility-type
+export type NoInfer<T> = [T][T extends any ? 0 : never];
