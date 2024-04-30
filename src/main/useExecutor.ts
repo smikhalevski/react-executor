@@ -65,14 +65,14 @@ export function useExecutor(
   useDebugValue(executor, toJSON);
 
   useEffect(() => {
-    const getVersion = () => executor.version;
+    const provideVersion = (prevVersion: number) => Math.max(prevVersion, executor.version);
 
     const deactivate = executor.activate();
     const unsubscribe = executor.subscribe(() => {
-      setVersion(getVersion);
+      setVersion(provideVersion);
     });
 
-    setVersion(getVersion);
+    setVersion(provideVersion);
 
     return () => {
       unsubscribe();
