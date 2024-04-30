@@ -16,24 +16,24 @@ import { ExecutorImpl } from '../ExecutorImpl';
 import type { ExecutorPlugin, ExecutorState } from '../types';
 
 /**
- * Serializes and deserializes values as a string.
+ * Serializes and deserializes values.
  *
  * @template Value The value to serialize.
  */
 export interface Serializer<Value> {
   /**
-   * Serializes value as string.
+   * Serializes a value as a string.
    *
    * @param value The value to serialize.
    */
   stringify(value: Value): string;
 
   /**
-   * Deserializes the stringified value.
+   * Deserializes a stringified value.
    *
-   * @param serializedValue The stringified value.
+   * @param valueStr The stringified value.
    */
-  parse(serializedValue: string): Value;
+  parse(valueStr: string): Value;
 }
 
 /**
@@ -54,47 +54,47 @@ export default function synchronizeStorage<Value = any>(
     // The key corresponds to the executor state in the storage
     const storageKey = 'executor/' + executor.key;
 
-    let latestSerializedState: string | undefined | null;
+    let latestStateStr: string | undefined | null;
 
-    const receiveExecutorState = (serializedState: string | null) => {
-      let record;
+    const receiveState = (stateStr: string | null) => {
+      let state;
 
       if (executor.isPending) {
         return;
       }
 
-      latestSerializedState = serializedState;
+      latestStateStr = stateStr;
 
-      if (serializedState === null || (record = serializer.parse(serializedState)).timestamp < executor.timestamp) {
+      if (stateStr === null || (state = serializer.parse(stateStr)).timestamp < executor.timestamp) {
         storage.setItem(storageKey, serializer.stringify(executor.toJSON()));
         return;
       }
-      if (record.timestamp === executor.timestamp) {
+      if (state.timestamp === executor.timestamp) {
         return;
       }
       if (executor instanceof ExecutorImpl) {
-        executor.value = record.value;
-        executor.reason = record.reason;
+        executor.value = state.value;
+        executor.reason = state.reason;
       }
-      if (record.isFulfilled) {
-        executor.resolve(record.value!, record.timestamp);
-      } else if (record.isRejected) {
-        executor.reject(record.reason, record.timestamp);
+      if (state.isFulfilled) {
+        executor.resolve(state.value!, state.timestamp);
+      } else if (state.isRejected) {
+        executor.reject(state.reason, state.timestamp);
       } else {
         executor.clear();
       }
-      if (record.isStale) {
+      if (state.isStale) {
         executor.invalidate();
       }
     };
 
     const handleStorage = (event: StorageEvent) => {
       if (event.storageArea === storage && event.key === storageKey) {
-        receiveExecutorState(event.newValue);
+        receiveState(event.newValue);
       }
     };
 
-    receiveExecutorState(storage.getItem(storageKey));
+    receiveState(storage.getItem(storageKey));
 
     executor.subscribe(event => {
       switch (event.type) {
@@ -102,7 +102,7 @@ export default function synchronizeStorage<Value = any>(
           if (typeof window !== 'undefined') {
             window.addEventListener('storage', handleStorage);
           }
-          receiveExecutorState(storage.getItem(storageKey));
+          receiveState(storage.getItem(storageKey));
           break;
 
         case 'cleared':
@@ -112,10 +112,10 @@ export default function synchronizeStorage<Value = any>(
           if (!executor.isActive) {
             break;
           }
-          const serializedState = serializer.stringify(executor.toJSON());
+          const stateStr = serializer.stringify(executor.toJSON());
 
-          if (latestSerializedState !== serializedState) {
-            storage.setItem(storageKey, serializedState);
+          if (latestStateStr !== stateStr) {
+            storage.setItem(storageKey, stateStr);
           }
           break;
 
