@@ -1,7 +1,7 @@
 import { AbortablePromise, PubSub } from 'parallel-universe';
 import type { ExecutorManager } from './ExecutorManager';
 import type { Executor, ExecutorEvent, ExecutorState, ExecutorTask } from './types';
-import { AbortError, definePrivateProperty } from './utils';
+import { AbortError } from './utils';
 
 /**
  * The {@link Executor} implementation returned by the {@link ExecutorManager}.
@@ -21,17 +21,17 @@ export class ExecutorImpl<Value = any> implements Executor {
   /**
    * The promise of the pending task execution, or `null` if there's no pending task execution.
    */
-  declare _promise: AbortablePromise<Value> | null;
+  _promise: AbortablePromise<Value> | null = null;
 
   /**
    * The number times the executor was activated.
    */
-  declare _activeCount: number;
+  _activeCount: number = 0;
 
   /**
    * The pubsub that handles the executor subscriptions.
    */
-  declare _pubSub: PubSub<ExecutorEvent>;
+  _pubSub = new PubSub<ExecutorEvent>();
 
   get isSettled(): boolean {
     return this.isFulfilled || this.isRejected;
@@ -48,11 +48,7 @@ export class ExecutorImpl<Value = any> implements Executor {
   constructor(
     public readonly key: string,
     public readonly manager: ExecutorManager
-  ) {
-    definePrivateProperty(this, '_promise', null);
-    definePrivateProperty(this, '_activeCount', 0);
-    definePrivateProperty(this, '_pubSub', new PubSub());
-  }
+  ) {}
 
   get(): Value {
     if (this.isFulfilled) {
@@ -101,8 +97,9 @@ export class ExecutorImpl<Value = any> implements Executor {
       signal.addEventListener('abort', () => {
         if (this._promise === promise) {
           this._promise = null;
+          this.version++;
         }
-        notify(this, 'aborted');
+        this._publish('aborted');
       });
 
       new Promise<Value>(resolve => {
@@ -134,11 +131,13 @@ export class ExecutorImpl<Value = any> implements Executor {
 
     if (prevPromise !== null) {
       prevPromise.abort(AbortError('The task was replaced: ' + this.key));
+    } else {
+      this.version++;
     }
 
     if (this._promise === promise) {
       this.latestTask = task;
-      notify(this, 'pending');
+      this._publish('pending');
     }
 
     return promise;
@@ -155,7 +154,8 @@ export class ExecutorImpl<Value = any> implements Executor {
       this.isFulfilled = this.isRejected = this.isStale = false;
       this.value = this.reason = undefined;
       this.timestamp = 0;
-      notify(this, 'cleared');
+      this.version++;
+      this._publish('cleared');
     }
   }
 
@@ -167,7 +167,8 @@ export class ExecutorImpl<Value = any> implements Executor {
 
   invalidate(): void {
     if (this.isStale !== (this.isStale = this.isSettled)) {
-      notify(this, 'invalidated');
+      this.version++;
+      this._publish('invalidated');
     }
   }
 
@@ -189,7 +190,8 @@ export class ExecutorImpl<Value = any> implements Executor {
     this.value = value;
     this.timestamp = timestamp;
 
-    notify(this, 'fulfilled');
+    this.version++;
+    this._publish('fulfilled');
   }
 
   reject(reason: any, timestamp = Date.now()): void {
@@ -205,14 +207,15 @@ export class ExecutorImpl<Value = any> implements Executor {
     this.reason = reason;
     this.timestamp = timestamp;
 
-    notify(this, 'rejected');
+    this.version++;
+    this._publish('rejected');
   }
 
   activate(): () => void {
     let isActive = true;
 
     if (this._activeCount++ === 0) {
-      notify(this, 'activated');
+      this._publish('activated');
     }
 
     return () => {
@@ -220,7 +223,7 @@ export class ExecutorImpl<Value = any> implements Executor {
         isActive = false;
 
         if (--this._activeCount === 0) {
-          notify(this, 'deactivated');
+          this._publish('deactivated');
         }
       }
     };
@@ -241,9 +244,8 @@ export class ExecutorImpl<Value = any> implements Executor {
       timestamp: this.timestamp,
     };
   }
-}
 
-function notify(executor: ExecutorImpl, eventType: ExecutorEvent['type']): void {
-  executor.version++;
-  executor._pubSub.publish({ type: eventType, target: executor });
+  _publish(eventType: ExecutorEvent['type']): void {
+    this._pubSub.publish({ type: eventType, target: this, version: this.version });
+  }
 }

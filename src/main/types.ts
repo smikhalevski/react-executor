@@ -108,6 +108,11 @@ export interface ExecutorEvent<Value = any> {
    * The executor for which the lifecycle event has occurred.
    */
   target: Executor<Value>;
+
+  /**
+   * The version of the executor for which this event was published.
+   */
+  version: number;
 }
 
 /**
@@ -204,7 +209,8 @@ export interface Executor<Value = any> extends ExecutorState<Value> {
   readonly latestTask: ExecutorTask<Value> | null;
 
   /**
-   * The integer version that is incremented every time the executor is mutated.
+   * The integer version of {@link ExecutorState the state of this executor} that is incremented every time it is
+   * mutated.
    */
   readonly version: number;
 
