@@ -10,6 +10,8 @@
 npm install --save-prod react-executor
 ```
 
+[**Try executors live**](https://codesandbox.io/p/sandbox/react-executor-example-ltflgy?file=%2Fsrc%2FApp.tsx%3A25%2C1)&ensp;🔥
+
 [**Introduction**](#introduction)
 
 - [Execute a task](#execute-a-task)
@@ -17,7 +19,7 @@ npm install --save-prod react-executor
 - [Replace a task](#replace-a-task)
 - [Wait for a task to complete](#wait-for-a-task-to-complete)
 - [Retry the latest task](#retry-the-latest-task)
-- [Resolve or reject an executor](#resolve-or-reject-an-executor)
+- [Settle an executor](#settle-an-executor)
 - [Clear an executor](#clear-an-executor)
 
 [**Lifecycle**](#lifecycle)
@@ -28,9 +30,20 @@ npm install --save-prod react-executor
 
 [**Plugins**](#plugins)
 
+- [`abortDeactivated`](#abortdeactivated)
+- [`bindAll`](#bindall)
+- [`disposeDeactivated`](#disposedeactivated)
+- [`invalidateAfter`](#invalidateafter)
+- [`invalidateByPeers`](#invalidatebypeers)
+- [`invalidatePeers`](#invalidatepeers)
+- [`retryFocused`](#retryfocused)
+- [`retryFulfilled`](#retryfulfilled)
+- [`retryRejected`](#retryrejected)
+- [`retryStale`](#retrystale)
+- [`synchronizeStorage`](#synchronizestorage)
+
 [**React integration**](#react-integration)
 
-- [Retry on dependencies change](#retry-on-dependencies-change)
 - [Suspense](#suspense)
 
 [**Cookbook**](#cookbook)
@@ -45,68 +58,72 @@ npm install --save-prod react-executor
 
 # Introduction
 
-An executor handles the task execution process and provides ways to access results later on.
+An executor executes tasks, stores the execution result, and provides access to it. Tasks are callbacks that return a
+value or throw an error.
 
 An [`Executor`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html) is created and
 managed by
 an [`ExecutorManager`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html) which
-controls its lifecycle:
+controls the executor lifecycle:
 
 ```ts
 import { ExecutorManager } from 'react-executor';
 
 const executorManager = new ExecutorManager();
 
-const executor = executorManager.getOrCreate('rex');
+const rookyExecutor = executorManager.getOrCreate('rooky');
 // ⮕ Executor<any>
 ```
 
-Each executor has a unique key in scope of the manager. Here we created the new executor with the key `'rex'`. Now each
-consequent call
-to [`getOrCreate`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html#getOrCreate)
-would return the same executor.
+Each executor has a unique key in the scope of the manager. Here we created the new executor with the key `'rooky'`.
+Manager creates a new executor when you call
+[`getOrCreate`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html#getOrCreate)
+with a new key. Each consequent call with that key returns the same executor.
 
-If you want to retrieve an existing executor and avoid creating a new one, use
+If you want to retrieve an existing executor by its key and don't want to create a new executor if it doesn't exist, use
 [`get`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html#getOrCreate):
 
 ```ts
-executorManager.get('rex');
-// ⮕ Executor<any> | undefined
+executorManager.get('bobby');
+// ⮕ undefined
+
+executorManager.get('rooky');
+// ⮕ Executor<any>
 ```
 
-New executors are unsettled, which means they neither store a value, nor a failure reason:
+The executor we created is unsettled, which means it neither stores a value, nor a task failure reason:
 
 ```ts
-executor.isSettled;
+rookyExecutor.isSettled;
 // ⮕ false
 ```
 
 An executor can be created with an initial value:
 
 ```ts
-const executor = executorManager.getOrCreate('rex', 42);
+const bobbyExecutor = executorManager.getOrCreate('bobby', 42);
 
-executor.isSettled;
+bobbyExecutor.isSettled;
 // ⮕ true
 
 // The result stored in the executor is a value
-executor.isFulfilled;
+bobbyExecutor.isFulfilled;
 // ⮕ true
 
-executor.value;
+bobbyExecutor.value;
 // ⮕ 42
 ```
 
 An initial value can be a task which is executed, a promise which the executor awaits, or any other value that instantly
 fulfills the executor. Read more in the [Execute a task](#execute-a-task) and in
-the [Resolve or reject an executor](#resolve-or-reject-an-executor) sections.
+the [Settle an executor](#settle-an-executor) sections.
 
-When executor is created, you can provide an array of plugins:
+When an executor is created, you can provide an array of plugins:
 
 ```ts
 import retryRejected from 'react-executor/plugin/retryRejected';
 
-const executor = executorManager.getOrCreate('rex', 42, [retryRejected()]);
+const rookyExecutor = executorManager.getOrCreate('rooky', 42, [retryRejected()]);
 ```
 
 Plugins can subscribe to [executor lifecycle](#lifecycle) events or alter the executor instance. Read more about plugins
@@ -114,47 +131,50 @@ in the [Plugins](#plugins) section.
 
 ## Execute a task
 
-Tasks are callbacks that return a value or throw an error which are stored in the executor.
-
 Let's execute a new task:
 
 ```ts
-import { ExecutorTask } from 'react-executor';
+import { ExecutorManager, ExecutorTask } from 'react-executor';
 
-const task: ExecutorTask = async (signal, executor) => 'Hello';
+const executorManager = new ExecutorManager();
 
-const promise = executor.execute(task);
+const rookyExecutor = executorManager.getOrCreate('rooky');
+
+const helloTask: ExecutorTask = async (signal, executor) => 'Hello';
+
+const helloPromise = rookyExecutor.execute(task);
 // ⮕ AbortablePromise<any>
 ```
 
-The task receives an [`AbortSignal`](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal) and an executor
-instance. Signal is aborted if a task is [aborted](#abort-a-task) or [replaced](#replace-a-task).
+`helloTask` receives an [`AbortSignal`](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal) and
+`rookyExecutor` as arguments. The signal is aborted if the task is [aborted](#abort-a-task) or
+[replaced](#replace-a-task).
 
 While tasks can be synchronous or asynchronous, executors always handle them in an asynchronous fashion. The executor is
 marked as [pending](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#isPending)
-after
+immediately after
 [`execute`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#execute) was called:
 
 ```ts
 // The executor is waiting for the task to complete
-executor.isPending
+rookyExecutor.isPending;
 // ⮕ true
 ```
 
-The returned promise is resolved when the task completes:
+`helloPromise` is resolved when the task completes:
 
 ```ts
-await promise;
+await helloPromise;
 
 // The executor doesn't have a pending task anymore
-executor.isPending;
+rookyExecutor.isPending;
 // ⮕ false
 
 // The result stored in the executor is a value
-executor.isFulfilled;
+rookyExecutor.isFulfilled;
 // ⮕ true
 
-executor.value;
+rookyExecutor.value;
 // ⮕ 'Hello'
 ```
 
@@ -163,40 +183,75 @@ the [latest task](https://smikhalevski.github.io/react-executor/interfaces/react
 has executed:
 
 ```ts
-executor.latestTask;
-// ⮕ ExecutorTask
+rookyExecutor.latestTask;
+// ⮕ helloTask
 ```
 
-If a task throws an error (or returns a promise that rejects with an error), then executor becomes rejected:
+If a task throws an error (or returns a promise that rejects with an error), then the promise returned from the
+`execute` is rejected:
 
 ```ts
-await executor.execute(() => {
+const ooopsPromise = rookyExecutor.execute(() => {
   throw new Error('Ooops!');
 });
+// ⮕ Promise{<rejected>}
 
-executor.isRejected;
+rookyExecutor.isPending;
+// ⮕ true
+```
+
+The executor becomes rejected as well after `ooopsPromise` is settled:
+
+```ts
+rookyExecutor.isRejected;
 // ⮕ true
 
 // The reason of the task failure
-executor.reason;
+rookyExecutor.reason;
 // ⮕ Error('Ooops!')
 ```
 
-An executor preserves the latest value and the latest reason when it is rejected or resolved respectively. Check if the
-executor
-is [fulfilled](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#isFulfilled),
-[rejected](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#isRejected), or
-[settled](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#isSettled) to act
-accordingly.
+Executors always preserve the latest value and the latest reason. So even when the executor
+[`isPending`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#isPending), you can
+access the previous value or failure reason. Use
+[`isFulfilled`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#isFulfilled) and
+[`isRejected`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#isRejected) to 
+detect with what result the executor has settled the last time. An executor cannot be both fulfilled and rejected at the
+same time.
 
 ```ts
-// The executor is rejected
-executor.isRejected;
+// Execute a new task
+const byePromise = rookyExecutor.execute(() => 'Bye');
+
+// 1️⃣ The executor is waiting for the task to complete
+rookyExecutor.isPending;
 // ⮕ true
 
-// 🟡 But the executor still has a value
-executor.value;
+// 2️⃣ The executor is still rejected after the previous task
+rookyExecutor.isRejected;
+// ⮕ true
+
+rookyExecutor.reason;
+// ⮕ Error('Ooops!')
+
+// 3️⃣ The executor still holds the latest value, but it isn't fulfilled
+rookyExecutor.isFulfilled;
+// ⮕ false
+
+rookyExecutor.value;
 // ⮕ 'Hello'
+```
+
+The executor becomes fulfilled after `byePromise` settles:
+
+```ts
+await byePromise;
+
+rookyExecutor.isFulfilled;
+// ⮕ true
+
+rookyExecutor.value;
+// ⮕ 'Bye'
 ```
 
 ## Abort a task
@@ -207,19 +262,27 @@ method is [abortable](https://smikhalevski.github.io/parallel-universe/classes/r
 the task can be prematurely aborted. Results of the aborted task are discarded:
 
 ```ts
-promise.abort();
+const helloPromise = rookyExecutor.execute(async () => 'Hello');
+
+rookyExecutor.isPending;
+// ⮕ true
+
+helloPromise.abort();
+
+rookyExecutor.isPending;
+// ⮕ false
 ```
 
 It isn't always convenient to keep the reference to the task execution promise, and you can abort the pending task by
 aborting the whole executor:
 
 ```ts
-executor.abort();
+rookyExecutor.abort();
 ```
 
 If there's no pending task, then aborting an executor is a no-op.
 
-When a task is aborted, the signal is aborted as well. Check
+When a task is aborted, the signal it received as an argument is aborted as well. Check
 the [signal status](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal/aborted) to ensure that computation
 should be concluded.
 
@@ -227,8 +290,8 @@ For example, if you're fetching data from the server inside a task, you can pass
 a [`fetch`](https://developer.mozilla.org/en-US/docs/Web/API/fetch#signal) option:
 
 ```ts
-const task: ExecutorTask = async (signal, executor) => {
-  const response = await fetch('/hello', { signal });
+const byeTask: ExecutorTask = async (signal, executor) => {
+  const response = await fetch('/bye', { signal });
   
   return response.json();
 };
@@ -242,9 +305,9 @@ discarded:
 ```ts
 executor.execute(async signal => 'Pluto');
 
-const promise = executor.execute(async signal => 'Mars');
+const marsPromise = executor.execute(async signal => 'Mars');
 
-await promise;
+await marsPromise;
 
 executor.value;
 // ⮕ 'Mars'
@@ -255,37 +318,40 @@ executor.value;
 In the [Execute a task](#execute-a-task) section we used a promise that is returned from
 [`Executor.execute`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#execute) to
 wait for a task execution to complete. While this approach allows to wait for a given task execution to settle, it is
-usually required to wait for an executor become settled.
+usually required to wait for an executor itself become settled. The main point here is that the executor remains
+pending while multiple tasks [replace one another](#replace-a-task).
 
 Let's consider the scenario where a task is replaced with another task:
 
 ```ts
-const executor = executorManager.getOrCreate('planet');
+const planetExecutor = executorManager.getOrCreate('planet');
 
-const promise = executor.toPromise();
+// The promise is resolved only when planetExecutor is settled
+const planetPromise = planetExecutor.toPromise();
 
-const plutoPromise = executor.execute(async signal => 'Pluto');
+const plutoPromise = planetExecutor.execute(async signal => 'Pluto');
 
-const venusPromise = executor.execute(async signal => 'Venus');
+// plutoPromise is aborted
+const venusPromise = planetExecutor.execute(async signal => 'Venus');
 
-await promise;
+await planetPromise;
 // ⮕ 'Venus'
 ```
 
-In this example, `plutoPromise` is aborted, and `promise` is resolved only after executor itself is settled and not
-pending anymore.
+In this example, `plutoPromise` is aborted, and `planetPromise` is resolved only after executor itself is settled and
+not pending anymore.
 
 Here's another example, where executor waits to be settled:
 
 ```ts
-const executor = executorManager.getOrCreate('printer');
+const printerExecutor = executorManager.getOrCreate('printer');
 
-executor.toPromise().then(value => {
+printerExecutor.toPromise().then(value => {
   console.log(value);
 });
 
 // Prints "Hello" to console
-executor.execute(() => 'Hello');
+printerExecutor.execute(() => 'Hello');
 ```
 
 ## Retry the latest task
@@ -307,9 +373,16 @@ executor.value;
 // ⮕ 'Mars'
 ```
 
-If there's no latest task, or there's a pending task, then calling `retly` is a no-op.
+If there's no latest task, or there's a pending task already, then calling `retly` is a no-op.
 
-## Resolve or reject an executor
+If you want to forcefully retry the latest task, then abort the executor first:
+
+```ts
+executor.abort();
+executor.retry();
+```
+
+## Settle an executor
 
 While tasks are always handled in an asynchronous fashion, there are cases when an executor should be settled
 synchronously.
@@ -349,14 +422,14 @@ const planetPromise = Promise.resolve('Mars');
 
 executor.resolve(planetPromise);
 
-// 🟡 The executor is waiting for the promise to settle
+// The executor is waiting for the promise to settle
 executor.isPending;
 // ⮕ true
 
 await executor.toPromise();
 
 executor.value;
-// ⮕ 'Hello'
+// ⮕ 'Mars'
 ```
 
 ## Clear an executor
@@ -434,7 +507,7 @@ The [task was aborted](#abort-a-task).
 
 If executor is
 still [pending](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#isPending) when
-an `'aborted'` event is published then the currently pending task is being replaced with a new task.
+an `'aborted'` event is published then the currently pending task is being [replaced](#replace-a-task) with a new task.
 
 Calling [`Executor.execute`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#execute)
 when handling an abort event may lead to stack overflow. If you need to do this anyway, execute a new task from async
@@ -517,7 +590,7 @@ const retryPlugin: ExecutorPlugin = executor => {
   });
 };
 
-const executor = executorManager.getOrCreate('rex', heavyTask, [retryPlugin]);
+const executor = executorManager.getOrCreate('rooky', heavyTask, [retryPlugin]);
 
 executor.activate();
 ```
@@ -557,72 +630,307 @@ All executor subscribers are unsubscribed after the disposal, and executor is re
 
 If an executor is still [active](#activate-an-executor) then it won't be disposed.
 
+> [!NOTE]\
+> Pending task isn't aborted if the executor is disposed. Use [`abortDeactivated`](#abortdeactivated) plugin to abort
+> the task of the deactivated executor.
+
 # Plugins
 
 Plugins are callbacks that are invoked only once when the executor is created by the manager. For example, you can
-create a plugin that [disposes an executor](#dispose-an-executor) when it is [deactivated](#activate-an-executor):
+create a plugin that aborts the pending task and [disposes an executor](#dispose-an-executor) when it is
+[deactivated](#activate-an-executor):
 
 ```ts
 const disposePlugin: ExecutorPlugin = executor => {
   executor.subscribe(event => {
     if (event.type === 'deactivted') {
+      executor.abort();
       executor.dispose();
     }
   });
-}
+};
 ```
 
 To apply a plugin, pass it to the
-[`ExecutorManager.getOrCreate`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html#getOrCreate):
+[`ExecutorManager.getOrCreate`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html#getOrCreate)
+or to the [`useExecutor`](https://smikhalevski.github.io/react-executor/functions/react_executor.useExecutor.html) hook:
 
 ```ts
 const executor = executorManager.getOrCreate('test', undefined, [disposePlugin]);
 
 const deactivate = executor.activate();
 
-// 🟡 The executor is instantly disposed
+// The executor is instantly disposed by the plugin
 deactivate();
 
 executorManager.get('test');
 // ⮕ undefined
 ```
 
-There is a bunch of built-in plugins:
+## `abortDeactivated`
+
+Aborts the pending task after the timeout if the executor is deactivated.
 
 ```ts
-executorManager.getOrCreate('rex', initialValue, [
+import abortDeactivated from 'react-executor/plugin/abortDeactivated';
 
-  // Persists the executor value in the synchronous storage
-  synchronizeStorage(localStorage),
+const executor = useExecutor('test', heavyTask, [abortDeactivated(2_000)]);
 
-  // Instantly aborts pending task when executor is deactivated
-  abortDeactivated(),
+executor.activate();
 
-  // Disposes a deactivated executor after the timeout
-  disposeDeactivated(5_000),
+// Aborts heavyTask in 2 seconds
+executor.deactivate();
+```
 
-  // Invalidates the settled executor result after the timeout
-  invalidateAfter(10_000),
+`abortDeactivated` has a single argument: the delay after which the task should be aborted. If an executor is
+re-activated during this delay, the task won't be aborted. 
 
-  // Invalidates the settled executor result if another executor
-  // with a matching key is fulfilled or invalidated
-  invalidateByPeers([/executor_key_pattern/, 'exact_executor_key']),
+## `bindAll`
 
-  // Retries the latest task if the window gains focus
-  retryFocused(),
+Binds all executor methods to the instance.
 
-  // Repeats the last task after the execution was fulfilled
-  retryFulfilled(3 /* retry count */, index => 2000 * index /* delay */),
-  
-  // Retries the last task after the execution has failed
-  retryRejected(3 /* retry count */, index => 2000 * index /* delay */),
+```ts
+import bindAll from 'react-executor/plugin/bindAll';
 
-  // Retries the latest task of the active executor if it was invalidated
-  retryStale(),
-  
-  // Binds all executor methods to the instance
-  bindAll(),
+// Methods can now be detached from the executor instance
+const { resolve } = useExecutor('test', 'Bye', [bindAll()]);
+
+resolve('Hello');
+```
+
+## `disposeDeactivated`
+
+Aborts the pending task after the timeout if the executor is deactivated.
+
+```ts
+import disposeDeactivated from 'react-executor/plugin/disposeDeactivated';
+
+const executor = useExecutor('test', heavyTask, [disposeDeactivated(2_000)]);
+
+executor.activate();
+
+// Executor is disposed in 2 seconds
+executor.deactivate();
+```
+
+`disposeDeactivated` has a single argument: the delay after which the executor should be disposed. If an executor is
+re-activated during this delay, the executor won't be disposed.
+
+Both an executor manager and this plugin don't abort the pending task when executor is disposed.
+Use [`abortDeactivated`](#abortdeactivated) to do the job:
+
+```ts
+import abortDeactivated from 'react-executor/plugin/abortDeactivated';
+import disposeDeactivated from 'react-executor/plugin/disposeDeactivated';
+
+const executor = useExecutor('test', heavyTask, [
+  abortDeactivated(2_000),
+  disposeDeactivated(2_000)
 ]);
+
+executor.activate();
+
+// The heavyTask is aborted and the executor is disposed in 2 seconds
+executor.deactivate();
+```
+
+## `invalidateAfter`
+
+Invalidates the executor result after the timeout.
+
+```ts
+import invalidateAfter from 'react-executor/plugin/invalidateAfter';
+
+const executor = useExecutor('test', 42, [invalidateAfter(2_000)]);
+
+// The executor is invalidated in 2 seconds
+executor.activate();
+```
+
+If the executor is settled then the timeout is restarted. If an executor is [deactivated](#activate-an-executor) then
+it won't be invalidated.
+
+## `invalidateByPeers`
+
+Invalidates the executor result if another executor with a matching key is fulfilled or invalidated.
+
+```ts
+import invalidateByPeers from 'react-executor/plugin/invalidateByPeers';
+
+const cheeseExecutor = useExecutor('cheese', 'Burrata', [invalidateByPeers(/bread/)]);
+const breadExecutor = useExecutor('bread');
+
+// cheeseExecutor is invalidated
+breadExecutor.resolve('Ciabatta');
+```
+
+## `invalidatePeers`
+
+Invalidates peer executors with matching keys if the executor is fulfilled or invalidated.
+
+```ts
+import invalidatePeers from 'react-executor/plugin/invalidatePeers';
+
+const cheeseExecutor = useExecutor('cheese', 'Burrata', [invalidatePeers(/bread/)]);
+const breadExecutor = useExecutor('bread', 'Focaccia');
+
+// breadExecutor is invalidated
+cheeseExecutor.resolve('Mozzarella');
+```
+
+## `retryFocused`
+
+Retries the latest task of the active executor if the window gains focus.
+
+```ts
+import retryFocused from 'react-executor/plugin/retryFocused';
+
+const executor = useExecutor('test', 42, [retryFocused()]);
+```
+
+This plugin is no-op in the server environment.
+
+## `retryFulfilled`
+
+Repeats the last task after the execution was fulfilled.
+
+```ts
+import retryFulfilled from 'react-executor/plugin/retryFulfilled';
+
+const executor = useExecutor('test', heavyTask, [retryFulfilled()]);
+
+executor.activate();
+```
+
+If the task fails, is aborted, or if an executor is deactivated then the plugin stops the retry process.
+
+With the default configuration, the plugin would infinitely retry the task of an active executor with a 5-second delay
+between retries. This is effectively a decent polling strategy that kicks in only if someone is actually using an
+executor.
+
+Specify the number of times the task should be re-executed if it succeeds:
+
+```ts
+retryFulfilled(3)
+```
+
+Specify the delay in milliseconds between retries:
+
+```ts
+retryFulfilled(3, 5_000);
+```
+
+Provide a function that returns the delay depending on the number of retries:
+
+```ts
+retryFulfilled(5, (index, executor) => 1000 * index);
+```
+
+## `retryRejected`
+
+Retries the last task after the execution has failed.
+
+```ts
+import retryRejected from 'react-executor/plugin/retryRejected';
+
+const executor = useExecutor('test', heavyTask, [retryRejected()]);
+
+executor.activate();
+```
+
+If the task succeeds, is aborted, or if an executor is deactivated then the plugin stops the retry process.
+
+With the default configuration, the plugin would retry the task 3 times with an exponential delay between retries.
+
+Specify the number of times the task should be re-executed if it fails:
+
+```ts
+retryRejected(3)
+```
+
+Specify the delay in milliseconds between retries:
+
+```ts
+retryRejected(3, 5_000);
+```
+
+Provide a function that returns the delay depending on the number of retries:
+
+```ts
+retryRejected(5, (index, executor) => 1000 * 1.8 ** index);
+```
+
+## `retryStale`
+
+Retries the latest task of the active executor if it was invalidated.
+
+```ts
+import retryStale from 'react-executor/plugin/retryStale';
+
+const executor = useExecutor('test', 42, [retryStale()]);
+
+executor.activate();
+```
+
+Combine this plugin with [`invalidateByPeers`](#invalidatebypeers) to automatically retry this executor if another
+executor on which it depends becomes invalid:
+
+```ts
+import { ExecutorTask, useExecutor } from 'react-executor';
+import invalidateByPeers from 'react-executor/plugin/invalidateByPeers';
+
+const fetchCheese: ExecutorTask = async (signal, executor) => {
+  
+  // Wait for the breadExecutor to be created
+  const breadExecutor = await executor.manager.waitFor('bread');
+
+  // Wait for the breadExecutor to be settled
+  const bread = await breadExecutor.toPromise();
+  
+  // Choose the best cheese for this bread
+  return bread === 'Ciabatta' ? 'Mozzarella' : 'Burrata';
+};
+
+const cheeseExecutor = useExecutor('cheese', fetchCheese, [
+  invalidateByPeers('bread'),
+  retryStale(),
+]);
+
+const breadExecutor = useExecutor('bread');
+
+// 🟡 cheeseExecutor is invalidated and re-fetches cheese
+breadExecutor.resolve('Ciabatta');
+```
+
+Read more about [dependent tasks](#dependent-tasks).
+
+## `synchronizeStorage`
+
+Persists the executor value in the synchronous storage.
+
+```ts
+import synchronizeStorage from 'react-executor/plugin/synchronizeStorage';
+
+const executor = useExecutor('test', 42, [synchronizeStorage(localStorage)]);
+
+executor.activate();
+```
+
+With this plugin, you can synchronize the executor state
+[across multiple browser tabs](https://codesandbox.io/p/sandbox/react-executor-example-ltflgy?file=%2Fsrc%2FApp.tsx%3A25%2C1)
+in just one line.
+
+> [!WARNING]\
+> If executor is [disposed](#dispose-an-executor), then the corresponding item is removed from the storage.
+
+By default, an executor state is serialized using
+[`JSON`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON). If your executor
+stores a value that may contain circular references, or non-serializable data like `BigInt`, use a custom serializer:
+
+```ts
+import { stringify, parse } from 'flatted';
+
+synchronizeStorage(localStorage, { stringify, parse });
 ```
 
 # React integration
@@ -634,10 +942,14 @@ away:
 ```tsx
 import { useExecutor } from 'react-executor';
 
-function User(props: { userId: string }) {
+const User = (props: { userId: string }) => {
   const executor = useExecutor(`user-${props.userId}`, async signal => {
     // Fetch the user from the server
   });
+  
+  if (executor.isPending) {
+    return 'Loading…';
+  }
   
   // Render the user from the executor.value
 };
@@ -649,25 +961,6 @@ Every time the executor's state is changed, the component is re-rendered. The ex
 The hook has the exact same signature as
 the [`ExecutorManager.getOrCreate`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html#getOrCreate)
 method, described in the [Introduction](#introduction) section.
-
-If you want to have access to an executor, but don't need to re-render the component when the executor's state is
-changed,
-use [`useExecutorManager`](https://smikhalevski.github.io/react-executor/functions/react_executor.useExecutorManager.html)
-hook:
-
-```ts
-const executor = useExecutorManager().getOrCreate('account');
-```
-
-You can execute a task in response a user action, for example when user clicks a button:
-
-```tsx
-const handleClick = () => {
-  executor.execute(async signal => {
-    // Handle the task
-  });
-};
-```
 
 You can use executors both inside and outside the rendering process. To do this, provide a custom
 [`ExecutorManager`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html) through
@@ -687,25 +980,37 @@ const App = () => (
 
 Now you can use `executorManager` to access all the same executors that are available through the `useExecutor` hook.
 
-## Retry on dependencies change
-
-If a task must be re-executed when a value changes between re-renders, you can use an effect:
+If you want to have access to an executor in a component, but don't want to re-render the component when the executor's
+state is changed,
+use [`useExecutorManager`](https://smikhalevski.github.io/react-executor/functions/react_executor.useExecutorManager.html)
+hook:
 
 ```ts
-const User = (props: { userId: string }) => {
-  const executor = useExecutor(`user-${props.userId}`);
-
-  useEffect(() => {
-    executor.execute(async signal => getUserById(props.userId, signal));
-  }, [props.userId]);
-}
+const accountExecutor = useExecutorManager().getOrCreate('account');
 ```
 
-If the task itself doesn't depend on a rendered value, but must be re-executed anyway when a rendered value is changed,
-use [`retry`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#retry):
+You can execute a task in response a user action, for example when user clicks a button:
+
+```tsx
+const executor = useExecutor('test');
+
+const handleClick = () => {
+  executor.execute(async signal => {
+    // Handle the task
+  });
+};
+```
+
+If you want executor to run on the client only, then execute a task from the effect:
 
 ```ts
-useEffect(() => executor.retry(), [props.userId]);
+const executor = useExecutor('test');
+
+useEffect(() => {
+  executor.execute(async signal => {
+    // Handle the task
+  });
+}, []);
 ```
 
 ## Suspense
@@ -718,7 +1023,7 @@ hook:
 ```tsx
 import { useExecutorSuspense } from 'react-executor';
 
-function Account() {
+const Account = () => {
   const executor = useExecutorSuspense(
     useExecutor('account', signal => {
       // Fetch the account from the server
@@ -726,7 +1031,7 @@ function Account() {
   );
 
   // Render the account from the executor.value
-}
+};
 ```
 
 An executor returned from the `useExecutorSuspense` hook is never pending.
@@ -756,7 +1061,7 @@ const [accountExecutor, shoppingCartExecutor] = useExecutorSuspense([
 
 ## Optimistic updates
 
-To implement optimistic updates, [resolve the executor](#resolve-or-reject-an-executor) with the expected value and then
+To implement optimistic updates, [resolve the executor](#settle-an-executor) with the expected value and then
 execute a server request.
 
 For example, if you want to instantly show to a user that a flag was enabled:
@@ -772,9 +1077,9 @@ const handleEnableClick = () => {
   executor.execute(async signal => {
     const response = await fetch('/flag', { signal });
     
-    const body = await response.json();
+    const data = await response.json();
     
-    return body.isEnabled;
+    return data.isEnabled;
   });
 };
 ```
@@ -837,7 +1142,7 @@ Create a task that uses the current executor value to combine it with the data l
 
 ```ts
 const itemsExecutor = useExecutor<Item[]>('items', async (signal, executor) => {
-  const items = executor.getOrDefault([]);
+  const items = executor.value || [];
 
   return items.concat(await fetchItems({ offset: items.length, signal }));
 });
@@ -875,36 +1180,35 @@ for (const executor of executorManager) {
 }
 ```
 
-It isn't optimal to retry all executors, even if they aren't [actively used](#activate-an-executor). Use the
-[`retryStale`](https://smikhalevski.github.io/react-executor/interface/react_executor.Executor.html#retry)
-
+It isn't optimal to retry all executors even if they aren't [actively used](#activate-an-executor). Use the
+[`retryStale`](https://smikhalevski.github.io/react-executor/interface/react_executor.Executor.html#retry) to retry active executors when they are invalidated.
 
 ## Prefetching
 
 In some cases, you can initialize an executor before its data is required for the first time:
 
 ```ts
-function User() {
+const User = () => {
   useExecutorManager().getOrCreate('shoppingCart', fetchShoppingCart);
-}
+};
 ```
 
 In this example, the executor with the `'shoppingCart'` key is initialized once the component is rendered for the first
-time. The `User` component _won't be re-rendered_ if the shopping cart executor's state is changed.
+time. The `User` component _won't be re-rendered_ if the state of this executor is changed.
 
 To do prefetching before the application is even rendered, create an executor manager beforehand:
 
 ```tsx
 const executorManager = new ExecutorManager();
 
-// 🟡 Prefetch the shopping cart
+// Prefetch the shopping cart
 executorManager.getOrCreate('shoppingCart', fetchShoppingCart);
 
 const App = () => (
   <ExecutorManagerProvider value={executorManager}>
     {/* Render you app here */}
   </ExecutorManagerProvider>
-)
+);
 ```
 
 ## Server rendering
@@ -913,16 +1217,16 @@ Both [`Executor`](https://smikhalevski.github.io/react-executor/interfaces/react
 the executor manager and send its state to the client:
 
 ```ts
-response.write(`<script>window.__EXECUTORS__ = ${JSON.serialize(executorManager)}</script>`);
+response.write(`<script>window.__EXECUTORS__ = ${JSON.stringify(executorManager)}</script>`);
 ```
 
-On the client, deserialize the initial state and pass to the `ExecutorManager` constructor:
+On the client, deserialize the initial state and pass it to the `ExecutorManager` constructor:
 
 ```ts
 const executorManager = new ExecutorManager(JSON.parse(window.__EXECUTORS__));
 ```
 
-Now when would you create a new executor using
+Now when you create a new executor using
 [`getOrCreate`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html#getOrCreate)
 it would be initialized with the state delivered from the server.
 

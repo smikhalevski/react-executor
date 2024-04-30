@@ -1,4 +1,4 @@
-import { useEffect, useReducer } from 'react';
+import { useDebugValue, useEffect, useReducer } from 'react';
 import type { Executor, ExecutorPlugin, ExecutorTask } from './types';
 import { useExecutorManager } from './useExecutorManager';
 
@@ -19,7 +19,7 @@ import { useExecutorManager } from './useExecutorManager';
 export function useExecutor<Value = any>(
   key: string,
   initialValue: undefined,
-  plugins?: ExecutorPlugin<Value>[]
+  plugins?: Array<ExecutorPlugin<Value> | undefined | null>
 ): Executor<Value>;
 
 /**
@@ -39,7 +39,7 @@ export function useExecutor<Value = any>(
 export function useExecutor<Value = any>(
   key: string,
   initialValue?: ExecutorTask<Value> | PromiseLike<Value> | Value,
-  plugins?: ExecutorPlugin<Value>[]
+  plugins?: Array<ExecutorPlugin<Value> | undefined | null>
 ): Executor<Value>;
 
 /**
@@ -55,12 +55,14 @@ export function useExecutor<Value>(executor: Executor<Value>): Executor<Value>;
 export function useExecutor(
   keyOrExecutor: string | Executor,
   initialValue?: unknown,
-  plugins?: ExecutorPlugin[]
+  plugins?: Array<ExecutorPlugin | undefined | null>
 ): Executor {
   const [, rerender] = useReducer(reduceCount, 0);
   const manager = useExecutorManager();
   const executor =
     typeof keyOrExecutor === 'string' ? manager.getOrCreate(keyOrExecutor, initialValue, plugins) : keyOrExecutor;
+
+  useDebugValue(executor, toJSON);
 
   useEffect(() => {
     const deactivate = executor.activate();
@@ -75,6 +77,10 @@ export function useExecutor(
   return executor;
 }
 
-function reduceCount(count: number): number {
+function reduceCount(count: number) {
   return count + 1;
+}
+
+function toJSON(executor: Executor) {
+  return executor.toJSON();
 }

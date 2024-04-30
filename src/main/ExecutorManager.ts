@@ -51,7 +51,11 @@ export class ExecutorManager implements Iterable<Executor> {
    * @param initialValue The initial executor value.
    * @param plugins The array of plugins that are applied to the newly created executor.
    */
-  getOrCreate<Value = any>(key: string, initialValue: undefined, plugins?: ExecutorPlugin<Value>[]): Executor<Value>;
+  getOrCreate<Value = any>(
+    key: string,
+    initialValue: undefined,
+    plugins?: Array<ExecutorPlugin<Value> | undefined | null>
+  ): Executor<Value>;
 
   /**
    * Returns an existing executor or creates a new one.
@@ -63,10 +67,10 @@ export class ExecutorManager implements Iterable<Executor> {
   getOrCreate<Value = any>(
     key: string,
     initialValue?: ExecutorTask<Value> | PromiseLike<Value> | Value,
-    plugins?: ExecutorPlugin<Value>[]
+    plugins?: Array<ExecutorPlugin<Value> | undefined | null>
   ): Executor<Value>;
 
-  getOrCreate(key: string, initialValue?: unknown, plugins?: ExecutorPlugin[]): Executor {
+  getOrCreate(key: string, initialValue?: unknown, plugins?: Array<ExecutorPlugin | undefined | null>): Executor {
     let executor = this._executors.get(key);
 
     if (executor !== undefined) {
@@ -77,9 +81,9 @@ export class ExecutorManager implements Iterable<Executor> {
 
     this._initialStates.delete(key);
 
-    if (plugins !== undefined) {
+    if (plugins !== null && plugins !== undefined) {
       for (const plugin of plugins) {
-        plugin(executor);
+        plugin?.(executor);
       }
     }
 

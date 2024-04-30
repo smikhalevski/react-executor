@@ -12,85 +12,89 @@
  * @module plugin/synchronizeStorage
  */
 
-import type { ExecutorPlugin } from '../types';
+import { ExecutorImpl } from '../ExecutorImpl';
+import type { ExecutorPlugin, ExecutorState } from '../types';
 
 /**
- * Serializes and deserializes values as a string.
+ * Serializes and deserializes values.
  *
  * @template Value The value to serialize.
  */
 export interface Serializer<Value> {
-  serialize(record: Value): string;
-
-  deserialize(str: string): Value;
-}
-
-/**
- * The record persisted in {@link Storage}.
- */
-export interface StorageRecord<Value> {
   /**
-   * The executor value, or `undefined` if the executor was cleared.
+   * Serializes a value as a string.
+   *
+   * @param value The value to serialize.
    */
-  value: Value | undefined;
+  stringify(value: Value): string;
 
   /**
-   * The timestamp when the {@link value} was acquired.
+   * Deserializes a stringified value.
+   *
+   * @param valueStr The stringified value.
    */
-  timestamp: number;
-}
-
-export interface Storage {
-  getItem(key: string): string | null;
-
-  removeItem(key: string): void;
-
-  setItem(key: string, value: string): void;
+  parse(valueStr: string): Value;
 }
 
 /**
  * Persists the executor value in the synchronous storage.
  *
- * Synchronization is enabled only for activated executors. If executor is disposed, corresponding item is removed from
- * the storage.
+ * Synchronization is enabled only for activated executors. If executor is disposed, then the corresponding item is
+ * removed from the storage.
  *
- * @param storage The storage where executor value is persisted.
+ * @param storage The storage where executor value is persisted, usually a `localStorage` or a `sessionStorage`.
  * @param serializer The storage record serializer.
  * @template Value The value persisted in the storage.
  */
 export default function synchronizeStorage<Value = any>(
-  storage: Storage,
-  serializer: Serializer<StorageRecord<Value>> = naturalSerializer
+  storage: Pick<Storage, 'setItem' | 'getItem' | 'removeItem'>,
+  serializer: Serializer<ExecutorState<Value>> = JSON
 ): ExecutorPlugin<Value> {
   return executor => {
+    // The key corresponds to the executor state in the storage
     const storageKey = 'executor/' + executor.key;
 
-    let latestStr: string | undefined | null;
+    let latestStateStr: string | undefined | null;
 
-    const receiveStr = (str: string | null) => {
-      let record;
+    const receiveState = (stateStr: string | null) => {
+      let state;
 
-      latestStr = str;
-
-      if (str === null || (record = serializer.deserialize(str)).timestamp < executor.timestamp) {
-        storage.setItem(storageKey, serializer.serialize({ value: executor.value, timestamp: executor.timestamp }));
+      if (executor.isPending) {
         return;
       }
-      if (record.timestamp === executor.timestamp) {
+
+      latestStateStr = stateStr;
+
+      if (stateStr === null || (state = serializer.parse(stateStr)).timestamp < executor.timestamp) {
+        storage.setItem(storageKey, serializer.stringify(executor.toJSON()));
         return;
       }
-      if (record.value === undefined) {
-        executor.clear();
+      if (state.timestamp === executor.timestamp) {
+        return;
+      }
+      if (executor instanceof ExecutorImpl) {
+        executor.value = state.value;
+        executor.reason = state.reason;
+      }
+      if (state.isFulfilled) {
+        executor.resolve(state.value!, state.timestamp);
+      } else if (state.isRejected) {
+        executor.reject(state.reason, state.timestamp);
       } else {
-        executor.resolve(record.value, record.timestamp);
+        executor.clear();
+      }
+      if (state.isStale) {
+        executor.invalidate();
       }
     };
 
     const handleStorage = (event: StorageEvent) => {
-      if (!executor.isPending && event.storageArea === storage && event.key === storageKey) {
-        receiveStr(event.newValue);
+      if (event.storageArea === storage && event.key === storageKey) {
+        receiveState(event.newValue);
       }
     };
+
+    receiveState(storage.getItem(storageKey));
 
     executor.subscribe(event => {
       switch (event.type) {
@@ -98,20 +102,20 @@ export default function synchronizeStorage<Value = any>(
           if (typeof window !== 'undefined') {
             window.addEventListener('storage', handleStorage);
           }
-          if (!executor.isPending) {
-            receiveStr(storage.getItem(storageKey));
-          }
+          receiveState(storage.getItem(storageKey));
           break;
 
         case 'cleared':
         case 'fulfilled':
+        case 'rejected':
+        case 'invalidated':
           if (!executor.isActive) {
             break;
           }
-          const str = serializer.serialize({ value: executor.value, timestamp: executor.timestamp });
+          const stateStr = serializer.stringify(executor.toJSON());
 
-          if (latestStr !== str) {
-            storage.setItem(storageKey, str);
+          if (latestStateStr !== stateStr) {
+            storage.setItem(storageKey, stateStr);
           }
           break;
 
@@ -128,8 +132,3 @@ export default function synchronizeStorage<Value = any>(
     });
   };
 }
-
-const naturalSerializer: Serializer<any> = {
-  serialize: value => JSON.stringify(value),
-  deserialize: str => JSON.parse(str),
-};

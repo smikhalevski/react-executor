@@ -13,4 +13,4 @@ export { useExecutor } from './useExecutor';
 export { useExecutorManager, ExecutorManagerProvider } from './useExecutorManager';
 export { useExecutorSuspense } from './useExecutorSuspense';
 
-export type { Executor, ExecutorEvent, ExecutorPlugin, ExecutorTask } from './types';
+export type { Executor, ExecutorEvent, ExecutorState, ExecutorPlugin, ExecutorTask } from './types';

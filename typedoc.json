@@ -6,6 +6,9 @@
   "excludeInternal": true,
   "disableSources": true,
   "hideGenerator": true,
+  "visibilityFilters": {
+    "inherited": true
+  },
   "navigation": {
     "includeFolders": false
   },
@@ -36,6 +39,7 @@
     },
     "typescript": {
       "AbortSignal": "https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal",
+      "JSON": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON",
       "Promise": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise"
     }
   }
