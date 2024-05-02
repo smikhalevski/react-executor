@@ -2,6 +2,9 @@ import { AbortablePromise, PubSub } from 'parallel-universe';
 import { ExecutorImpl } from './ExecutorImpl';
 import type { Executor, ExecutorEvent, ExecutorPlugin, ExecutorState, ExecutorTask, NoInfer } from './types';
 
+/**
+ * Options provided to the {@link ExecutorManager} constructor.
+ */
 export interface ExecutorManagerOptions {
   /**
    * The initial state of executors that are created via {@link ExecutorManager.getOrCreate}.
@@ -13,6 +16,15 @@ export interface ExecutorManagerOptions {
    */
   plugins?: Array<ExecutorPlugin | null | undefined>;
 
+  /**
+   * Serializes executor keys.
+   *
+   * A serializer is required to support objects as executor keys, otherwise an error is thrown. The serialized key form
+   * can be anything, so if you want to use object references as executor keys, provide an identity function as a
+   * serializer.
+   *
+   * @param key The key to serialize.
+   */
   keySerializer?: (key: any) => any;
 }
 
@@ -23,28 +35,33 @@ export class ExecutorManager implements Iterable<Executor> {
   /**
    * The map from a key to an executor.
    */
-  protected _executors = new Map<unknown, ExecutorImpl>();
+  private readonly _executors = new Map<unknown, ExecutorImpl>();
 
   /**
    * The pubsub that handles the manager subscriptions.
    */
-  protected _pubSub = new PubSub<ExecutorEvent>();
+  private readonly _pubSub = new PubSub<ExecutorEvent>();
 
   /**
    * The map from a key to an initial state that must be set to an executor before plugins are applied. Entries from
    * this map are deleted after the executor is initialized.
    */
-  protected _initialState = new Map<unknown, ExecutorState>();
+  private readonly _initialState = new Map<unknown, ExecutorState>();
 
   /**
    * Plugins that are applied to all executors.
    */
-  protected _plugins: ExecutorPlugin[] = [];
+  private readonly _plugins: ExecutorPlugin[] = [];
 
-  protected _keySerializer: ((key: unknown) => unknown) | undefined;
+  /**
+   * Serializes executor keys.
+   */
+  private readonly _keySerializer: ((key: unknown) => unknown) | undefined;
 
   /**
    * Creates a new executor manager.
+   *
+   * @param options Additional options.
    */
   constructor(options: ExecutorManagerOptions = {}) {
     this._keySerializer = options.keySerializer;
@@ -217,17 +234,17 @@ export class ExecutorManager implements Iterable<Executor> {
   }
 
   /**
-   * Converts a structured key into a serialized form.
+   * Converts a key into its serialized form.
    *
    * @param key The key to convert.
    * @returns The serialized key.
    */
-  protected _toSerializedKey(key: unknown): unknown {
+  private _toSerializedKey(key: unknown): unknown {
     if (this._keySerializer !== undefined) {
       return this._keySerializer(key);
     }
     if ((key !== null && typeof key === 'object') || typeof key === 'function') {
-      throw new Error('Structured keys require a keySerializer');
+      throw new Error('Object keys require a keySerializer');
     }
     return key;
   }
