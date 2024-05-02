@@ -146,7 +146,7 @@ export class ExecutorManager implements Iterable<Executor> {
 
     this._executors.set(serializedKey, executor);
 
-    executor._publish('configured');
+    executor.publish('configured');
 
     if (initialValue === undefined || executor.isSettled || executor.isPending) {
       return executor;
@@ -204,7 +204,7 @@ export class ExecutorManager implements Iterable<Executor> {
 
     this._executors.delete(serializedKey);
 
-    executor._publish('disposed');
+    executor.publish('disposed');
     executor._pubSub.unsubscribeAll();
 
     return true;

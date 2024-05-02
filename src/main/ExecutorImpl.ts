@@ -99,7 +99,7 @@ export class ExecutorImpl<Value = any> implements Executor {
           this._promise = null;
           this.version++;
         }
-        this._publish('aborted');
+        this.publish('aborted');
       });
 
       new Promise<Value>(resolve => {
@@ -137,7 +137,7 @@ export class ExecutorImpl<Value = any> implements Executor {
 
     if (this._promise === promise) {
       this.latestTask = task;
-      this._publish('pending');
+      this.publish('pending');
     }
 
     return promise;
@@ -155,7 +155,7 @@ export class ExecutorImpl<Value = any> implements Executor {
       this.value = this.reason = undefined;
       this.timestamp = 0;
       this.version++;
-      this._publish('cleared');
+      this.publish('cleared');
     }
   }
 
@@ -168,7 +168,7 @@ export class ExecutorImpl<Value = any> implements Executor {
   invalidate(): void {
     if (this.isStale !== (this.isStale = this.isSettled)) {
       this.version++;
-      this._publish('invalidated');
+      this.publish('invalidated');
     }
   }
 
@@ -191,7 +191,7 @@ export class ExecutorImpl<Value = any> implements Executor {
     this.timestamp = timestamp;
 
     this.version++;
-    this._publish('fulfilled');
+    this.publish('fulfilled');
   }
 
   reject(reason: any, timestamp = Date.now()): void {
@@ -208,14 +208,14 @@ export class ExecutorImpl<Value = any> implements Executor {
     this.timestamp = timestamp;
 
     this.version++;
-    this._publish('rejected');
+    this.publish('rejected');
   }
 
   activate(): () => void {
     let isActive = true;
 
     if (this._activeCount++ === 0) {
-      this._publish('activated');
+      this.publish('activated');
     }
 
     return () => {
@@ -223,7 +223,7 @@ export class ExecutorImpl<Value = any> implements Executor {
         isActive = false;
 
         if (--this._activeCount === 0) {
-          this._publish('deactivated');
+          this.publish('deactivated');
         }
       }
     };
@@ -245,7 +245,7 @@ export class ExecutorImpl<Value = any> implements Executor {
     };
   }
 
-  _publish(eventType: ExecutorEvent['type']): void {
-    this._pubSub.publish({ type: eventType, target: this, version: this.version });
+  publish(eventType: ExecutorEvent['type'], payload?: unknown): void {
+    this._pubSub.publish({ type: eventType, target: this, version: this.version, payload });
   }
 }
