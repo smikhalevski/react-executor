@@ -23,8 +23,9 @@ npm install --save-prod react-executor
 - [Settle an executor](#settle-an-executor)
 - [Clear an executor](#clear-an-executor)
 
-[**Lifecycle**](#lifecycle)
+[**Events and lifecycle**](#events-and-lifecycle)
 
+- [Custom events](#custom-events)
 - [Activate an executor](#activate-an-executor)
 - [Invalidate results](#invalidate-results)
 - [Dispose an executor](#dispose-an-executor)
@@ -127,8 +128,8 @@ import retryRejected from 'react-executor/plugin/retryRejected';
 const rookyExecutor = executorManager.getOrCreate('rooky', 42, [retryRejected()]);
 ```
 
-Plugins can subscribe to [executor lifecycle](#lifecycle) events or alter the executor instance. Read more about plugins
-in the [Plugins](#plugins) section.
+Plugins can subscribe to [executor events](#events-and-lifecycle) or alter the executor instance. Read more about
+plugins in the [Plugins](#plugins) section.
 
 ## Executor keys
 
@@ -503,13 +504,17 @@ Clearing an executor removes the stored value and reason, but _doesn't_ affect t
 the [latest task](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#task) that
 was executed.
 
-# Lifecycle
+# Events and lifecycle
 
 Executors publish various events when their state changes. To subscribe to executor events use the
 [`subscribe`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#subscribe) method:
 
 ```ts
-const unsubscribe = executor.subscribe(event => {
+const executorManager = new ExecutorManager();
+
+const rookyExecutor = executorManager.getOrCreate('rooky');
+
+const unsubscribe = rookyExecutor.subscribe(event => {
   if (event.type === 'fulfilled') {
     // Handle the event here
   }
@@ -518,7 +523,19 @@ const unsubscribe = executor.subscribe(event => {
 unsubscribe();
 ```
 
-Executors may have multiple subscribers and each subscriber receives
+You can also subscribe to the executor manager to receive events from all executors:
+
+```ts
+executorManager.subscribe(event => {
+
+  if (event.type === 'invalidated' && event.target.isActive) {
+    // Retry the invalidated executor if it has consumers 
+    event.target.retry();
+  }
+});
+```
+
+Both executors and managers may have multiple subscribers and each subscriber receives
 [events](https://smikhalevski.github.io/react-executor/interfaces/react_executor.ExecutorEvent.html) with following
 types:
 
@@ -527,7 +544,7 @@ types:
 <dd>
 
 The executor was just [created](#clear-an-executor) and plugins were applied to it. Read more about plugins in the
-[Plugins](#plugins) section. 
+[Plugins](#plugins) section.
 
 </dd>
 
@@ -603,6 +620,22 @@ anymore. Read more in the [Dispose an executor](#dispose-an-executor) section.
 
 </dd>
 </dl>
+
+## Custom events
+
+You can publish custom events for an executor:
+
+```ts
+rookyExecutor.publish('hello', 'Jerry');
+```
+
+Here `'hello'` is the event 
+[`type`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.ExecutorEvent.html#type) and `'Jerry'`
+is the event
+[`payload`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.ExecutorEvent.html#payload).
+
+Events are especially useful if you set up a communication between executors in a plugin. Read more about plugins in
+the [Plugins](#plugins) section.
 
 ## Activate an executor
 
