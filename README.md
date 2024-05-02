@@ -14,6 +14,7 @@ npm install --save-prod react-executor
 
 [**Introduction**](#introduction)
 
+- [Executor keys](#executor-keys)
 - [Execute a task](#execute-a-task)
 - [Abort a task](#abort-a-task)
 - [Replace a task](#replace-a-task)
@@ -76,7 +77,7 @@ const rookyExecutor = executorManager.getOrCreate('rooky');
 ```
 
 Each executor has a unique key in the scope of the manager. Here we created the new executor with the key `'rooky'`.
-Manager creates a new executor when you call
+Managers create a new executor when you call
 [`getOrCreate`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html#getOrCreate)
 with a new key. Each consequent call with that key returns the same executor.
 
@@ -128,6 +129,59 @@ const rookyExecutor = executorManager.getOrCreate('rooky', 42, [retryRejected()]
 
 Plugins can subscribe to [executor lifecycle](#lifecycle) events or alter the executor instance. Read more about plugins
 in the [Plugins](#plugins) section.
+
+## Executor keys
+
+Anything can be an executor key: a string, a number, an object, etc. By default, if you use an object as a key, an error
+is thrown:
+
+```ts
+const executorManager = new ExecutorManager();
+
+const userExecutor = executorManager.getOrCreate(['user', 123]);
+// ❌ Error("Object keys require a keySerializer")
+```
+
+To enable object keys an executor manager must be created with the
+[`keySerializer`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html#keySerializer)
+option. Key serializer is a function that receives the requested executor key and returns its serialized form. The
+serialized key form can be anything, but usually you want a stable JSON serialization for your keys:
+
+```ts
+import stringify from 'fast-json-stable-stringify';
+
+const executorManager = new ExecutorManager({
+  keySerializer: stringify
+});
+
+const bobrExecutor = executorManager.getOrCreate({ bobrId: 123, favourites: ['wood'] });
+// ⮕ Executor<any>
+
+executorManager.get({ favourites: ['wood'], bobrId: 123 });
+// ⮕ bobrExecutor
+```
+
+If you want to use object identities as executor keys, provide an identity function as a serializer to mute the error:
+
+```ts
+const executorManager = new ExecutorManager({
+  keySerializer: key => key
+});
+
+const bobrKey = { bobrId: 123 };
+
+const bobrExecutor = executorManager.getOrCreate(bobrKey);
+
+// The same executor is returned for the same key
+executorManager.get(bobrKey);
+// ⮕ bobrExecutor
+
+const anotherBobrExecutor = executorManager.getOrCreate({ bobrId: 123 });
+
+// 🟡 Executors are different because different object keys were used
+bobrExecutor === anotherBobrExecutor;
+// ⮕ false
+```
 
 ## Execute a task
 
@@ -373,7 +427,7 @@ executor.value;
 // ⮕ 'Mars'
 ```
 
-If there's no latest task, or there's a pending task already, then calling `retly` is a no-op.
+If there's no latest task, or there's a pending task already, then calling `retry` is a no-op.
 
 If you want to forcefully retry the latest task, then abort the executor first:
 
@@ -1037,19 +1091,17 @@ hook:
 import { useExecutorSuspense } from 'react-executor';
 
 const Account = () => {
-  const executor = useExecutorSuspense(
-    useExecutor('account', signal => {
-      // Fetch the account from the server
-    })
-  );
+  const accountExecutor = useExecutor('account', signal => {
+    // Fetch the account from the server
+  });
+  
+  useExecutorSuspense(accountExecutor);
 
-  // Render the account from the executor.value
+  // 🟡 accountExecutor is already settled here
 };
 ```
 
-An executor returned from the `useExecutorSuspense` hook is never pending.
-
-Now when the `Account` component is rendered, it would be suspended until the executor is settled:
+Now when the `Account` component is rendered, it would be suspended until the `accountExecutor` is settled:
 
 ```tsx
 import { Suspense } from 'react';
@@ -1064,10 +1116,10 @@ const App = () => (
 You can provide multiple executors to `useExecutorSuspense` to wait for them in parallel:
 
 ```ts
-const [accountExecutor, shoppingCartExecutor] = useExecutorSuspense([
-  useExecutor('account'),
-  useExecutor('shoppingCart')
-]);
+const accountExecutor = useExecutor('account');
+const shoppingCartExecutor = useExecutor('shoppingCart');
+
+useExecutorSuspense([accountExecutor, shoppingCartExecutor]);
 ```
 
 # Cookbook

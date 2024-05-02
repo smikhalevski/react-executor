@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
-import { StrictMode } from 'react';
-import { useExecutor } from '../main';
+import { createElement, StrictMode } from 'react';
+import { ExecutorManager, ExecutorManagerProvider, useExecutor } from '../main';
 
 describe('useExecutor', () => {
   let testIndex = 0;
@@ -12,6 +12,44 @@ describe('useExecutor', () => {
 
   test('returns the same executor on every render', () => {
     const hook = renderHook(() => useExecutor(executorKey), { wrapper: StrictMode });
+    const executor1 = hook.result.current;
+
+    hook.rerender();
+
+    const executor2 = hook.result.current;
+
+    expect(executor1).toBe(executor2);
+  });
+
+  test('returns the same executor for an object key on every render', () => {
+    const manager = new ExecutorManager({
+      keySerializer: JSON.stringify,
+    });
+
+    const hook = renderHook(() => useExecutor({ aaa: 111 }), {
+      wrapper: props =>
+        createElement(StrictMode, null, createElement(ExecutorManagerProvider, { value: manager }, props.children)),
+    });
+
+    const executor1 = hook.result.current;
+
+    hook.rerender();
+
+    const executor2 = hook.result.current;
+
+    expect(executor1).toBe(executor2);
+  });
+
+  test('returns the same executor for an array-of-primitives key', () => {
+    const manager = new ExecutorManager({
+      keySerializer: key => key,
+    });
+
+    const hook = renderHook(() => useExecutor(['xxx', 111]), {
+      wrapper: props =>
+        createElement(StrictMode, null, createElement(ExecutorManagerProvider, { value: manager }, props.children)),
+    });
+
     const executor1 = hook.result.current;
 
     hook.rerender();

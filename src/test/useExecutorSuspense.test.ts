@@ -6,10 +6,10 @@ import { useExecutor, useExecutorSuspense } from '../main';
 describe('useExecutorSuspense', () => {
   test('suspends component rendering until executors are settled', async () => {
     const Child = () => {
-      const [executor1, executor2] = useExecutorSuspense([
-        useExecutor('xxx', () => 'aaa'),
-        useExecutor('yyy', () => 'bbb'),
-      ]);
+      const executor1 = useExecutor('xxx', () => 'aaa');
+      const executor2 = useExecutor('yyy', () => 'bbb');
+
+      useExecutorSuspense([executor1, executor2]);
 
       return executor1.get() + executor2.get();
     };

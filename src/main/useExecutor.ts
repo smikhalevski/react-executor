@@ -1,6 +1,7 @@
-import { useDebugValue, useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import type { Executor, ExecutorPlugin, ExecutorTask, NoInfer } from './types';
 import { useExecutorManager } from './useExecutorManager';
+import { useExecutorSubscription } from './useExecutorSubscription';
 
 /**
  * Gets an existing executor or create a new executor using the {@link ExecutorManager}.
@@ -17,7 +18,7 @@ import { useExecutorManager } from './useExecutorManager';
  * @template Value The value stored by the executor.
  */
 export function useExecutor<Value = any>(
-  key: string,
+  key: unknown,
   initialValue: undefined,
   plugins?: Array<ExecutorPlugin<Value> | null | undefined>
 ): Executor<Value>;
@@ -37,52 +38,21 @@ export function useExecutor<Value = any>(
  * @template Value The value stored by the executor.
  */
 export function useExecutor<Value = any>(
-  key: string,
+  key: unknown,
   initialValue?: ExecutorTask<Value> | PromiseLike<Value> | Value,
   plugins?: Array<ExecutorPlugin<NoInfer<Value>> | null | undefined>
 ): Executor<Value>;
 
-/**
- * Re-renders the component to changes of the executor's state. The executor is activated after mount and deactivated
- * before unmount.
- *
- * @param executor The executor to subscribe to.
- * @returns The executor that was passed as an argument.
- * @template Value The value stored by the executor.
- */
-export function useExecutor<Value>(executor: Executor<Value>): Executor<Value>;
-
 export function useExecutor(
-  keyOrExecutor: string | Executor,
+  key: unknown,
   initialValue?: unknown,
   plugins?: Array<ExecutorPlugin | null | undefined>
 ): Executor {
   const manager = useExecutorManager();
-  const executor =
-    typeof keyOrExecutor === 'string' ? manager.getOrCreate(keyOrExecutor, initialValue, plugins) : keyOrExecutor;
-  const [, setVersion] = useState(executor.version);
 
-  useDebugValue(executor, toJSON);
+  const executor = useMemo(() => manager.getOrCreate(key, initialValue, plugins), Array.isArray(key) ? key : [key]);
 
-  useEffect(() => {
-    const provideVersion = (prevVersion: number) => Math.max(prevVersion, executor.version);
-
-    const deactivate = executor.activate();
-    const unsubscribe = executor.subscribe(() => {
-      setVersion(provideVersion);
-    });
-
-    setVersion(provideVersion);
-
-    return () => {
-      unsubscribe();
-      deactivate();
-    };
-  }, [executor]);
+  useExecutorSubscription(executor);
 
   return executor;
-}
-
-function toJSON(executor: Executor) {
-  return executor.toJSON();
 }

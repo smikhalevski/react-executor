@@ -2,24 +2,13 @@ import type { Executor } from './types';
 import { noop } from './utils';
 
 /**
- * Suspends rendering until the provided executor is settled.
- *
- * @param executor The executor to wait for.
- * @returns The provided executor.
- * @template Value The value stored by the executor.
- */
-export function useExecutorSuspense<Value>(executor: Executor<Value>): Executor<Value>;
-
-/**
  * Suspends rendering until all of provided executors are settled.
  *
  * @param executors Executors to wait for.
  * @returns Provided executors.
  * @template Executors Executors to wait for.
  */
-export function useExecutorSuspense<Executors extends Executor[]>(executors: Executors): Executors;
-
-export function useExecutorSuspense(executors: Executor | Executor[]) {
+export function useExecutorSuspense(executors: Executor | Executor[]): void {
   if (Array.isArray(executors)) {
     const promises = executors.reduce(reducePending, null);
 
@@ -29,8 +18,6 @@ export function useExecutorSuspense(executors: Executor | Executor[]) {
   } else if (executors.isPending) {
     throw executors.toPromise().then(noop, noop);
   }
-
-  return executors;
 }
 
 function reducePending(promises: PromiseLike<unknown>[] | null, executor: Executor): PromiseLike<unknown>[] | null {

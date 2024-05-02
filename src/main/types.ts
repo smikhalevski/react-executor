@@ -142,7 +142,7 @@ export interface ExecutorState<Value = any> {
   /**
    * The key of this executor, unique in scope of the {@link Executor.manager}.
    */
-  readonly key: string;
+  readonly key: any;
 
   /**
    * `true` if the executor was fulfilled with a {@link value}, or `false` otherwise.

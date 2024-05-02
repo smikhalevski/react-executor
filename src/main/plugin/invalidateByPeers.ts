@@ -5,32 +5,32 @@
  * import invalidateByPeers from 'react-executor/plugin/invalidateByPeers';
  *
  * const executor = useExecutor('test', 42, [
- *   invalidateByPeers([/executor_key_pattern/, 'exact_executor_key'])
+ *   invalidateByPeers(executor => executor.key === 'exact_executor_key')
  * ]);
  * ```
  *
  * @module plugin/invalidateByPeers
  */
 
-import type { ExecutorPlugin } from '../types';
-import { isMatchingPeerKey } from '../utils';
+import type { Executor, ExecutorPlugin } from '../types';
 
 /**
  * Invalidates the executor result if another executor with a matching key is fulfilled or invalidated.
  *
- * @param keys The array of executor keys and key patterns.
+ * @param peerMatcher The callback that returns a truthy value for a matching peer executor.
  */
-export default function invalidateByPeers(keys: Array<RegExp | string>): ExecutorPlugin {
+export default function invalidateByPeers(peerMatcher: (executor: Executor) => any): ExecutorPlugin {
   return executor => {
     const unsubscribe = executor.manager.subscribe(event => {
-      if ((event.type === 'invalidated' || event.type === 'fulfilled') && isMatchingPeerKey(keys, event.target.key)) {
-        executor.invalidate();
+      if (event.target === executor) {
+        if (event.type === 'disposed') {
+          unsubscribe();
+        }
+        return;
       }
-    });
 
-    executor.subscribe(event => {
-      if (event.type === 'disposed') {
-        unsubscribe();
+      if ((event.type === 'invalidated' || event.type === 'fulfilled') && peerMatcher(event.target)) {
+        executor.invalidate();
       }
     });
   };
