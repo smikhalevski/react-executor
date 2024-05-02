@@ -17,7 +17,7 @@ import type { ExecutorManager } from './ExecutorManager';
  *   <dt><i>"pending"</i></dt>
  *   <dd>
  *
- *   The executor started a {@link Executor.latestTask task} execution.
+ *   The executor started an {@link Executor.task} execution.
  *
  *   </dd>
  *
@@ -38,7 +38,7 @@ import type { ExecutorManager } from './ExecutorManager';
  *   <dt><i>"aborted"</i></dt>
  *   <dd>
  *
- *   The {@link Executor.latestTask latest task} was aborted.
+ *   The {@link Executor.task latest task} was aborted.
  *
  *   If executor is still {@link Executor.isPending pending} when abort event is published then the currently pending
  *   task is being replaced with a new task.
@@ -214,7 +214,7 @@ export interface Executor<Value = any> extends ExecutorState<Value> {
   /**
    * The latest task that was {@link execute executed}, or `null` if the executor didn't execute any tasks.
    */
-  readonly latestTask: ExecutorTask<Value> | null;
+  readonly task: ExecutorTask<Value> | null;
 
   /**
    * The integer version of {@link ExecutorState the state of this executor} that is incremented every time the executor
@@ -257,15 +257,15 @@ export interface Executor<Value = any> extends ExecutorState<Value> {
   execute(task: ExecutorTask<Value>): AbortablePromise<Value>;
 
   /**
-   * If the executor isn't {@link isPending pending} then the {@link latestTask latest task} is {@link execute executed}
-   * again. If there's no latest task then no-op.
+   * If the executor isn't {@link isPending pending} then the {@link task latest task} is {@link execute executed}
+   * again. If there's no task then no-op.
    */
   retry(): void;
 
   /**
    * Clears available results and doesn't affect the pending task execution.
    *
-   * The {@link latestTask latest task} can still be {@link retry retried} after the executor is cleared.
+   * The {@link task latest task} can still be {@link retry retried} after the executor is cleared.
    */
   clear(): void;
 
@@ -285,8 +285,7 @@ export interface Executor<Value = any> extends ExecutorState<Value> {
   /**
    * Aborts pending execution and fulfills the executor with the value.
    *
-   * **Note:** If value is a promise-like then {@link execute} is implicitly called which replaces the
-   * {@link latestTask latest task}.
+   * **Note:** If value is a promise-like then {@link execute} is implicitly called which replaces the {@link task}.
    *
    * @param value The value.
    * @param timestamp The timestamp when the value was acquired. If value is a promise then the timestamp is ignored.

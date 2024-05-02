@@ -69,7 +69,7 @@ describe('ExecutorImpl', () => {
       const taskMock = jest.fn((_signal, _executor) => 'aaa');
       const promise = executor.execute(taskMock);
 
-      expect(executor.latestTask).toBe(taskMock);
+      expect(executor.task).toBe(taskMock);
 
       expect(taskMock).toHaveBeenCalledTimes(1);
       expect(taskMock.mock.calls[0][0].aborted).toBe(false);
@@ -99,7 +99,7 @@ describe('ExecutorImpl', () => {
 
       const promise2 = executor.execute(taskMock2);
 
-      expect(executor.latestTask).toBe(taskMock2);
+      expect(executor.task).toBe(taskMock2);
       expect(taskMock1.mock.calls[0][0].aborted).toBe(true);
       expect(taskMock2.mock.calls[0][0].aborted).toBe(false);
 
@@ -157,7 +157,7 @@ describe('ExecutorImpl', () => {
       promise.catch(noop);
       promise.abort();
 
-      expect(executor.latestTask).toBe(taskMock);
+      expect(executor.task).toBe(taskMock);
 
       expect(taskMock).toHaveBeenCalledTimes(1);
       expect(taskMock.mock.calls[0][0].aborted).toBe(true);
@@ -189,7 +189,7 @@ describe('ExecutorImpl', () => {
       promise.catch(noop);
       promise.abort();
 
-      expect(executor.latestTask).toBe(taskMock2);
+      expect(executor.task).toBe(taskMock2);
       expect(executor._promise).not.toBeNull();
       expect(executor._promise).not.toBe(promise);
 
@@ -226,7 +226,7 @@ describe('ExecutorImpl', () => {
       const promise2 = executor.execute(taskMock2);
       promise2.catch(noop);
 
-      expect(executor.latestTask).toBe(taskMock3);
+      expect(executor.task).toBe(taskMock3);
       expect(executor._promise).not.toBeNull();
       expect(executor._promise).not.toBe(promise1);
       expect(executor._promise).not.toBe(promise2);
@@ -262,7 +262,7 @@ describe('ExecutorImpl', () => {
       const promise1 = executor.execute(taskMock1);
       const promise2 = executor.execute(taskMock2);
 
-      expect(executor.latestTask).toBe(taskMock2);
+      expect(executor.task).toBe(taskMock2);
 
       expect(taskMock1).toHaveBeenCalledTimes(1);
       expect(taskMock1.mock.calls[0][0].aborted).toBe(true);
@@ -330,7 +330,7 @@ describe('ExecutorImpl', () => {
       expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'fulfilled', target: executor, version: 1 });
     });
 
-    test('aborts pending task and preserves it as a latestTask', () => {
+    test('aborts pending task and preserves it as the latest task', () => {
       const taskMock = jest.fn((_signal, _executor) => 'aaa');
 
       executor.execute(taskMock).catch(noop);
@@ -345,7 +345,7 @@ describe('ExecutorImpl', () => {
       expect(executor.isStale).toBe(false);
       expect(executor.value).toBe('bbb');
       expect(executor.reason).toBeUndefined();
-      expect(executor.latestTask).toBe(taskMock);
+      expect(executor.task).toBe(taskMock);
       expect(executor._promise).toBeNull();
 
       expect(listenerMock).toHaveBeenCalledTimes(3);
@@ -376,7 +376,7 @@ describe('ExecutorImpl', () => {
       expect(executor.isStale).toBe(false);
       expect(executor.value).toBeUndefined();
       expect(executor.reason).toBeUndefined();
-      expect(executor.latestTask).not.toBeNull();
+      expect(executor.task).not.toBeNull();
       expect(executor._promise).not.toBeNull();
 
       await executor._promise;
@@ -386,7 +386,7 @@ describe('ExecutorImpl', () => {
 
       expect(executor.value).toBe('aaa');
       expect(executor.reason).toBeUndefined();
-      expect(executor.latestTask).not.toBeNull();
+      expect(executor.task).not.toBeNull();
       expect(executor._promise).toBeNull();
     });
   });
@@ -406,7 +406,7 @@ describe('ExecutorImpl', () => {
       expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'rejected', target: executor, version: 1 });
     });
 
-    test('aborts pending task and preserves it as a latestTask', () => {
+    test('aborts pending task and preserves it as the latest task', () => {
       const taskMock = jest.fn((_signal, _executor) => 'aaa');
 
       executor.execute(taskMock).catch(noop);
@@ -421,7 +421,7 @@ describe('ExecutorImpl', () => {
       expect(executor.isStale).toBe(false);
       expect(executor.value).toBeUndefined();
       expect(executor.reason).toBe('bbb');
-      expect(executor.latestTask).toBe(taskMock);
+      expect(executor.task).toBe(taskMock);
       expect(executor._promise).toBeNull();
 
       expect(listenerMock).toHaveBeenCalledTimes(3);
@@ -443,7 +443,7 @@ describe('ExecutorImpl', () => {
   });
 
   describe('retry', () => {
-    test('no-op if there is no latestTask', () => {
+    test('no-op if there is no task', () => {
       executor.retry();
 
       expect(executor._promise).toBeNull();
@@ -455,11 +455,11 @@ describe('ExecutorImpl', () => {
 
       executor.retry();
 
-      expect(executor.latestTask).toBe(task);
+      expect(executor.task).toBe(task);
       expect(executor._promise).toBe(promise);
     });
 
-    test('executes the latestTask', async () => {
+    test('executes the latest task', async () => {
       const taskMock = jest.fn(() => 'aaa');
 
       await executor.execute(taskMock);
@@ -552,7 +552,7 @@ describe('ExecutorImpl', () => {
       executor.execute(taskMock).catch(noop);
       executor.abort('bbb');
 
-      expect(executor.latestTask).toBe(taskMock);
+      expect(executor.task).toBe(taskMock);
 
       expect(taskMock).toHaveBeenCalledTimes(1);
       expect(taskMock.mock.calls[0][0].aborted).toBe(true);

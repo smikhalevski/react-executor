@@ -233,11 +233,11 @@ rookyExecutor.value;
 ```
 
 The executor keeps track of
-the [latest task](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#latestTask) it
+the [latest task](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#task) it
 has executed:
 
 ```ts
-rookyExecutor.latestTask;
+rookyExecutor.task;
 // ⮕ helloTask
 ```
 
@@ -411,7 +411,7 @@ printerExecutor.execute(() => 'Hello');
 ## Retry the latest task
 
 To retry
-the [latest task](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#latestTask),
+the [latest task](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#task),
 use [`retry`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#retry):
 
 ```ts
@@ -500,7 +500,7 @@ executor.clear();
 ```
 
 Clearing an executor removes the stored value and reason, but _doesn't_ affect the pending task execution and preserves
-the [latest task](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#latestTask) that
+the [latest task](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#task) that
 was executed.
 
 # Lifecycle
@@ -535,7 +535,7 @@ The executor was just [created](#clear-an-executor) and plugins were applied to 
 <dd>
 
 The executor started [a task execution](#execute-a-task). You can find the latest task the executor handled in the
-[`Executor.latestTask`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#latestTask)
+[`Executor.task`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#task)
 property.
 
 </dd>

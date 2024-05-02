@@ -14,7 +14,7 @@ export class ExecutorImpl<Value = any> implements Executor {
   isStale = false;
   value: Value | undefined = undefined;
   reason: any = undefined;
-  latestTask: ExecutorTask<Value> | null = null;
+  task: ExecutorTask<Value> | null = null;
   timestamp = 0;
   version = 0;
 
@@ -136,7 +136,7 @@ export class ExecutorImpl<Value = any> implements Executor {
     }
 
     if (this._promise === promise) {
-      this.latestTask = task;
+      this.task = task;
       this.publish('pending');
     }
 
@@ -144,8 +144,8 @@ export class ExecutorImpl<Value = any> implements Executor {
   }
 
   retry(): void {
-    if (this.latestTask !== null && !this.isPending) {
-      this.execute(this.latestTask);
+    if (this.task !== null && !this.isPending) {
+      this.execute(this.task);
     }
   }
 
