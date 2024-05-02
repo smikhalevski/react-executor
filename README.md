@@ -373,7 +373,7 @@ executor.value;
 // ⮕ 'Mars'
 ```
 
-If there's no latest task, or there's a pending task already, then calling `retly` is a no-op.
+If there's no latest task, or there's a pending task already, then calling `retry` is a no-op.
 
 If you want to forcefully retry the latest task, then abort the executor first:
 

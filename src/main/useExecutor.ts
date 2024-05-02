@@ -1,4 +1,5 @@
-import { useDebugValue, useEffect, useState } from 'react';
+import { useDebugValue, useEffect, useMemo, useState } from 'react';
+import { ExecutorImpl } from './ExecutorImpl';
 import type { Executor, ExecutorPlugin, ExecutorTask, NoInfer } from './types';
 import { useExecutorManager } from './useExecutorManager';
 
@@ -17,7 +18,7 @@ import { useExecutorManager } from './useExecutorManager';
  * @template Value The value stored by the executor.
  */
 export function useExecutor<Value = any>(
-  key: string,
+  key: unknown,
   initialValue: undefined,
   plugins?: Array<ExecutorPlugin<Value> | null | undefined>
 ): Executor<Value>;
@@ -37,7 +38,7 @@ export function useExecutor<Value = any>(
  * @template Value The value stored by the executor.
  */
 export function useExecutor<Value = any>(
-  key: string,
+  key: unknown,
   initialValue?: ExecutorTask<Value> | PromiseLike<Value> | Value,
   plugins?: Array<ExecutorPlugin<NoInfer<Value>> | null | undefined>
 ): Executor<Value>;
@@ -53,13 +54,18 @@ export function useExecutor<Value = any>(
 export function useExecutor<Value>(executor: Executor<Value>): Executor<Value>;
 
 export function useExecutor(
-  keyOrExecutor: string | Executor,
+  keyOrExecutor: unknown,
   initialValue?: unknown,
   plugins?: Array<ExecutorPlugin | null | undefined>
 ): Executor {
   const manager = useExecutorManager();
-  const executor =
-    typeof keyOrExecutor === 'string' ? manager.getOrCreate(keyOrExecutor, initialValue, plugins) : keyOrExecutor;
+
+  const executor = useMemo(
+    () =>
+      keyOrExecutor instanceof ExecutorImpl ? keyOrExecutor : manager.getOrCreate(keyOrExecutor, initialValue, plugins),
+    Array.isArray(keyOrExecutor) ? keyOrExecutor : [keyOrExecutor]
+  );
+
   const [, setVersion] = useState(executor.version);
 
   useDebugValue(executor, toJSON);

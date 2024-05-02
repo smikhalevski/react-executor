@@ -5,31 +5,51 @@
  * import invalidatePeers from 'react-executor/plugin/invalidatePeers';
  *
  * const executor = useExecutor('test', 42, [
- *   invalidatePeers([/executor_key_pattern/, 'exact_executor_key'])
+ *   invalidatePeers(executor => executor.key === 'exact_executor_key')
  * ]);
  * ```
  *
  * @module plugin/invalidatePeers
  */
 
-import type { ExecutorPlugin } from '../types';
-import { isMatchingPeerKey } from '../utils';
+import type { Executor, ExecutorPlugin } from '../types';
 
 /**
  * Invalidates peer executors with matching keys if the executor is fulfilled or invalidated.
  *
- * @param keys The array of executor keys and key patterns.
+ * @param peerMatcher The callback that returns a truthy value for a matching peer executor.
  */
-export default function invalidatePeers(keys: Array<RegExp | string>): ExecutorPlugin {
+export default function invalidatePeers(peerMatcher: (executor: Executor) => any): ExecutorPlugin {
   return executor => {
-    executor.subscribe(event => {
-      if (event.type !== 'invalidated' && event.type !== 'fulfilled') {
+    const peerExecutors: Executor[] = [];
+
+    for (const peerExecutor of executor.manager) {
+      if (peerMatcher(peerExecutor)) {
+        peerExecutors.push(peerExecutor);
+      }
+    }
+
+    const unsubscribe = executor.manager.subscribe(event => {
+      if (event.target === executor) {
+        switch (event.type) {
+          case 'invalidated':
+          case 'fulfilled':
+            for (const peerExecutor of peerExecutors) {
+              peerExecutor.invalidate();
+            }
+            break;
+
+          case 'disposed':
+            unsubscribe();
+        }
         return;
       }
 
-      for (const peerExecutor of executor.manager) {
-        if (isMatchingPeerKey(keys, peerExecutor.key)) {
-          peerExecutor.invalidate();
+      if ((event.type === 'configured' || event.type === 'disposed') && peerMatcher(event.target)) {
+        if (event.type === 'configured') {
+          peerExecutors.push(executor);
+        } else {
+          peerExecutors.splice(peerExecutors.indexOf(executor), 1);
         }
       }
     });
