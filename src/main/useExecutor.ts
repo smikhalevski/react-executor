@@ -1,7 +1,7 @@
-import { useDebugValue, useEffect, useMemo, useState } from 'react';
-import { ExecutorImpl } from './ExecutorImpl';
+import { useMemo } from 'react';
 import type { Executor, ExecutorPlugin, ExecutorTask, NoInfer } from './types';
 import { useExecutorManager } from './useExecutorManager';
+import { useExecutorSubscription } from './useExecutorSubscription';
 
 /**
  * Gets an existing executor or create a new executor using the {@link ExecutorManager}.
@@ -43,52 +43,16 @@ export function useExecutor<Value = any>(
   plugins?: Array<ExecutorPlugin<NoInfer<Value>> | null | undefined>
 ): Executor<Value>;
 
-/**
- * Re-renders the component to changes of the executor's state. The executor is activated after mount and deactivated
- * before unmount.
- *
- * @param executor The executor to subscribe to.
- * @returns The executor that was passed as an argument.
- * @template Value The value stored by the executor.
- */
-export function useExecutor<Value>(executor: Executor<Value>): Executor<Value>;
-
 export function useExecutor(
-  keyOrExecutor: unknown,
+  key: unknown,
   initialValue?: unknown,
   plugins?: Array<ExecutorPlugin | null | undefined>
 ): Executor {
   const manager = useExecutorManager();
 
-  const executor = useMemo(
-    () =>
-      keyOrExecutor instanceof ExecutorImpl ? keyOrExecutor : manager.getOrCreate(keyOrExecutor, initialValue, plugins),
-    Array.isArray(keyOrExecutor) ? keyOrExecutor : [keyOrExecutor]
-  );
+  const executor = useMemo(() => manager.getOrCreate(key, initialValue, plugins), Array.isArray(key) ? key : [key]);
 
-  const [, setVersion] = useState(executor.version);
-
-  useDebugValue(executor, toJSON);
-
-  useEffect(() => {
-    const provideVersion = (prevVersion: number) => Math.max(prevVersion, executor.version);
-
-    const deactivate = executor.activate();
-    const unsubscribe = executor.subscribe(() => {
-      setVersion(provideVersion);
-    });
-
-    setVersion(provideVersion);
-
-    return () => {
-      unsubscribe();
-      deactivate();
-    };
-  }, [executor]);
+  useExecutorSubscription(executor);
 
   return executor;
-}
-
-function toJSON(executor: Executor) {
-  return executor.toJSON();
 }
