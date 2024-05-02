@@ -25,7 +25,6 @@ npm install --save-prod react-executor
 
 [**Events and lifecycle**](#events-and-lifecycle)
 
-- [Custom events](#custom-events)
 - [Activate an executor](#activate-an-executor)
 - [Invalidate results](#invalidate-results)
 - [Dispose an executor](#dispose-an-executor)
@@ -620,22 +619,6 @@ anymore. Read more in the [Dispose an executor](#dispose-an-executor) section.
 </dd>
 </dl>
 
-## Custom events
-
-You can publish custom events for an executor:
-
-```ts
-rookyExecutor.publish('hello', 'Jerry');
-```
-
-Here `'hello'` is the event 
-[`type`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.ExecutorEvent.html#type) and `'Jerry'`
-is the event
-[`payload`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.ExecutorEvent.html#payload).
-
-Events are especially useful if you set up a communication between executors in a plugin. Read more about plugins in
-the [Plugins](#plugins) section.
-
 ## Activate an executor
 
 Executors have
@@ -657,9 +640,9 @@ executor.isActive;
 If there are multiple consumers and each of them invoke the `activate` method, then executor would remain active until
 all of them invoke their deactivate callbacks.
 
-Without [plugins](#plugins), marking executor as active has no additional effect. Checking the executor active status in
-a plugin allows to skip or defer excessive updates and keep executor results up-to-date lazily. For example, consider a
-plugin that [retries the latest task](#retry-the-latest-task) if an active executor becomes rejected:
+By default, marking an executor as active has no additional effect. Checking the executor active status in a plugin
+allows to skip or defer excessive updates and keep executor results up-to-date lazily. For example, consider a plugin
+that [retries the latest task](#retry-the-latest-task) if an active executor becomes rejected:
 
 ```ts
 const retryPlugin: ExecutorPlugin = executor => {
@@ -695,7 +678,16 @@ executor.isInvalidated;
 // ⮕ true
 ```
 
-Without [plugins](#plugins), invalidating an executor has no effect except marking executor
+After the executor is fulfilled, rejected, or cleared, it becomes valid:
+
+```ts
+executor.resolve('Okay');
+
+executor.isInvalidated;
+// ⮕ false
+```
+
+By default, invalidating an executor has no effect except marking it
 as [invalidated](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#isInvalidated).
 
 ## Dispose an executor
@@ -710,6 +702,7 @@ such case:
 const executor = executorManager.getOrCreate('test');
 
 executorManager.dispose(executor.key);
+// ⮕ true
 ```
 
 All executor subscribers are unsubscribed after the disposal, and executor is removed from the manager.
