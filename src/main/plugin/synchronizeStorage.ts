@@ -54,7 +54,7 @@ export default function synchronizeStorage<Value = any>(
     // The key corresponds to the executor state in the storage
     const storageKey = 'executor/' + executor.key;
 
-    let latestStateStr: string | undefined | null;
+    let latestStateStr: string | null | undefined;
 
     const receiveState = (stateStr: string | null) => {
       let state;
