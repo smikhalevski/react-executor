@@ -63,17 +63,19 @@ describe('synchronizeStorage', () => {
   });
 
   test('preserves the initial state if it is newer', () => {
-    const manager = new ExecutorManager([
-      {
-        isFulfilled: true,
-        isRejected: false,
-        isStale: false,
-        key: 'xxx',
-        timestamp: 100,
-        value: 'aaa',
-        reason: undefined,
-      },
-    ]);
+    const manager = new ExecutorManager({
+      initialState: [
+        {
+          isFulfilled: true,
+          isRejected: false,
+          isStale: false,
+          key: 'xxx',
+          timestamp: 100,
+          value: 'aaa',
+          reason: undefined,
+        },
+      ],
+    });
 
     manager.subscribe(listenerMock);
 

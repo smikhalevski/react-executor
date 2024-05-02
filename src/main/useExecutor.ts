@@ -19,7 +19,7 @@ import { useExecutorManager } from './useExecutorManager';
 export function useExecutor<Value = any>(
   key: string,
   initialValue: undefined,
-  plugins?: Array<ExecutorPlugin<Value> | undefined | null>
+  plugins?: Array<ExecutorPlugin<Value> | null | undefined>
 ): Executor<Value>;
 
 /**
@@ -39,7 +39,7 @@ export function useExecutor<Value = any>(
 export function useExecutor<Value = any>(
   key: string,
   initialValue?: ExecutorTask<Value> | PromiseLike<Value> | Value,
-  plugins?: Array<ExecutorPlugin<NoInfer<Value>> | undefined | null>
+  plugins?: Array<ExecutorPlugin<NoInfer<Value>> | null | undefined>
 ): Executor<Value>;
 
 /**
@@ -55,7 +55,7 @@ export function useExecutor<Value>(executor: Executor<Value>): Executor<Value>;
 export function useExecutor(
   keyOrExecutor: string | Executor,
   initialValue?: unknown,
-  plugins?: Array<ExecutorPlugin | undefined | null>
+  plugins?: Array<ExecutorPlugin | null | undefined>
 ): Executor {
   const manager = useExecutorManager();
   const executor =

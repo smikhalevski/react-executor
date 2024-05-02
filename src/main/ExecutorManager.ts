@@ -2,6 +2,18 @@ import { AbortablePromise, PubSub } from 'parallel-universe';
 import { ExecutorImpl } from './ExecutorImpl';
 import type { Executor, ExecutorEvent, ExecutorPlugin, ExecutorState, ExecutorTask, NoInfer } from './types';
 
+export interface ExecutorManagerOptions {
+  /**
+   * The initial state of executors that are created via {@link ExecutorManager.getOrCreate}.
+   */
+  initialState?: ExecutorState[];
+
+  /**
+   * Plugins that are applied to all executors.
+   */
+  plugins?: Array<ExecutorPlugin | null | undefined>;
+}
+
 /**
  * Creates executors and manages their lifecycle.
  */
@@ -9,28 +21,39 @@ export class ExecutorManager implements Iterable<Executor> {
   /**
    * The map from a key to an executor.
    */
-  private _executors = new Map<string, ExecutorImpl>();
+  protected _executors = new Map<string, ExecutorImpl>();
 
   /**
    * The pubsub that handles the manager subscriptions.
    */
-  private _pubSub = new PubSub<ExecutorEvent>();
+  protected _pubSub = new PubSub<ExecutorEvent>();
 
   /**
    * The map from a key to an initial state that must be set to an executor before plugins are applied. Entries from
-   * this map are deleted after the executor was initialized.
+   * this map are deleted after the executor is initialized.
    */
-  private _initialStates = new Map<string, ExecutorState>();
+  protected _initialState = new Map<string, ExecutorState>();
+
+  /**
+   * Plugins that are applied to all executors.
+   */
+  protected _plugins: ExecutorPlugin[] = [];
 
   /**
    * Creates a new executor manager.
-   *
-   * @param initialState The initial state of executors that are created via {@link getOrCreate}.
    */
-  constructor(initialState?: ExecutorState[]) {
-    if (initialState !== undefined) {
-      for (const state of initialState) {
-        this._initialStates.set(state.key, state);
+  constructor(options: ExecutorManagerOptions = {}) {
+    if (options.initialState !== undefined) {
+      for (const state of options.initialState) {
+        this._initialState.set(state.key, state);
+      }
+    }
+
+    if (options.plugins !== undefined) {
+      for (const plugin of options.plugins) {
+        if (plugin !== null && plugin !== undefined) {
+          this._plugins.push(plugin);
+        }
       }
     }
   }
@@ -54,7 +77,7 @@ export class ExecutorManager implements Iterable<Executor> {
   getOrCreate<Value = any>(
     key: string,
     initialValue: undefined,
-    plugins?: Array<ExecutorPlugin<Value> | undefined | null>
+    plugins?: Array<ExecutorPlugin<Value> | null | undefined>
   ): Executor<Value>;
 
   /**
@@ -67,21 +90,25 @@ export class ExecutorManager implements Iterable<Executor> {
   getOrCreate<Value = any>(
     key: string,
     initialValue?: ExecutorTask<Value> | PromiseLike<Value> | Value,
-    plugins?: Array<ExecutorPlugin<NoInfer<Value>> | undefined | null>
+    plugins?: Array<ExecutorPlugin<NoInfer<Value>> | null | undefined>
   ): Executor<Value>;
 
-  getOrCreate(key: string, initialValue?: unknown, plugins?: Array<ExecutorPlugin | undefined | null>): Executor {
+  getOrCreate(key: string, initialValue?: unknown, plugins?: Array<ExecutorPlugin | null | undefined>): Executor {
     let executor = this._executors.get(key);
 
     if (executor !== undefined) {
       return executor;
     }
 
-    executor = Object.assign(new ExecutorImpl(key, this), this._initialStates.get(key));
+    executor = Object.assign(new ExecutorImpl(key, this), this._initialState.get(key));
 
-    this._initialStates.delete(key);
+    this._initialState.delete(key);
 
-    if (plugins !== null && plugins !== undefined) {
+    for (const plugin of this._plugins) {
+      plugin(executor);
+    }
+
+    if (plugins !== undefined) {
       for (const plugin of plugins) {
         plugin?.(executor);
       }

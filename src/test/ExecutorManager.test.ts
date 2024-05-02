@@ -14,24 +14,43 @@ describe('ExecutorManager', () => {
   });
 
   describe('constructor', () => {
-    const manager = new ExecutorManager([
-      {
-        isFulfilled: true,
-        isRejected: false,
-        isStale: false,
-        key: 'xxx',
-        timestamp: 50,
-        value: 111,
-        reason: undefined,
-      },
-    ]);
+    test('creates executors with the initial state', () => {
+      const manager = new ExecutorManager({
+        initialState: [
+          {
+            isFulfilled: true,
+            isRejected: false,
+            isStale: false,
+            key: 'xxx',
+            timestamp: 50,
+            value: 111,
+            reason: undefined,
+          },
+        ],
+      });
 
-    expect(manager.get('xxx')).toBeUndefined();
+      expect(manager.get('xxx')).toBeUndefined();
 
-    const executor = manager.getOrCreate('xxx');
+      const executor = manager.getOrCreate('xxx');
 
-    expect(executor.value).toBe(111);
-    expect(executor.timestamp).toBe(50);
+      expect(executor.value).toBe(111);
+      expect(executor.timestamp).toBe(50);
+    });
+
+    test('creates executors with plugins', () => {
+      const pluginMock = jest.fn(_executor => {});
+
+      const manager = new ExecutorManager({
+        plugins: [pluginMock],
+      });
+
+      const executor1 = manager.getOrCreate('xxx');
+      const executor2 = manager.getOrCreate('yyy');
+
+      expect(pluginMock).toHaveBeenCalledTimes(2);
+      expect(pluginMock).toHaveBeenNthCalledWith(1, executor1);
+      expect(pluginMock).toHaveBeenNthCalledWith(2, executor2);
+    });
   });
 
   describe('getOrCreate', () => {

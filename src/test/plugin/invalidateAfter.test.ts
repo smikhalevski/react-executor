@@ -15,17 +15,19 @@ describe('invalidateAfter', () => {
   });
 
   test('invalidates the initial value', async () => {
-    const manager = new ExecutorManager([
-      {
-        isFulfilled: true,
-        isRejected: false,
-        isStale: false,
-        key: 'xxx',
-        timestamp: 50,
-        value: 111,
-        reason: undefined,
-      },
-    ]);
+    const manager = new ExecutorManager({
+      initialState: [
+        {
+          isFulfilled: true,
+          isRejected: false,
+          isStale: false,
+          key: 'xxx',
+          timestamp: 50,
+          value: 111,
+          reason: undefined,
+        },
+      ],
+    });
 
     const executor = manager.getOrCreate('xxx', undefined, [invalidateAfter(100)]);
 
