@@ -667,6 +667,19 @@ executorManager.get('test');
 // ⮕ undefined
 ```
 
+You can define plugins that are applied to all executors that are created by a manager:
+
+```ts
+const executorManager = new ExecutorManager({
+  plugins: [bindAll()]
+});
+
+const { execute } = executorManager.getOrCreate('test');
+
+// Methods can be detached because bindAll plugin was applied
+execute(heavyTask)
+```
+
 ## `abortDeactivated`
 
 Aborts the pending task after the timeout if the executor is deactivated.
@@ -1222,7 +1235,9 @@ response.write(`<script>window.__EXECUTORS__ = ${JSON.stringify(executorManager)
 On the client, deserialize the initial state and pass it to the `ExecutorManager` constructor:
 
 ```ts
-const executorManager = new ExecutorManager(JSON.parse(window.__EXECUTORS__));
+const executorManager = new ExecutorManager({
+  initialState: JSON.parse(window.__EXECUTORS__)
+});
 ```
 
 Now when you create a new executor using
