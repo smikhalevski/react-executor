@@ -1037,19 +1037,17 @@ hook:
 import { useExecutorSuspense } from 'react-executor';
 
 const Account = () => {
-  const executor = useExecutorSuspense(
-    useExecutor('account', signal => {
-      // Fetch the account from the server
-    })
-  );
+  const accountExecutor = useExecutor('account', signal => {
+    // Fetch the account from the server
+  });
+  
+  useExecutorSuspense(accountExecutor);
 
-  // Render the account from the executor.value
+  // 🟡 accountExecutor is already settled here
 };
 ```
 
-An executor returned from the `useExecutorSuspense` hook is never pending.
-
-Now when the `Account` component is rendered, it would be suspended until the executor is settled:
+Now when the `Account` component is rendered, it would be suspended until the `accountExecutor` is settled:
 
 ```tsx
 import { Suspense } from 'react';
@@ -1064,10 +1062,10 @@ const App = () => (
 You can provide multiple executors to `useExecutorSuspense` to wait for them in parallel:
 
 ```ts
-const [accountExecutor, shoppingCartExecutor] = useExecutorSuspense([
-  useExecutor('account'),
-  useExecutor('shoppingCart')
-]);
+const accountExecutor = useExecutor('account');
+const shoppingCartExecutor = useExecutor('shoppingCart');
+
+useExecutorSuspense([accountExecutor, shoppingCartExecutor]);
 ```
 
 # Cookbook
