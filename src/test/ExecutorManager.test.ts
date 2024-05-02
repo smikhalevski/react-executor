@@ -199,6 +199,24 @@ describe('ExecutorManager', () => {
       expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor1, version: 1 });
       expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'fulfilled', target: executor2, version: 1 });
     });
+
+    test('throws is an object key is used without keySerializer', () => {
+      expect(() => manager.getOrCreate(['aaa'])).toThrow();
+    });
+
+    test('creates an executor with an object key', () => {
+      const manager = new ExecutorManager({
+        keySerializer: JSON.stringify,
+      });
+
+      const expectedKey = ['aaa'];
+      const executor1 = manager.getOrCreate(expectedKey);
+      const executor2 = manager.getOrCreate(['aaa']);
+
+      expect(executor1).toBe(executor2);
+      expect(executor1.key).toBe(expectedKey);
+      expect(manager.get(['aaa'])).toBe(executor1);
+    });
   });
 
   describe('get', () => {

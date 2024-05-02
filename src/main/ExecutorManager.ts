@@ -19,9 +19,10 @@ export interface ExecutorManagerOptions {
   /**
    * Serializes executor keys.
    *
-   * A serializer is required to support objects as executor keys, otherwise an error is thrown. The serialized key form
-   * can be anything, so if you want to use object references as executor keys, provide an identity function as a
-   * serializer.
+   * A serializer is required to support objects as executor keys, otherwise an error is thrown.
+   *
+   * The serialized key form can be anything. If you want to use object references as executor keys, provide an identity
+   * function as a serializer to mute the error.
    *
    * @param key The key to serialize.
    */

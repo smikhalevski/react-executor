@@ -30,7 +30,9 @@ export default function invalidatePeers(peerMatcher: (executor: Executor) => any
     }
 
     const unsubscribe = executor.manager.subscribe(event => {
-      if (event.target === executor) {
+      const peerExecutor = event.target;
+
+      if (peerExecutor === executor) {
         switch (event.type) {
           case 'invalidated':
           case 'fulfilled':
@@ -45,12 +47,11 @@ export default function invalidatePeers(peerMatcher: (executor: Executor) => any
         return;
       }
 
-      if ((event.type === 'configured' || event.type === 'disposed') && peerMatcher(event.target)) {
-        if (event.type === 'configured') {
-          peerExecutors.push(executor);
-        } else {
-          peerExecutors.splice(peerExecutors.indexOf(executor), 1);
-        }
+      if (event.type === 'configured' && peerMatcher(peerExecutor)) {
+        peerExecutors.push(peerExecutor);
+      }
+      if (event.type === 'disposed' && peerMatcher(peerExecutor)) {
+        peerExecutors.splice(peerExecutors.indexOf(peerExecutor), 1);
       }
     });
   };

@@ -46,8 +46,8 @@ export class ExecutorImpl<Value = any> implements Executor {
   }
 
   constructor(
-    public readonly key: unknown,
-    public readonly manager: ExecutorManager
+    readonly key: unknown,
+    readonly manager: ExecutorManager
   ) {}
 
   get(): Value {
