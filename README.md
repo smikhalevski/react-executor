@@ -14,6 +14,7 @@ npm install --save-prod react-executor
 
 [**Introduction**](#introduction)
 
+- [Executor keys](#executor-keys)
 - [Execute a task](#execute-a-task)
 - [Abort a task](#abort-a-task)
 - [Replace a task](#replace-a-task)
@@ -76,7 +77,7 @@ const rookyExecutor = executorManager.getOrCreate('rooky');
 ```
 
 Each executor has a unique key in the scope of the manager. Here we created the new executor with the key `'rooky'`.
-Manager creates a new executor when you call
+Managers create a new executor when you call
 [`getOrCreate`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html#getOrCreate)
 with a new key. Each consequent call with that key returns the same executor.
 
@@ -128,6 +129,59 @@ const rookyExecutor = executorManager.getOrCreate('rooky', 42, [retryRejected()]
 
 Plugins can subscribe to [executor lifecycle](#lifecycle) events or alter the executor instance. Read more about plugins
 in the [Plugins](#plugins) section.
+
+## Executor keys
+
+Anything can be an executor key: a string, a number, an object, etc. By default, if you use an object as a key, an error
+is thrown:
+
+```ts
+const executorManager = new ExecutorManager();
+
+const userExecutor = executorManager.getOrCreate(['user', 123]);
+// ❌ Error("Object keys require a keySerializer")
+```
+
+To enable object keys an executor manager must be created with the
+[`keySerializer`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html#keySerializer)
+option. Key serializer is a function that receives the requested executor key and returns its serialized form. The
+serialized key form can be anything, but usually you want a stable JSON serialization for your keys:
+
+```ts
+import stringify from 'fast-json-stable-stringify';
+
+const executorManager = new ExecutorManager({
+  keySerializer: stringify
+});
+
+const bobrExecutor = executorManager.getOrCreate({ bobrId: 123, favourites: ['wood'] });
+// ⮕ Executor<any>
+
+executorManager.get({ favourites: ['wood'], bobrId: 123 });
+// ⮕ bobrExecutor
+```
+
+If you want to use object identities as executor keys, provide an identity function as a serializer to mute the error:
+
+```ts
+const executorManager = new ExecutorManager({
+  keySerializer: key => key
+});
+
+const bobrKey = { bobrId: 123 };
+
+const bobrExecutor = executorManager.getOrCreate(bobrKey);
+
+// The same executor is returned for the same key
+executorManager.get(bobrKey);
+// ⮕ bobrExecutor
+
+const anotherBobrExecutor = executorManager.getOrCreate({ bobrId: 123 });
+
+// 🟡 Executors are different because different object keys were used
+bobrExecutor === anotherBobrExecutor;
+// ⮕ false
+```
 
 ## Execute a task
 
