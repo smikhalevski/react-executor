@@ -55,7 +55,7 @@ import type { ExecutorManager } from './ExecutorManager';
  *   <dt><i>"invalidated"</i></dt>
  *   <dd>
  *
- *   The executor was {@link Executor.invalidate invalidated} and its result is now {@link Executor.isStale stale}.
+ *   The result stored in the executor was {@link Executor.invalidate invalidated}.
  *
  *   </dd>
  *
@@ -166,7 +166,7 @@ export interface ExecutorState<Value = any> {
    * `true` if {@link Executor.invalidate} was called on a {@link Executor.isSettled settled} executor and a new
    * settlement hasn't occurred yet.
    */
-  readonly isStale: boolean;
+  readonly isInvalidated: boolean;
 
   /**
    * The value of the latest fulfillment.
@@ -278,7 +278,7 @@ export interface Executor<Value = any> extends ExecutorState<Value> {
   abort(reason?: unknown): void;
 
   /**
-   * If the executor is settled then its value is marked as {@link isStale stale}.
+   * If the executor is settled the result is masted as {@link isInvalidated invalidated}.
    */
   invalidate(): void;
 

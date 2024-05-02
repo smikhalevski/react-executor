@@ -11,7 +11,7 @@ import { AbortError } from './utils';
 export class ExecutorImpl<Value = any> implements Executor {
   isFulfilled = false;
   isRejected = false;
-  isStale = false;
+  isInvalidated = false;
   value: Value | undefined = undefined;
   reason: any = undefined;
   task: ExecutorTask<Value> | null = null;
@@ -151,7 +151,7 @@ export class ExecutorImpl<Value = any> implements Executor {
 
   clear(): void {
     if (this.isSettled) {
-      this.isFulfilled = this.isRejected = this.isStale = false;
+      this.isFulfilled = this.isRejected = this.isInvalidated = false;
       this.value = this.reason = undefined;
       this.timestamp = 0;
       this.version++;
@@ -166,7 +166,7 @@ export class ExecutorImpl<Value = any> implements Executor {
   }
 
   invalidate(): void {
-    if (this.isStale !== (this.isStale = this.isSettled)) {
+    if (this.isInvalidated !== (this.isInvalidated = this.isSettled)) {
       this.version++;
       this.publish('invalidated');
     }
@@ -186,7 +186,7 @@ export class ExecutorImpl<Value = any> implements Executor {
     }
 
     this.isFulfilled = true;
-    this.isRejected = this.isStale = false;
+    this.isRejected = this.isInvalidated = false;
     this.value = value;
     this.timestamp = timestamp;
 
@@ -202,7 +202,7 @@ export class ExecutorImpl<Value = any> implements Executor {
       promise.abort();
     }
 
-    this.isFulfilled = this.isStale = false;
+    this.isFulfilled = this.isInvalidated = false;
     this.isRejected = true;
     this.reason = reason;
     this.timestamp = timestamp;
@@ -238,7 +238,7 @@ export class ExecutorImpl<Value = any> implements Executor {
       key: this.key,
       isFulfilled: this.isFulfilled,
       isRejected: this.isRejected,
-      isStale: this.isStale,
+      isInvalidated: this.isInvalidated,
       value: this.value,
       reason: this.reason,
       timestamp: this.timestamp,

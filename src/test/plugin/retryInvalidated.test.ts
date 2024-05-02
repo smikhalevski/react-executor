@@ -1,7 +1,7 @@
 import { ExecutorManager } from '../../main';
-import retryStale from '../../main/plugin/retryStale';
+import retryInvalidated from '../../main/plugin/retryInvalidated';
 
-describe('retryStale', () => {
+describe('retryInvalidated', () => {
   let listenerMock: jest.Mock;
   let manager: ExecutorManager;
 
@@ -13,26 +13,26 @@ describe('retryStale', () => {
 
   test('retries the invalidated active executor', async () => {
     const taskMock = jest.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
-    const executor = manager.getOrCreate('xxx', taskMock, [retryStale()]);
+    const executor = manager.getOrCreate('xxx', taskMock, [retryInvalidated()]);
 
     executor.activate();
 
     await executor.toPromise();
 
     expect(executor.isPending).toBe(false);
-    expect(executor.isStale).toBe(false);
+    expect(executor.isInvalidated).toBe(false);
     expect(executor.value).toBe('aaa');
 
     executor.invalidate();
 
     expect(executor.isPending).toBe(true);
-    expect(executor.isStale).toBe(true);
+    expect(executor.isInvalidated).toBe(true);
     expect(executor.value).toBe('aaa');
 
     await executor.toPromise();
 
     expect(executor.isPending).toBe(false);
-    expect(executor.isStale).toBe(false);
+    expect(executor.isInvalidated).toBe(false);
     expect(executor.value).toBe('bbb');
 
     expect(listenerMock).toHaveBeenCalledTimes(7);
@@ -45,27 +45,27 @@ describe('retryStale', () => {
     expect(listenerMock).toHaveBeenNthCalledWith(7, { type: 'fulfilled', target: executor, version: 5 });
   });
 
-  test('retries the activated stale executor', async () => {
+  test('retries the activated and invalidated executor', async () => {
     const taskMock = jest.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
-    const executor = manager.getOrCreate('xxx', taskMock, [retryStale()]);
+    const executor = manager.getOrCreate('xxx', taskMock, [retryInvalidated()]);
 
     await executor.toPromise();
 
     expect(executor.isPending).toBe(false);
-    expect(executor.isStale).toBe(false);
+    expect(executor.isInvalidated).toBe(false);
     expect(executor.value).toBe('aaa');
 
     executor.invalidate();
     executor.activate();
 
     expect(executor.isPending).toBe(true);
-    expect(executor.isStale).toBe(true);
+    expect(executor.isInvalidated).toBe(true);
     expect(executor.value).toBe('aaa');
 
     await executor.toPromise();
 
     expect(executor.isPending).toBe(false);
-    expect(executor.isStale).toBe(false);
+    expect(executor.isInvalidated).toBe(false);
     expect(executor.value).toBe('bbb');
 
     expect(listenerMock).toHaveBeenCalledTimes(7);

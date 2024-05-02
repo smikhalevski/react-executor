@@ -51,10 +51,10 @@
       "import": "./plugin/retryRejected.mjs",
       "require": "./plugin/retryRejected.js"
     },
-    "./plugin/retryStale": {
-      "types": "./plugin/retryStale.d.ts",
-      "import": "./plugin/retryStale.mjs",
-      "require": "./plugin/retryStale.js"
+    "./plugin/retryInvalidated": {
+      "types": "./plugin/retryInvalidated.d.ts",
+      "import": "./plugin/retryInvalidated.mjs",
+      "require": "./plugin/retryInvalidated.js"
     },
     "./plugin/synchronizeStorage": {
       "types": "./plugin/synchronizeStorage.d.ts",

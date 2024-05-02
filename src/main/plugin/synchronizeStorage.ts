@@ -83,7 +83,7 @@ export default function synchronizeStorage<Value = any>(
       } else {
         executor.clear();
       }
-      if (state.isStale) {
+      if (state.isInvalidated) {
         executor.invalidate();
       }
     };

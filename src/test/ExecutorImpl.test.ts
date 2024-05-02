@@ -21,7 +21,7 @@ describe('ExecutorImpl', () => {
       expect(listenerMock).not.toHaveBeenCalled();
       expect(executor.isFulfilled).toBe(false);
       expect(executor.isRejected).toBe(false);
-      expect(executor.isStale).toBe(false);
+      expect(executor.isInvalidated).toBe(false);
       expect(executor.value).toBeUndefined();
       expect(executor.reason).toBeUndefined();
       expect(executor._promise).toBeNull();
@@ -321,7 +321,7 @@ describe('ExecutorImpl', () => {
 
       expect(executor.isFulfilled).toBe(true);
       expect(executor.isRejected).toBe(false);
-      expect(executor.isStale).toBe(false);
+      expect(executor.isInvalidated).toBe(false);
       expect(executor.value).toBe('aaa');
       expect(executor.reason).toBeUndefined();
       expect(executor._promise).toBeNull();
@@ -342,7 +342,7 @@ describe('ExecutorImpl', () => {
 
       expect(executor.isFulfilled).toBe(true);
       expect(executor.isRejected).toBe(false);
-      expect(executor.isStale).toBe(false);
+      expect(executor.isInvalidated).toBe(false);
       expect(executor.value).toBe('bbb');
       expect(executor.reason).toBeUndefined();
       expect(executor.task).toBe(taskMock);
@@ -354,15 +354,15 @@ describe('ExecutorImpl', () => {
       expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor, version: 2 });
     });
 
-    test('resets the stale flag', () => {
+    test('resets invalidated', () => {
       executor.resolve('aaa');
       executor.invalidate();
 
-      expect(executor.isStale).toBe(true);
+      expect(executor.isInvalidated).toBe(true);
 
       executor.resolve('bbb');
 
-      expect(executor.isStale).toBe(false);
+      expect(executor.isInvalidated).toBe(false);
     });
 
     test('executes a new task if resolved with a promise', async () => {
@@ -373,7 +373,7 @@ describe('ExecutorImpl', () => {
 
       expect(executor.isFulfilled).toBe(false);
       expect(executor.isRejected).toBe(false);
-      expect(executor.isStale).toBe(false);
+      expect(executor.isInvalidated).toBe(false);
       expect(executor.value).toBeUndefined();
       expect(executor.reason).toBeUndefined();
       expect(executor.task).not.toBeNull();
@@ -397,7 +397,7 @@ describe('ExecutorImpl', () => {
 
       expect(executor.isFulfilled).toBe(false);
       expect(executor.isRejected).toBe(true);
-      expect(executor.isStale).toBe(false);
+      expect(executor.isInvalidated).toBe(false);
       expect(executor.value).toBeUndefined();
       expect(executor.reason).toBe('aaa');
       expect(executor._promise).toBeNull();
@@ -418,7 +418,7 @@ describe('ExecutorImpl', () => {
 
       expect(executor.isFulfilled).toBe(false);
       expect(executor.isRejected).toBe(true);
-      expect(executor.isStale).toBe(false);
+      expect(executor.isInvalidated).toBe(false);
       expect(executor.value).toBeUndefined();
       expect(executor.reason).toBe('bbb');
       expect(executor.task).toBe(taskMock);
@@ -430,15 +430,15 @@ describe('ExecutorImpl', () => {
       expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'rejected', target: executor, version: 2 });
     });
 
-    test('resets the stale flag', () => {
+    test('resets invalidated', () => {
       executor.resolve('aaa');
       executor.invalidate();
 
-      expect(executor.isStale).toBe(true);
+      expect(executor.isInvalidated).toBe(true);
 
       executor.reject('bbb');
 
-      expect(executor.isStale).toBe(false);
+      expect(executor.isInvalidated).toBe(false);
     });
   });
 
@@ -486,7 +486,7 @@ describe('ExecutorImpl', () => {
 
       expect(executor.isFulfilled).toBe(false);
       expect(executor.isRejected).toBe(false);
-      expect(executor.isStale).toBe(false);
+      expect(executor.isInvalidated).toBe(false);
       expect(executor.value).toBeUndefined();
       expect(executor.reason).toBeUndefined();
       expect(executor._promise).toBeNull();
@@ -506,7 +506,7 @@ describe('ExecutorImpl', () => {
 
       expect(executor.isFulfilled).toBe(false);
       expect(executor.isRejected).toBe(false);
-      expect(executor.isStale).toBe(false);
+      expect(executor.isInvalidated).toBe(false);
       expect(executor.value).toBeUndefined();
       expect(executor.reason).toBeUndefined();
       expect(executor._promise).toBe(promise);
@@ -520,7 +520,7 @@ describe('ExecutorImpl', () => {
       expect(listenerMock).toHaveBeenCalledTimes(0);
     });
 
-    test('marks executor as stale only once', () => {
+    test('marks executor as invalidated only once', () => {
       executor.resolve('aaa');
       executor.invalidate();
       executor.invalidate();
@@ -528,7 +528,7 @@ describe('ExecutorImpl', () => {
 
       expect(executor.isFulfilled).toBe(true);
       expect(executor.isRejected).toBe(false);
-      expect(executor.isStale).toBe(true);
+      expect(executor.isInvalidated).toBe(true);
       expect(executor.value).toBe('aaa');
       expect(executor.reason).toBeUndefined();
       expect(executor._promise).toBeNull();
@@ -666,7 +666,7 @@ describe('ExecutorImpl', () => {
       expect(executor.toJSON()).toStrictEqual({
         isFulfilled: true,
         isRejected: false,
-        isStale: false,
+        isInvalidated: false,
         key: 'xxx',
         timestamp: 50,
         value: 111,
@@ -678,7 +678,7 @@ describe('ExecutorImpl', () => {
       executor.resolve(111);
 
       expect(JSON.stringify(executor)).toBe(
-        '{"key":"xxx","isFulfilled":true,"isRejected":false,"isStale":false,"value":111,"timestamp":50}'
+        '{"key":"xxx","isFulfilled":true,"isRejected":false,"isInvalidated":false,"value":111,"timestamp":50}'
       );
     });
   });

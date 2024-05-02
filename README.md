@@ -41,7 +41,7 @@ npm install --save-prod react-executor
 - [`retryFocused`](#retryfocused)
 - [`retryFulfilled`](#retryfulfilled)
 - [`retryRejected`](#retryrejected)
-- [`retryStale`](#retrystale)
+- [`retryInvalidated`](#retryinvalidated)
 - [`synchronizeStorage`](#synchronizestorage)
 
 [**React integration**](#react-integration)
@@ -523,13 +523,12 @@ const unsubscribe = rookyExecutor.subscribe(event => {
 unsubscribe();
 ```
 
-You can also subscribe to the executor manager to receive events from all executors:
+You can subscribe to the executor manager to receive events from all executors. For example, you can automatically retry
+any invalidated executor:
 
 ```ts
 executorManager.subscribe(event => {
-
-  if (event.type === 'invalidated' && event.target.isActive) {
-    // Retry the invalidated executor if it has consumers 
+  if (event.type === 'invalidated') {
     event.target.retry();
   }
 });
@@ -692,12 +691,12 @@ Invalidate results stored in the executor:
 ```ts
 executor.invalidate();
 
-executor.isStale;
+executor.isInvalidated;
 // ⮕ true
 ```
 
 Without [plugins](#plugins), invalidating an executor has no effect except marking executor
-as [stale](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#isStale).
+as [invalidated](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#isInvalidated).
 
 ## Dispose an executor
 
@@ -960,14 +959,14 @@ Provide a function that returns the delay depending on the number of retries:
 retryRejected(5, (index, executor) => 1000 * 1.8 ** index);
 ```
 
-## `retryStale`
+## `retryInvalidated`
 
 Retries the latest task of the active executor if it was invalidated.
 
 ```ts
-import retryStale from 'react-executor/plugin/retryStale';
+import retryInvalidated from 'react-executor/plugin/retryInvalidated';
 
-const executor = useExecutor('test', 42, [retryStale()]);
+const executor = useExecutor('test', 42, [retryInvalidated()]);
 
 executor.activate();
 ```
@@ -993,7 +992,7 @@ const fetchCheese: ExecutorTask = async (signal, executor) => {
 
 const cheeseExecutor = useExecutor('cheese', fetchCheese, [
   invalidateByPeers('bread'),
-  retryStale(),
+  retryInvalidated(),
 ]);
 
 const breadExecutor = useExecutor('bread');
@@ -1278,7 +1277,7 @@ for (const executor of executorManager) {
 ```
 
 It isn't optimal to retry all executors even if they aren't [actively used](#activate-an-executor). Use the
-[`retryStale`](https://smikhalevski.github.io/react-executor/interface/react_executor.Executor.html#retry) to retry active executors when they are invalidated.
+[`retryInvalidated`](https://smikhalevski.github.io/react-executor/interface/react_executor.Executor.html#retry) to retry active executors when they are invalidated.
 
 ## Prefetching
 

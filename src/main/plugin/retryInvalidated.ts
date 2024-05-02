@@ -2,12 +2,12 @@
  * The plugin that retries the latest task of the active executor if it was invalidated.
  *
  * ```ts
- * import retryStale from 'react-executor/plugin/retryStale';
+ * import retryInvalidated from 'react-executor/plugin/retryInvalidated';
  *
- * const executor = useExecutor('test', 42, [retryStale()]);
+ * const executor = useExecutor('test', 42, [retryInvalidated()]);
  * ```
  *
- * @module plugin/retryStale
+ * @module plugin/retryInvalidated
  */
 
 import type { ExecutorPlugin } from '../types';
@@ -15,13 +15,13 @@ import type { ExecutorPlugin } from '../types';
 /**
  * Retries the latest task of the active executor if it was invalidated.
  */
-export default function retryStale(): ExecutorPlugin {
+export default function retryInvalidated(): ExecutorPlugin {
   return plugin;
 }
 
 const plugin: ExecutorPlugin = executor => {
   executor.subscribe(event => {
-    if ((event.type === 'invalidated' && executor.isActive) || (event.type === 'activated' && executor.isStale)) {
+    if ((event.type === 'invalidated' && executor.isActive) || (event.type === 'activated' && executor.isInvalidated)) {
       executor.retry();
     }
   });

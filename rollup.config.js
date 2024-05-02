@@ -12,7 +12,7 @@ module.exports = {
     './src/main/plugin/retryFocused.ts',
     './src/main/plugin/retryFulfilled.ts',
     './src/main/plugin/retryRejected.ts',
-    './src/main/plugin/retryStale.ts',
+    './src/main/plugin/retryInvalidated.ts',
     './src/main/plugin/synchronizeStorage.ts',
   ],
   output: [

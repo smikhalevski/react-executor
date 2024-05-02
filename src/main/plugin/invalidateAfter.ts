@@ -32,7 +32,7 @@ export default function invalidateAfter(ms: number): ExecutorPlugin {
         case 'rejected':
           clearTimeout(timer);
 
-          if (!executor.isStale && !executor.isPending && executor.isActive && executor.isSettled) {
+          if (!executor.isInvalidated && !executor.isPending && executor.isActive && executor.isSettled) {
             timer = setTimeout(
               () => {
                 executor.invalidate();
