@@ -20,7 +20,7 @@ describe('ExecutorManager', () => {
           {
             isFulfilled: true,
             isRejected: false,
-            isStale: false,
+            isInvalidated: false,
             key: 'xxx',
             timestamp: 50,
             value: 111,
@@ -300,7 +300,7 @@ describe('ExecutorManager', () => {
         {
           isFulfilled: true,
           isRejected: false,
-          isStale: false,
+          isInvalidated: false,
           key: 'xxx',
           timestamp: 50,
           value: 111,
@@ -312,7 +312,7 @@ describe('ExecutorManager', () => {
       manager.getOrCreate('xxx', 111);
 
       expect(JSON.stringify(manager)).toBe(
-        '[{"key":"xxx","isFulfilled":true,"isRejected":false,"isStale":false,"value":111,"timestamp":50}]'
+        '[{"key":"xxx","isFulfilled":true,"isRejected":false,"isInvalidated":false,"value":111,"timestamp":50}]'
       );
     });
   });

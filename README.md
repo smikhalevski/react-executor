@@ -23,7 +23,7 @@ npm install --save-prod react-executor
 - [Settle an executor](#settle-an-executor)
 - [Clear an executor](#clear-an-executor)
 
-[**Lifecycle**](#lifecycle)
+[**Events and lifecycle**](#events-and-lifecycle)
 
 - [Activate an executor](#activate-an-executor)
 - [Invalidate results](#invalidate-results)
@@ -40,7 +40,7 @@ npm install --save-prod react-executor
 - [`retryFocused`](#retryfocused)
 - [`retryFulfilled`](#retryfulfilled)
 - [`retryRejected`](#retryrejected)
-- [`retryStale`](#retrystale)
+- [`retryInvalidated`](#retryinvalidated)
 - [`synchronizeStorage`](#synchronizestorage)
 
 [**React integration**](#react-integration)
@@ -127,8 +127,8 @@ import retryRejected from 'react-executor/plugin/retryRejected';
 const rookyExecutor = executorManager.getOrCreate('rooky', 42, [retryRejected()]);
 ```
 
-Plugins can subscribe to [executor lifecycle](#lifecycle) events or alter the executor instance. Read more about plugins
-in the [Plugins](#plugins) section.
+Plugins can subscribe to [executor events](#events-and-lifecycle) or alter the executor instance. Read more about
+plugins in the [Plugins](#plugins) section.
 
 ## Executor keys
 
@@ -233,11 +233,11 @@ rookyExecutor.value;
 ```
 
 The executor keeps track of
-the [latest task](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#latestTask) it
+the [latest task](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#task) it
 has executed:
 
 ```ts
-rookyExecutor.latestTask;
+rookyExecutor.task;
 // ⮕ helloTask
 ```
 
@@ -411,7 +411,7 @@ printerExecutor.execute(() => 'Hello');
 ## Retry the latest task
 
 To retry
-the [latest task](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#latestTask),
+the [latest task](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#task),
 use [`retry`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#retry):
 
 ```ts
@@ -500,16 +500,20 @@ executor.clear();
 ```
 
 Clearing an executor removes the stored value and reason, but _doesn't_ affect the pending task execution and preserves
-the [latest task](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#latestTask) that
+the [latest task](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#task) that
 was executed.
 
-# Lifecycle
+# Events and lifecycle
 
 Executors publish various events when their state changes. To subscribe to executor events use the
 [`subscribe`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#subscribe) method:
 
 ```ts
-const unsubscribe = executor.subscribe(event => {
+const executorManager = new ExecutorManager();
+
+const rookyExecutor = executorManager.getOrCreate('rooky');
+
+const unsubscribe = rookyExecutor.subscribe(event => {
   if (event.type === 'fulfilled') {
     // Handle the event here
   }
@@ -518,7 +522,18 @@ const unsubscribe = executor.subscribe(event => {
 unsubscribe();
 ```
 
-Executors may have multiple subscribers and each subscriber receives
+You can subscribe to the executor manager to receive events from all executors. For example, you can automatically retry
+any invalidated executor:
+
+```ts
+executorManager.subscribe(event => {
+  if (event.type === 'invalidated') {
+    event.target.retry();
+  }
+});
+```
+
+Both executors and managers may have multiple subscribers and each subscriber receives
 [events](https://smikhalevski.github.io/react-executor/interfaces/react_executor.ExecutorEvent.html) with following
 types:
 
@@ -527,7 +542,7 @@ types:
 <dd>
 
 The executor was just [created](#clear-an-executor) and plugins were applied to it. Read more about plugins in the
-[Plugins](#plugins) section. 
+[Plugins](#plugins) section.
 
 </dd>
 
@@ -535,7 +550,7 @@ The executor was just [created](#clear-an-executor) and plugins were applied to 
 <dd>
 
 The executor started [a task execution](#execute-a-task). You can find the latest task the executor handled in the
-[`Executor.latestTask`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#latestTask)
+[`Executor.task`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#task)
 property.
 
 </dd>
@@ -625,9 +640,9 @@ executor.isActive;
 If there are multiple consumers and each of them invoke the `activate` method, then executor would remain active until
 all of them invoke their deactivate callbacks.
 
-Without [plugins](#plugins), marking executor as active has no additional effect. Checking the executor active status in
-a plugin allows to skip or defer excessive updates and keep executor results up-to-date lazily. For example, consider a
-plugin that [retries the latest task](#retry-the-latest-task) if an active executor becomes rejected:
+By default, marking an executor as active has no additional effect. Checking the executor active status in a plugin
+allows to skip or defer excessive updates and keep executor results up-to-date lazily. For example, consider a plugin
+that [retries the latest task](#retry-the-latest-task) if an active executor becomes rejected:
 
 ```ts
 const retryPlugin: ExecutorPlugin = executor => {
@@ -659,12 +674,21 @@ Invalidate results stored in the executor:
 ```ts
 executor.invalidate();
 
-executor.isStale;
+executor.isInvalidated;
 // ⮕ true
 ```
 
-Without [plugins](#plugins), invalidating an executor has no effect except marking executor
-as [stale](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#isStale).
+After the executor is fulfilled, rejected, or cleared, it becomes valid:
+
+```ts
+executor.resolve('Okay');
+
+executor.isInvalidated;
+// ⮕ false
+```
+
+By default, invalidating an executor has no effect except marking it
+as [invalidated](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#isInvalidated).
 
 ## Dispose an executor
 
@@ -678,6 +702,7 @@ such case:
 const executor = executorManager.getOrCreate('test');
 
 executorManager.dispose(executor.key);
+// ⮕ true
 ```
 
 All executor subscribers are unsubscribed after the disposal, and executor is removed from the manager.
@@ -927,14 +952,14 @@ Provide a function that returns the delay depending on the number of retries:
 retryRejected(5, (index, executor) => 1000 * 1.8 ** index);
 ```
 
-## `retryStale`
+## `retryInvalidated`
 
 Retries the latest task of the active executor if it was invalidated.
 
 ```ts
-import retryStale from 'react-executor/plugin/retryStale';
+import retryInvalidated from 'react-executor/plugin/retryInvalidated';
 
-const executor = useExecutor('test', 42, [retryStale()]);
+const executor = useExecutor('test', 42, [retryInvalidated()]);
 
 executor.activate();
 ```
@@ -960,7 +985,7 @@ const fetchCheese: ExecutorTask = async (signal, executor) => {
 
 const cheeseExecutor = useExecutor('cheese', fetchCheese, [
   invalidateByPeers('bread'),
-  retryStale(),
+  retryInvalidated(),
 ]);
 
 const breadExecutor = useExecutor('bread');
@@ -1245,7 +1270,7 @@ for (const executor of executorManager) {
 ```
 
 It isn't optimal to retry all executors even if they aren't [actively used](#activate-an-executor). Use the
-[`retryStale`](https://smikhalevski.github.io/react-executor/interface/react_executor.Executor.html#retry) to retry active executors when they are invalidated.
+[`retryInvalidated`](https://smikhalevski.github.io/react-executor/interface/react_executor.Executor.html#retry) to retry active executors when they are invalidated.
 
 ## Prefetching
 

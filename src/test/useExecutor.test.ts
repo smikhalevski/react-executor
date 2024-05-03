@@ -87,7 +87,7 @@ describe('useExecutor', () => {
     expect(executor.isRejected).toBe(false);
     expect(executor.value).toBe('aaa');
     expect(executor.reason).toBeUndefined();
-    expect(executor.latestTask).toBeNull();
+    expect(executor.task).toBeNull();
 
     expect(renderMock).toHaveBeenCalledTimes(2);
   });
@@ -105,7 +105,7 @@ describe('useExecutor', () => {
     expect(executor.isRejected).toBe(false);
     expect(executor.value).toBeUndefined();
     expect(executor.reason).toBeUndefined();
-    expect(executor.latestTask).toBe(taskMock);
+    expect(executor.task).toBe(taskMock);
 
     expect(taskMock).toHaveBeenCalledTimes(1);
     expect(renderMock).toHaveBeenCalledTimes(2);
@@ -117,7 +117,7 @@ describe('useExecutor', () => {
     expect(executor.isRejected).toBe(false);
     expect(executor.value).toBe('aaa');
     expect(executor.reason).toBeUndefined();
-    expect(executor.latestTask).toBe(taskMock);
+    expect(executor.task).toBe(taskMock);
 
     expect(renderMock).toHaveBeenCalledTimes(4);
   });
@@ -153,7 +153,7 @@ describe('useExecutor', () => {
     expect(executor.isRejected).toBe(false);
     expect(executor.value).toBe('aaa');
     expect(executor.reason).toBeUndefined();
-    expect(executor.latestTask).toBe(task);
+    expect(executor.task).toBe(task);
 
     expect(renderMock).toHaveBeenCalledTimes(4);
   });

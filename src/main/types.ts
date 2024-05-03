@@ -2,7 +2,9 @@ import type { AbortablePromise } from 'parallel-universe';
 import type { ExecutorManager } from './ExecutorManager';
 
 /**
- * The lifecycle event published by the {@link Executor}.
+ * The event published by the {@link Executor}.
+ *
+ * Lifecycle events:
  *
  * <dl>
  *   <dt><i>"configured"</i></dt>
@@ -15,7 +17,7 @@ import type { ExecutorManager } from './ExecutorManager';
  *   <dt><i>"pending"</i></dt>
  *   <dd>
  *
- *   The executor started a {@link Executor.latestTask task} execution.
+ *   The executor started an {@link Executor.task} execution.
  *
  *   </dd>
  *
@@ -36,7 +38,7 @@ import type { ExecutorManager } from './ExecutorManager';
  *   <dt><i>"aborted"</i></dt>
  *   <dd>
  *
- *   The {@link Executor.latestTask latest task} was aborted.
+ *   The {@link Executor.task latest task} was aborted.
  *
  *   If executor is still {@link Executor.isPending pending} when abort event is published then the currently pending
  *   task is being replaced with a new task.
@@ -53,7 +55,7 @@ import type { ExecutorManager } from './ExecutorManager';
  *   <dt><i>"invalidated"</i></dt>
  *   <dd>
  *
- *   The executor was {@link Executor.invalidate invalidated} and its result is now {@link Executor.isStale stale}.
+ *   The result stored in the executor was {@link Executor.invalidate invalidated}.
  *
  *   </dd>
  *
@@ -88,7 +90,7 @@ import type { ExecutorManager } from './ExecutorManager';
  */
 export interface ExecutorEvent<Value = any> {
   /**
-   * The type of the lifecycle event.
+   * The type of the event.
    *
    * See {@link ExecutorEvent} for more details.
    */
@@ -102,7 +104,8 @@ export interface ExecutorEvent<Value = any> {
     | 'invalidated'
     | 'activated'
     | 'deactivated'
-    | 'disposed';
+    | 'disposed'
+    | (string & {});
 
   /**
    * The executor for which the lifecycle event has occurred.
@@ -110,9 +113,14 @@ export interface ExecutorEvent<Value = any> {
   target: Executor<Value>;
 
   /**
-   * The version of the executor for which this event was published.
+   * The {@link Executor.version version of the executor} for which this event was published.
    */
   version: number;
+
+  /**
+   * The payload carried by the event, or `undefined` if there's no payload.
+   */
+  payload: any;
 }
 
 /**
@@ -158,15 +166,15 @@ export interface ExecutorState<Value = any> {
    * `true` if {@link Executor.invalidate} was called on a {@link Executor.isSettled settled} executor and a new
    * settlement hasn't occurred yet.
    */
-  readonly isStale: boolean;
+  readonly isInvalidated: boolean;
 
   /**
-   * The value of the last fulfillment, or `undefined` if executor isn't {@link isFulfilled fulfilled}.
+   * The value of the latest fulfillment.
    */
   readonly value: Value | undefined;
 
   /**
-   * The reason of failure, or `undefined` if executor isn't {@link isRejected rejected}.
+   * The reason of the latest failure.
    */
   readonly reason: any;
 
@@ -189,34 +197,34 @@ export interface Executor<Value = any> extends ExecutorState<Value> {
   readonly manager: ExecutorManager;
 
   /**
-   * `true` if result was {@link isFulfilled fulfilled} or {@link isRejected rejected}, or `false` otherwise.
+   * `true` if the executor is {@link isFulfilled fulfilled} or {@link isRejected rejected}, or `false` otherwise.
    */
   readonly isSettled: boolean;
 
   /**
-   * `true` if the executor was activated more times {@link activate activated} then deactivated.
+   * `true` if the executor was {@link activate activated} more times then deactivated.
    */
   readonly isActive: boolean;
 
   /**
-   * `true` if an execution is currently pending, or `false` otherwise.
+   * `true` if the execution is currently pending, or `false` otherwise.
    */
   readonly isPending: boolean;
 
   /**
-   * The latest task that was passed to {@link execute}, or `null` if the executor didn't execute a task.
+   * The latest task that was {@link execute executed}, or `null` if the executor didn't execute any tasks.
    */
-  readonly latestTask: ExecutorTask<Value> | null;
+  readonly task: ExecutorTask<Value> | null;
 
   /**
-   * The integer version of {@link ExecutorState the state of this executor} that is incremented every time it is
-   * mutated.
+   * The integer version of {@link ExecutorState the state of this executor} that is incremented every time the executor
+   * is mutated.
    */
   readonly version: number;
 
   /**
    * Returns a {@link value} if the executor is {@link isFulfilled fulfilled}. Otherwise, throws the {@link reason} if
-   * the executor is {@link isRejected rejected}, or an {@link Error}.
+   * the executor is {@link isRejected rejected}, or an {@link Error} if the executor isn't settled.
    */
   get(): Value;
 
@@ -249,15 +257,15 @@ export interface Executor<Value = any> extends ExecutorState<Value> {
   execute(task: ExecutorTask<Value>): AbortablePromise<Value>;
 
   /**
-   * If the executor isn't {@link isPending pending} then {@link latestTask latest task} is {@link execute executed}
-   * again. If there's no latest task then no-op.
+   * If the executor isn't {@link isPending pending} then the {@link task latest task} is {@link execute executed}
+   * again. If there's no task then no-op.
    */
   retry(): void;
 
   /**
    * Clears available results and doesn't affect the pending task execution.
    *
-   * The executor can still be {@link retry retried} after being cleared.
+   * The {@link task latest task} can still be {@link retry retried} after the executor is cleared.
    */
   clear(): void;
 
@@ -270,15 +278,14 @@ export interface Executor<Value = any> extends ExecutorState<Value> {
   abort(reason?: unknown): void;
 
   /**
-   * If the executor is settled then its value is marked as {@link isStale stale}.
+   * If the executor is settled the result is masted as {@link isInvalidated invalidated}.
    */
   invalidate(): void;
 
   /**
    * Aborts pending execution and fulfills the executor with the value.
    *
-   * **Note:** If value is a promise-like then {@link execute} is implicitly called which replaces the
-   * {@link latestTask latest task}.
+   * **Note:** If value is a promise-like then {@link execute} is implicitly called which replaces the {@link task}.
    *
    * @param value The value.
    * @param timestamp The timestamp when the value was acquired. If value is a promise then the timestamp is ignored.
@@ -303,7 +310,7 @@ export interface Executor<Value = any> extends ExecutorState<Value> {
   activate(): () => void;
 
   /**
-   * Subscribes a listener to the events published by this executor.
+   * Subscribes a listener to events published by the executor.
    *
    * @param listener The listener to subscribe.
    * @returns The callback that unsubscribes the listener.
@@ -311,7 +318,15 @@ export interface Executor<Value = any> extends ExecutorState<Value> {
   subscribe(listener: (event: ExecutorEvent<Value>) => void): () => void;
 
   /**
-   * Returns serializable executor state.
+   * Publishes the event for subscribers of the executor and its manager.
+   *
+   * @param eventType The type of the published event.
+   * @param payload The optional payload associated with the event.
+   */
+  publish(eventType: ExecutorEvent['type'], payload?: unknown): void;
+
+  /**
+   * Returns the serializable executor state.
    */
   toJSON(): ExecutorState<Value>;
 }

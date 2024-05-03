@@ -11,10 +11,10 @@ import { AbortError } from './utils';
 export class ExecutorImpl<Value = any> implements Executor {
   isFulfilled = false;
   isRejected = false;
-  isStale = false;
+  isInvalidated = false;
   value: Value | undefined = undefined;
   reason: any = undefined;
-  latestTask: ExecutorTask<Value> | null = null;
+  task: ExecutorTask<Value> | null = null;
   timestamp = 0;
   version = 0;
 
@@ -99,7 +99,7 @@ export class ExecutorImpl<Value = any> implements Executor {
           this._promise = null;
           this.version++;
         }
-        this._publish('aborted');
+        this.publish('aborted');
       });
 
       new Promise<Value>(resolve => {
@@ -136,26 +136,26 @@ export class ExecutorImpl<Value = any> implements Executor {
     }
 
     if (this._promise === promise) {
-      this.latestTask = task;
-      this._publish('pending');
+      this.task = task;
+      this.publish('pending');
     }
 
     return promise;
   }
 
   retry(): void {
-    if (this.latestTask !== null && !this.isPending) {
-      this.execute(this.latestTask);
+    if (this.task !== null && !this.isPending) {
+      this.execute(this.task);
     }
   }
 
   clear(): void {
     if (this.isSettled) {
-      this.isFulfilled = this.isRejected = this.isStale = false;
+      this.isFulfilled = this.isRejected = this.isInvalidated = false;
       this.value = this.reason = undefined;
       this.timestamp = 0;
       this.version++;
-      this._publish('cleared');
+      this.publish('cleared');
     }
   }
 
@@ -166,9 +166,9 @@ export class ExecutorImpl<Value = any> implements Executor {
   }
 
   invalidate(): void {
-    if (this.isStale !== (this.isStale = this.isSettled)) {
+    if (this.isInvalidated !== (this.isInvalidated = this.isSettled)) {
       this.version++;
-      this._publish('invalidated');
+      this.publish('invalidated');
     }
   }
 
@@ -186,12 +186,12 @@ export class ExecutorImpl<Value = any> implements Executor {
     }
 
     this.isFulfilled = true;
-    this.isRejected = this.isStale = false;
+    this.isRejected = this.isInvalidated = false;
     this.value = value;
     this.timestamp = timestamp;
 
     this.version++;
-    this._publish('fulfilled');
+    this.publish('fulfilled');
   }
 
   reject(reason: any, timestamp = Date.now()): void {
@@ -202,20 +202,20 @@ export class ExecutorImpl<Value = any> implements Executor {
       promise.abort();
     }
 
-    this.isFulfilled = this.isStale = false;
+    this.isFulfilled = this.isInvalidated = false;
     this.isRejected = true;
     this.reason = reason;
     this.timestamp = timestamp;
 
     this.version++;
-    this._publish('rejected');
+    this.publish('rejected');
   }
 
   activate(): () => void {
     let isActive = true;
 
     if (this._activeCount++ === 0) {
-      this._publish('activated');
+      this.publish('activated');
     }
 
     return () => {
@@ -223,7 +223,7 @@ export class ExecutorImpl<Value = any> implements Executor {
         isActive = false;
 
         if (--this._activeCount === 0) {
-          this._publish('deactivated');
+          this.publish('deactivated');
         }
       }
     };
@@ -238,14 +238,14 @@ export class ExecutorImpl<Value = any> implements Executor {
       key: this.key,
       isFulfilled: this.isFulfilled,
       isRejected: this.isRejected,
-      isStale: this.isStale,
+      isInvalidated: this.isInvalidated,
       value: this.value,
       reason: this.reason,
       timestamp: this.timestamp,
     };
   }
 
-  _publish(eventType: ExecutorEvent['type']): void {
-    this._pubSub.publish({ type: eventType, target: this, version: this.version });
+  publish(eventType: ExecutorEvent['type'], payload?: unknown): void {
+    this._pubSub.publish({ type: eventType, target: this, version: this.version, payload });
   }
 }

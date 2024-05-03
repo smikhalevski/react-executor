@@ -20,7 +20,7 @@ describe('invalidateAfter', () => {
         {
           isFulfilled: true,
           isRejected: false,
-          isStale: false,
+          isInvalidated: false,
           key: 'xxx',
           timestamp: 50,
           value: 111,
@@ -31,7 +31,7 @@ describe('invalidateAfter', () => {
 
     const executor = manager.getOrCreate('xxx', undefined, [invalidateAfter(100)]);
 
-    expect(executor.isStale).toBe(true);
+    expect(executor.isInvalidated).toBe(true);
   });
 
   test('invalidates an executor after a timeout', async () => {
@@ -41,7 +41,7 @@ describe('invalidateAfter', () => {
 
     jest.runAllTimers();
 
-    expect(executor.isStale).toBe(true);
+    expect(executor.isInvalidated).toBe(true);
 
     expect(listenerMock).toHaveBeenCalledTimes(4);
     expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor, version: 0 });

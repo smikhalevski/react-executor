@@ -14,24 +14,24 @@ describe('invalidateByPeers', () => {
     const executor1 = manager.getOrCreate('xxx', 'aaa', [invalidateByPeers(executor => executor.key === 'yyy')]);
     const executor2 = manager.getOrCreate('yyy');
 
-    expect(executor1.isStale).toBe(false);
-    expect(executor1.isStale).toBe(false);
+    expect(executor1.isInvalidated).toBe(false);
+    expect(executor1.isInvalidated).toBe(false);
 
     executor2.resolve('bbb');
 
-    expect(executor1.isStale).toBe(true);
-    expect(executor2.isStale).toBe(false);
+    expect(executor1.isInvalidated).toBe(true);
+    expect(executor2.isInvalidated).toBe(false);
   });
 
   test('invalidates an executor if a peer executor with the matching key is invalidated', () => {
     const executor2 = manager.getOrCreate('yyy', 'bbb');
     const executor1 = manager.getOrCreate('xxx', 'aaa', [invalidateByPeers(executor => executor.key === 'yyy')]);
 
-    expect(executor1.isStale).toBe(false);
+    expect(executor1.isInvalidated).toBe(false);
 
     executor2.invalidate();
 
-    expect(executor1.isStale).toBe(true);
+    expect(executor1.isInvalidated).toBe(true);
   });
 
   test('invalidates an executor if a peer executor is created with an initial value', () => {
@@ -39,7 +39,7 @@ describe('invalidateByPeers', () => {
 
     manager.getOrCreate('yyy', 'bbb');
 
-    expect(executor1.isStale).toBe(true);
+    expect(executor1.isInvalidated).toBe(true);
   });
 
   test('do not get invalidated after disposal', () => {
@@ -49,6 +49,6 @@ describe('invalidateByPeers', () => {
 
     manager.getOrCreate('yyy', 'bbb');
 
-    expect(executor1.isStale).toBe(false);
+    expect(executor1.isInvalidated).toBe(false);
   });
 });
