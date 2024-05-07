@@ -12,7 +12,7 @@
  * @module plugin/invalidatePeers
  */
 
-import type { Executor, ExecutorPlugin } from '../types';
+import type { Executor, ExecutorPlugin, PluginConfiguredPayload } from '../types';
 
 /**
  * Invalidates peer executors with matching keys if the executor is fulfilled or invalidated.
@@ -21,13 +21,7 @@ import type { Executor, ExecutorPlugin } from '../types';
  */
 export default function invalidatePeers(peerMatcher: (executor: Executor) => any): ExecutorPlugin {
   return executor => {
-    const peerExecutors: Executor[] = [];
-
-    for (const peerExecutor of executor.manager) {
-      if (peerMatcher(peerExecutor)) {
-        peerExecutors.push(peerExecutor);
-      }
-    }
+    const peerExecutors = new Set(Array.from(executor.manager).filter(peerMatcher));
 
     const unsubscribe = executor.manager.subscribe(event => {
       const peerExecutor = event.target;
@@ -41,18 +35,32 @@ export default function invalidatePeers(peerMatcher: (executor: Executor) => any
             }
             break;
 
-          case 'disposed':
+          case 'detached':
             unsubscribe();
         }
         return;
       }
 
-      if (event.type === 'configured' && peerMatcher(peerExecutor)) {
-        peerExecutors.push(peerExecutor);
+      if (
+        (event.type === 'attached' && peerMatcher(peerExecutor)) ||
+        (event.type === 'detached' && peerExecutors.has(peerExecutor))
+      ) {
+        if (event.type === 'attached') {
+          peerExecutors.add(peerExecutor);
+        } else {
+          peerExecutors.delete(peerExecutor);
+        }
+
+        executor.publish<PluginConfiguredPayload>('plugin_configured', {
+          type: 'invalidatePeers',
+          options: { peerExecutors: Array.from(peerExecutors) },
+        });
       }
-      if (event.type === 'disposed' && peerMatcher(peerExecutor)) {
-        peerExecutors.splice(peerExecutors.indexOf(peerExecutor), 1);
-      }
+    });
+
+    executor.publish<PluginConfiguredPayload>('plugin_configured', {
+      type: 'invalidatePeers',
+      options: { peerExecutors: Array.from(peerExecutors) },
     });
   };
 }

@@ -21,10 +21,10 @@
       "import": "./plugin/bindAll.mjs",
       "require": "./plugin/bindAll.js"
     },
-    "./plugin/disposeDeactivated": {
-      "types": "./plugin/disposeDeactivated.d.ts",
-      "import": "./plugin/disposeDeactivated.mjs",
-      "require": "./plugin/disposeDeactivated.js"
+    "./plugin/detachDeactivated": {
+      "types": "./plugin/detachDeactivated.d.ts",
+      "import": "./plugin/detachDeactivated.mjs",
+      "require": "./plugin/detachDeactivated.js"
     },
     "./plugin/invalidateAfter": {
       "types": "./plugin/invalidateAfter.d.ts",

@@ -10,7 +10,7 @@
  * @module plugin/invalidateAfter
  */
 
-import type { ExecutorPlugin } from '../types';
+import type { ExecutorPlugin, PluginConfiguredPayload } from '../types';
 
 /**
  * Invalidates the settled executor result after the timeout.
@@ -21,7 +21,7 @@ export default function invalidateAfter(ms: number): ExecutorPlugin {
   return executor => {
     let timer: NodeJS.Timeout;
 
-    if (executor.isSettled && Date.now() - executor.timestamp >= ms) {
+    if (executor.isSettled && ms - Date.now() + executor.settledAt <= 0) {
       executor.invalidate();
     }
 
@@ -37,7 +37,7 @@ export default function invalidateAfter(ms: number): ExecutorPlugin {
               () => {
                 executor.invalidate();
               },
-              ms - Date.now() + executor.timestamp
+              ms - Date.now() + executor.settledAt
             );
           }
           break;
@@ -47,6 +47,11 @@ export default function invalidateAfter(ms: number): ExecutorPlugin {
           clearTimeout(timer);
           break;
       }
+    });
+
+    executor.publish<PluginConfiguredPayload>('plugin_configured', {
+      type: 'invalidateAfter',
+      options: { ms },
     });
   };
 }

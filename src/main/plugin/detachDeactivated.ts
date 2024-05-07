@@ -1,23 +1,23 @@
 /**
- * The plugin that aborts the pending task after the timeout if the executor is deactivated.
+ * The plugin that detaches a deactivated executor after the timeout.
  *
  * ```ts
- * import abortDeactivated from 'react-executor/plugin/abortDeactivated';
+ * import detachDeactivated from 'react-executor/plugin/detachDeactivated';
  *
- * const executor = useExecutor('test', 42, [abortDeactivated()]);
+ * const executor = useExecutor('test', 42, [detachDeactivated()]);
  * ```
  *
- * @module plugin/abortDeactivated
+ * @module plugin/detachDeactivated
  */
 
 import type { ExecutorPlugin, PluginConfiguredPayload } from '../types';
 
 /**
- * Aborts the pending task after the timeout if the executor is deactivated.
+ * Detaches a deactivated executor after the timeout.
  *
- * @param ms The timeout in milliseconds after which the task is aborted.
+ * @param ms The timeout in milliseconds after which the executor is detached.
  */
-export default function abortDeactivated(ms = 0): ExecutorPlugin {
+export default function detachDeactivated(ms = 5_000): ExecutorPlugin {
   return executor => {
     let timer: NodeJS.Timeout;
 
@@ -27,7 +27,7 @@ export default function abortDeactivated(ms = 0): ExecutorPlugin {
           clearTimeout(timer);
 
           timer = setTimeout(() => {
-            executor.abort();
+            executor.manager.detach(executor.key);
           }, ms);
           break;
 
@@ -38,7 +38,7 @@ export default function abortDeactivated(ms = 0): ExecutorPlugin {
     });
 
     executor.publish<PluginConfiguredPayload>('plugin_configured', {
-      type: 'abortDeactivated',
+      type: 'detachDeactivated',
       options: { ms },
     });
   };

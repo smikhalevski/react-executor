@@ -22,14 +22,20 @@ describe('synchronizeStorage', () => {
 
     expect(executor.isSettled).toBe(false);
 
-    expect(listenerMock).toHaveBeenCalledTimes(1);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor, version: 0 });
+    expect(listenerMock).toHaveBeenCalledTimes(2);
+    expect(listenerMock).toHaveBeenNthCalledWith(1, {
+      type: 'plugin_configured',
+      target: executor,
+      version: 0,
+      payload: { type: 'synchronizeStorage', options: { storageKey: 'executor_xxx' } },
+    });
+    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
   });
 
   test('resolves an executor if a fulfilled storage item exists', () => {
     localStorage.setItem(
-      'executor/xxx',
-      '{"key":"xxx","isFulfilled":true,"isRejected":false,"isInvalidated":false,"value":"aaa","timestamp":30}'
+      'executor_xxx',
+      '{"key":"xxx","isFulfilled":true,"value":"aaa","settledAt":30,"invalidatedAt":0}'
     );
 
     const executor = manager.getOrCreate('xxx', undefined, [synchronizeStorage(localStorage)]);
@@ -38,16 +44,23 @@ describe('synchronizeStorage', () => {
     expect(executor.isRejected).toBe(false);
     expect(executor.value).toBe('aaa');
     expect(executor.reason).toBeUndefined();
-    expect(executor.timestamp).toBe(30);
+    expect(executor.settledAt).toBe(30);
 
-    expect(listenerMock).toHaveBeenCalledTimes(1);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor, version: 1 });
+    expect(listenerMock).toHaveBeenCalledTimes(3);
+    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'fulfilled', target: executor, version: 1 });
+    expect(listenerMock).toHaveBeenNthCalledWith(2, {
+      type: 'plugin_configured',
+      target: executor,
+      version: 1,
+      payload: { type: 'synchronizeStorage', options: { storageKey: 'executor_xxx' } },
+    });
+    expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'attached', target: executor, version: 1 });
   });
 
   test('rejects an executor if a rejected storage item exists', () => {
     localStorage.setItem(
-      'executor/xxx',
-      '{"key":"xxx","isFulfilled":false,"isRejected":true,"isInvalidated":false,"value":"aaa","reason":"bbb","timestamp":30}'
+      'executor_xxx',
+      '{"key":"xxx","isFulfilled":false,"value":"aaa","reason":"bbb","settledAt":30,"invalidatedAt":0}'
     );
 
     const executor = manager.getOrCreate('xxx', undefined, [synchronizeStorage(localStorage)]);
@@ -56,23 +69,29 @@ describe('synchronizeStorage', () => {
     expect(executor.isRejected).toBe(true);
     expect(executor.value).toBe('aaa');
     expect(executor.reason).toBe('bbb');
-    expect(executor.timestamp).toBe(30);
+    expect(executor.settledAt).toBe(30);
 
-    expect(listenerMock).toHaveBeenCalledTimes(1);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor, version: 1 });
+    expect(listenerMock).toHaveBeenCalledTimes(3);
+    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'rejected', target: executor, version: 1 });
+    expect(listenerMock).toHaveBeenNthCalledWith(2, {
+      type: 'plugin_configured',
+      target: executor,
+      version: 1,
+      payload: { type: 'synchronizeStorage', options: { storageKey: 'executor_xxx' } },
+    });
+    expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'attached', target: executor, version: 1 });
   });
 
   test('preserves the initial state if it is newer', () => {
     const manager = new ExecutorManager({
       initialState: [
         {
-          isFulfilled: true,
-          isRejected: false,
-          isInvalidated: false,
           key: 'xxx',
-          timestamp: 100,
+          isFulfilled: true,
           value: 'aaa',
           reason: undefined,
+          settledAt: 100,
+          invalidatedAt: 0,
         },
       ],
     });
@@ -80,8 +99,8 @@ describe('synchronizeStorage', () => {
     manager.subscribe(listenerMock);
 
     localStorage.setItem(
-      'executor/xxx',
-      '{"key":"xxx","isFulfilled":true,"isRejected":false,"isInvalidated":false,"value":"bbb","timestamp":30}'
+      'executor_xxx',
+      '{"key":"xxx","isFulfilled":true,"value":"bbb","settledAt":30,"invalidatedAt":0}'
     );
 
     const executor = manager.getOrCreate('xxx', undefined, [synchronizeStorage(localStorage)]);
@@ -90,28 +109,40 @@ describe('synchronizeStorage', () => {
     expect(executor.isRejected).toBe(false);
     expect(executor.value).toBe('aaa');
     expect(executor.reason).toBeUndefined();
-    expect(executor.timestamp).toBe(100);
+    expect(executor.settledAt).toBe(100);
 
-    expect(listenerMock).toHaveBeenCalledTimes(1);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor, version: 0 });
+    expect(listenerMock).toHaveBeenCalledTimes(2);
+    expect(listenerMock).toHaveBeenNthCalledWith(1, {
+      type: 'plugin_configured',
+      target: executor,
+      version: 0,
+      payload: { type: 'synchronizeStorage', options: { storageKey: 'executor_xxx' } },
+    });
+    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
   });
 
   test('sets storage item if it is invalidated when executor is created', () => {
-    localStorage.setItem('executor/xxx', '{"value":"aaa","timestamp":0}');
+    localStorage.setItem('executor_xxx', '{"value":"aaa","settledAt":0}');
 
     const executor = manager.getOrCreate('xxx', 'bbb', [synchronizeStorage(localStorage)]);
 
     executor.activate();
 
     expect(executor.value).toBe('bbb');
-    expect(localStorage.getItem('executor/xxx')).toBe(
-      '{"key":"xxx","isFulfilled":true,"isRejected":false,"isInvalidated":false,"value":"bbb","timestamp":50}'
+    expect(localStorage.getItem('executor_xxx')).toBe(
+      '{"key":"xxx","isFulfilled":true,"value":"bbb","settledAt":50,"invalidatedAt":0}'
     );
 
-    expect(listenerMock).toHaveBeenCalledTimes(3);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor, version: 0 });
-    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'fulfilled', target: executor, version: 1 });
-    expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'activated', target: executor, version: 1 });
+    expect(listenerMock).toHaveBeenCalledTimes(4);
+    expect(listenerMock).toHaveBeenNthCalledWith(1, {
+      type: 'plugin_configured',
+      target: executor,
+      version: 0,
+      payload: { type: 'synchronizeStorage', options: { storageKey: 'executor_xxx' } },
+    });
+    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
+    expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor, version: 1 });
+    expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'activated', target: executor, version: 1 });
   });
 
   test('sets storage item if executor was resolved from plugin', () => {
@@ -123,8 +154,8 @@ describe('synchronizeStorage', () => {
     ]);
 
     expect(executor.value).toBe('aaa');
-    expect(localStorage.getItem('executor/xxx')).toBe(
-      '{"key":"xxx","isFulfilled":true,"isRejected":false,"isInvalidated":false,"value":"aaa","timestamp":50}'
+    expect(localStorage.getItem('executor_xxx')).toBe(
+      '{"key":"xxx","isFulfilled":true,"value":"aaa","settledAt":50,"invalidatedAt":0}'
     );
   });
 
@@ -140,14 +171,14 @@ describe('synchronizeStorage', () => {
 
     expect(executor.isPending).toBe(true);
     expect(executor.value).toBeUndefined();
-    expect(localStorage.getItem('executor/xxx')).toBeNull();
+    expect(localStorage.getItem('executor_xxx')).toBeNull();
 
     await executor.toPromise();
 
     expect(executor.isPending).toBe(false);
     expect(executor.value).toBe('aaa');
-    expect(localStorage.getItem('executor/xxx')).toBe(
-      '{"key":"xxx","isFulfilled":true,"isRejected":false,"isInvalidated":false,"value":"aaa","timestamp":50}'
+    expect(localStorage.getItem('executor_xxx')).toBe(
+      '{"key":"xxx","isFulfilled":true,"value":"aaa","settledAt":50,"invalidatedAt":0}'
     );
   });
 
@@ -159,9 +190,9 @@ describe('synchronizeStorage', () => {
     fireEvent(
       window,
       new StorageEvent('storage', {
-        key: 'executor/xxx',
+        key: 'executor_xxx',
         storageArea: localStorage,
-        newValue: '{"value":"aaa","timestamp":50}',
+        newValue: '{"value":"aaa","settledAt":50}',
       })
     );
 
@@ -177,9 +208,9 @@ describe('synchronizeStorage', () => {
     fireEvent(
       window,
       new StorageEvent('storage', {
-        key: 'executor/xxx',
+        key: 'executor_xxx',
         storageArea: localStorage,
-        newValue: '{"value":"aaa","timestamp":50}',
+        newValue: '{"value":"aaa","settledAt":50}',
       })
     );
 
@@ -191,28 +222,28 @@ describe('synchronizeStorage', () => {
     const executor = manager.getOrCreate('xxx', 'aaa', [synchronizeStorage(localStorage)]);
 
     executor.activate();
-    localStorage.removeItem('executor/xxx');
+    localStorage.removeItem('executor_xxx');
 
     fireEvent(
       window,
       new StorageEvent('storage', {
-        key: 'executor/xxx',
+        key: 'executor_xxx',
         storageArea: localStorage,
         newValue: null,
       })
     );
 
     expect(executor.value).toBe('aaa');
-    expect(localStorage.getItem('executor/xxx')).toBe(
-      '{"key":"xxx","isFulfilled":true,"isRejected":false,"isInvalidated":false,"value":"aaa","timestamp":50}'
+    expect(localStorage.getItem('executor_xxx')).toBe(
+      '{"key":"xxx","isFulfilled":true,"value":"aaa","settledAt":50,"invalidatedAt":0}'
     );
   });
 
-  test('removes a storage item if an executor was disposed', () => {
+  test('removes a storage item if an executor was detach', () => {
     manager.getOrCreate('xxx', 'aaa', [synchronizeStorage(localStorage)]);
 
-    manager.dispose('xxx');
+    manager.detach('xxx');
 
-    expect(localStorage.getItem('executor/xxx')).toBeNull();
+    expect(localStorage.getItem('executor_xxx')).toBeNull();
   });
 });

@@ -10,7 +10,7 @@
  * @module plugin/retryInvalidated
  */
 
-import type { ExecutorPlugin } from '../types';
+import type { ExecutorPlugin, PluginConfiguredPayload } from '../types';
 
 /**
  * Retries the latest task of the active executor if it was invalidated.
@@ -24,5 +24,9 @@ const plugin: ExecutorPlugin = executor => {
     if ((event.type === 'invalidated' && executor.isActive) || (event.type === 'activated' && executor.isInvalidated)) {
       executor.retry();
     }
+  });
+
+  executor.publish<PluginConfiguredPayload>('plugin_configured', {
+    type: 'retryInvalidated',
   });
 };

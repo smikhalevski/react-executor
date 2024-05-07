@@ -130,23 +130,28 @@ export class ExecutorManager implements Iterable<Executor> {
 
     this._initialState.delete(serializedKey);
 
-    for (const plugin of this._plugins) {
-      plugin(executor);
-    }
-
-    if (plugins !== undefined) {
-      for (const plugin of plugins) {
-        plugin?.(executor);
-      }
-    }
-
-    executor.subscribe(event => {
+    const unsubscribe = executor.subscribe(event => {
       this._pubSub.publish(event);
     });
 
+    try {
+      for (const plugin of this._plugins) {
+        plugin(executor);
+      }
+
+      if (plugins !== undefined) {
+        for (const plugin of plugins) {
+          plugin?.(executor);
+        }
+      }
+    } catch (error) {
+      unsubscribe();
+      throw error;
+    }
+
     this._executors.set(serializedKey, executor);
 
-    executor.publish('configured');
+    executor.publish('attached');
 
     if (initialValue === undefined || executor.isSettled || executor.isPending) {
       return executor;
@@ -175,7 +180,7 @@ export class ExecutorManager implements Iterable<Executor> {
       }
 
       const unsubscribe = this.subscribe(event => {
-        if (event.type === 'configured' && this._toSerializedKey(event.target.key) === serializedKey) {
+        if (event.type === 'attached' && this._toSerializedKey(event.target.key) === serializedKey) {
           unsubscribe();
           resolve(event.target);
         }
@@ -188,13 +193,13 @@ export class ExecutorManager implements Iterable<Executor> {
   /**
    * Deletes the non-{@link Executor.isActive active} executor from the manager.
    *
-   * If the disposed executor is {@link Executor.isPending pending} then it _is not_ aborted. Subscribe to the
-   * {@link ExecutorEvent.type dispose} event on either manager or an executor and abort it manually.
+   * If the detached executor is {@link Executor.isPending pending} then it _is not_ aborted. Subscribe to the
+   * {@link ExecutorEvent detach} event on either manager or an executor and abort it manually.
    *
    * @param key The key of the executor to delete.
-   * @returns `true` if the executor was disposed, or `false` if there's no such executor, or the executor is active.
+   * @returns `true` if the executor was detached, or `false` if there's no such executor, or the executor is active.
    */
-  dispose(key: unknown): boolean {
+  detach(key: unknown): boolean {
     const serializedKey = this._toSerializedKey(key);
     const executor = this._executors.get(serializedKey);
 
@@ -204,7 +209,7 @@ export class ExecutorManager implements Iterable<Executor> {
 
     this._executors.delete(serializedKey);
 
-    executor.publish('disposed');
+    executor.publish('detached');
     executor._pubSub.unsubscribeAll();
 
     return true;
@@ -245,7 +250,7 @@ export class ExecutorManager implements Iterable<Executor> {
       return this._keySerializer(key);
     }
     if ((key !== null && typeof key === 'object') || typeof key === 'function') {
-      throw new Error('Object keys require a keySerializer');
+      throw new Error('Object keys require the "keySerializer" option');
     }
     return key;
   }

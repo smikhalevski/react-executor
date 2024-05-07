@@ -10,7 +10,7 @@
  * @module plugin/bindAll
  */
 
-import type { ExecutorPlugin } from '../types';
+import type { ExecutorPlugin, PluginConfiguredPayload } from '../types';
 
 /**
  * Binds all executor methods to the instance.
@@ -19,12 +19,16 @@ export default function bindAll(): ExecutorPlugin {
   return plugin;
 }
 
-const plugin: ExecutorPlugin = (executor: any) => {
+const plugin: ExecutorPlugin = executor => {
   const { prototype } = executor.constructor;
 
   for (const key of Object.getOwnPropertyNames(prototype)) {
     if (typeof prototype[key] === 'function') {
-      executor[key] = prototype[key].bind(executor);
+      (executor as any)[key] = prototype[key].bind(executor);
     }
   }
+
+  executor.publish<PluginConfiguredPayload>('plugin_configured', {
+    type: 'bindAll',
+  });
 };
