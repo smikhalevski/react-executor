@@ -10,7 +10,7 @@
  * @module plugin/retryFulfilled
  */
 
-import type { Executor, ExecutorPlugin } from '../types';
+import type { Executor, ExecutorPlugin, PluginConfiguredPayload } from '../types';
 
 /**
  * Repeats the last task after the execution was fulfilled.
@@ -39,7 +39,7 @@ export default function retryFulfilled<Value = any>(
                 index++;
                 executor.retry();
               },
-              (typeof ms === 'function' ? ms(index, executor) : ms) - Date.now() + executor.timestamp
+              (typeof ms === 'function' ? ms(index, executor) : ms) - Date.now() + executor.settledAt
             );
           }
           break;
@@ -51,6 +51,11 @@ export default function retryFulfilled<Value = any>(
           clearTimeout(timer);
           break;
       }
+    });
+
+    executor.publish<PluginConfiguredPayload>('plugin_configured', {
+      type: 'retryFulfilled',
+      options: { count, ms },
     });
   };
 }

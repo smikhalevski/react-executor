@@ -42,10 +42,10 @@ describe('invalidateByPeers', () => {
     expect(executor1.isInvalidated).toBe(true);
   });
 
-  test('do not get invalidated after disposal', () => {
+  test('do not get invalidated after detach', () => {
     const executor1 = manager.getOrCreate('xxx', 'aaa', [invalidateByPeers(executor => executor.key === 'yyy')]);
 
-    manager.dispose(executor1.key);
+    manager.detach(executor1.key);
 
     manager.getOrCreate('yyy', 'bbb');
 

@@ -10,12 +10,11 @@ import { AbortError } from './utils';
  */
 export class ExecutorImpl<Value = any> implements Executor {
   isFulfilled = false;
-  isRejected = false;
-  isInvalidated = false;
   value: Value | undefined = undefined;
   reason: any = undefined;
   task: ExecutorTask<Value> | null = null;
-  timestamp = 0;
+  settledAt = 0;
+  invalidatedAt = 0;
   version = 0;
 
   /**
@@ -26,15 +25,19 @@ export class ExecutorImpl<Value = any> implements Executor {
   /**
    * The number times the executor was activated.
    */
-  _activeCount: number = 0;
+  _activeCount = 0;
 
   /**
    * The pubsub that handles the executor subscriptions.
    */
   _pubSub = new PubSub<ExecutorEvent>();
 
+  get isRejected(): boolean {
+    return this.isSettled && !this.isFulfilled;
+  }
+
   get isSettled(): boolean {
-    return this.isFulfilled || this.isRejected;
+    return this.settledAt !== 0;
   }
 
   get isActive(): boolean {
@@ -43,6 +46,10 @@ export class ExecutorImpl<Value = any> implements Executor {
 
   get isPending(): boolean {
     return this._promise !== null;
+  }
+
+  get isInvalidated(): boolean {
+    return this.invalidatedAt !== 0;
   }
 
   constructor(
@@ -72,9 +79,9 @@ export class ExecutorImpl<Value = any> implements Executor {
       }
 
       const unsubscribe = this.subscribe(event => {
-        if (event.type === 'disposed') {
+        if (event.type === 'detached') {
           unsubscribe();
-          reject(AbortError('The executor was disposed: ' + this.key));
+          reject(AbortError('The executor was detached: ' + this.key));
           return;
         }
 
@@ -151,9 +158,9 @@ export class ExecutorImpl<Value = any> implements Executor {
 
   clear(): void {
     if (this.isSettled) {
-      this.isFulfilled = this.isRejected = this.isInvalidated = false;
+      this.isFulfilled = false;
       this.value = this.reason = undefined;
-      this.timestamp = 0;
+      this.settledAt = this.invalidatedAt = 0;
       this.version++;
       this.publish('cleared');
     }
@@ -165,14 +172,15 @@ export class ExecutorImpl<Value = any> implements Executor {
     }
   }
 
-  invalidate(): void {
-    if (this.isInvalidated !== (this.isInvalidated = this.isSettled)) {
+  invalidate(invalidatedAt = Date.now()): void {
+    if (!this.isInvalidated && this.isSettled) {
+      this.invalidatedAt = invalidatedAt;
       this.version++;
       this.publish('invalidated');
     }
   }
 
-  resolve(value: PromiseLike<Value> | Value, timestamp = Date.now()): void {
+  resolve(value: PromiseLike<Value> | Value, settledAt = Date.now()): void {
     if (value !== null && typeof value === 'object' && 'then' in value) {
       this.execute(() => value);
       return;
@@ -186,15 +194,15 @@ export class ExecutorImpl<Value = any> implements Executor {
     }
 
     this.isFulfilled = true;
-    this.isRejected = this.isInvalidated = false;
     this.value = value;
-    this.timestamp = timestamp;
+    this.settledAt = settledAt;
+    this.invalidatedAt = 0;
 
     this.version++;
     this.publish('fulfilled');
   }
 
-  reject(reason: any, timestamp = Date.now()): void {
+  reject(reason: any, settledAt = Date.now()): void {
     const promise = this._promise;
     this._promise = null;
 
@@ -202,29 +210,25 @@ export class ExecutorImpl<Value = any> implements Executor {
       promise.abort();
     }
 
-    this.isFulfilled = this.isInvalidated = false;
-    this.isRejected = true;
+    this.isFulfilled = false;
     this.reason = reason;
-    this.timestamp = timestamp;
+    this.settledAt = settledAt;
+    this.invalidatedAt = 0;
 
     this.version++;
     this.publish('rejected');
   }
 
   activate(): () => void {
-    let isActive = true;
+    let isApplicable = true;
 
     if (this._activeCount++ === 0) {
       this.publish('activated');
     }
 
     return () => {
-      if (isActive) {
-        isActive = false;
-
-        if (--this._activeCount === 0) {
-          this.publish('deactivated');
-        }
+      if (isApplicable && ((isApplicable = false), --this._activeCount === 0)) {
+        this.publish('deactivated');
       }
     };
   }
@@ -237,11 +241,10 @@ export class ExecutorImpl<Value = any> implements Executor {
     return {
       key: this.key,
       isFulfilled: this.isFulfilled,
-      isRejected: this.isRejected,
-      isInvalidated: this.isInvalidated,
       value: this.value,
       reason: this.reason,
-      timestamp: this.timestamp,
+      settledAt: this.settledAt,
+      invalidatedAt: this.invalidatedAt,
     };
   }
 

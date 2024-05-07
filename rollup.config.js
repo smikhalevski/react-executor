@@ -5,7 +5,7 @@ module.exports = {
     './src/main/index.ts',
     './src/main/plugin/abortDeactivated.ts',
     './src/main/plugin/bindAll.ts',
-    './src/main/plugin/disposeDeactivated.ts',
+    './src/main/plugin/detachDeactivated.ts',
     './src/main/plugin/invalidateAfter.ts',
     './src/main/plugin/invalidateByPeers.ts',
     './src/main/plugin/invalidatePeers.ts',

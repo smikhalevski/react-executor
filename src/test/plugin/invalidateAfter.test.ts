@@ -18,13 +18,12 @@ describe('invalidateAfter', () => {
     const manager = new ExecutorManager({
       initialState: [
         {
-          isFulfilled: true,
-          isRejected: false,
-          isInvalidated: false,
           key: 'xxx',
-          timestamp: 50,
+          isFulfilled: true,
           value: 111,
           reason: undefined,
+          settledAt: 50,
+          invalidatedAt: 0,
         },
       ],
     });
@@ -43,11 +42,17 @@ describe('invalidateAfter', () => {
 
     expect(executor.isInvalidated).toBe(true);
 
-    expect(listenerMock).toHaveBeenCalledTimes(4);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor, version: 0 });
-    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'activated', target: executor, version: 0 });
-    expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor, version: 1 });
-    expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'invalidated', target: executor, version: 2 });
+    expect(listenerMock).toHaveBeenCalledTimes(5);
+    expect(listenerMock).toHaveBeenNthCalledWith(1, {
+      type: 'plugin_configured',
+      target: executor,
+      version: 0,
+      payload: { type: 'invalidateAfter', options: { ms: 100 } },
+    });
+    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
+    expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'activated', target: executor, version: 0 });
+    expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'fulfilled', target: executor, version: 1 });
+    expect(listenerMock).toHaveBeenNthCalledWith(5, { type: 'invalidated', target: executor, version: 2 });
   });
 
   test('delays invalidation every time an executor is fulfilled', async () => {
@@ -61,10 +66,16 @@ describe('invalidateAfter', () => {
 
     jest.advanceTimersByTime(99);
 
-    expect(listenerMock).toHaveBeenCalledTimes(4);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor, version: 0 });
-    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'activated', target: executor, version: 0 });
-    expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor, version: 1 });
-    expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'fulfilled', target: executor, version: 2 });
+    expect(listenerMock).toHaveBeenCalledTimes(5);
+    expect(listenerMock).toHaveBeenNthCalledWith(1, {
+      type: 'plugin_configured',
+      target: executor,
+      version: 0,
+      payload: { type: 'invalidateAfter', options: { ms: 100 } },
+    });
+    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
+    expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'activated', target: executor, version: 0 });
+    expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'fulfilled', target: executor, version: 1 });
+    expect(listenerMock).toHaveBeenNthCalledWith(5, { type: 'fulfilled', target: executor, version: 2 });
   });
 });

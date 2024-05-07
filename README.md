@@ -27,13 +27,13 @@ npm install --save-prod react-executor
 
 - [Activate an executor](#activate-an-executor)
 - [Invalidate results](#invalidate-results)
-- [Dispose an executor](#dispose-an-executor)
+- [Detach an executor](#detach-an-executor)
 
 [**Plugins**](#plugins)
 
 - [`abortDeactivated`](#abortdeactivated)
 - [`bindAll`](#bindall)
-- [`disposeDeactivated`](#disposedeactivated)
+- [`detachDeactivated`](#detachdeactivated)
 - [`invalidateAfter`](#invalidateafter)
 - [`invalidateByPeers`](#invalidatebypeers)
 - [`invalidatePeers`](#invalidatepeers)
@@ -139,7 +139,7 @@ is thrown:
 const executorManager = new ExecutorManager();
 
 const userExecutor = executorManager.getOrCreate(['user', 123]);
-// ❌ Error("Object keys require a keySerializer")
+// ❌ Error
 ```
 
 To enable object keys an executor manager must be created with the
@@ -538,11 +538,11 @@ Both executors and managers may have multiple subscribers and each subscriber re
 types:
 
 <dl>
-<dt>configured</dt>
+<dt>attached</dt>
 <dd>
 
-The executor was just [created](#clear-an-executor) and plugins were applied to it. Read more about plugins in the
-[Plugins](#plugins) section.
+The executor was just created, plugins were applied to it, and it was attached to the manager. Read more about plugins
+in the [Plugins](#plugins) section.
 
 </dd>
 
@@ -610,11 +610,11 @@ executor. Read more in the [Activate an executor](#activate-an-executor) section
 
 </dd>
 
-<dt>disposed</dt>
+<dt>detached</dt>
 <dd>
 
-The executor was just disposed: plugin cleanup callbacks were invoked, and the executor key isn't known to the manager
-anymore. Read more in the [Dispose an executor](#dispose-an-executor) section.
+The executor was just detached: it was removed from the manager and all of its subscribers were unsubscribed. Read more
+in the [Detach an executor](#detach-an-executor) section.
 
 </dd>
 </dl>
@@ -690,41 +690,41 @@ executor.isInvalidated;
 By default, invalidating an executor has no effect except marking it
 as [invalidated](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#isInvalidated).
 
-## Dispose an executor
+## Detach an executor
 
 By default, executors that a manager has created are preserved indefinitely and are always available though
 [`get`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html#getOrCreate). This
-isn't always optimal, and you may want to dispose an executor when it isn't needed anymore.
-Use [`dispose`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html#dispose) in
+isn't always optimal, and you may want to detach an executor when it isn't needed anymore.
+Use [`detach`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html#detach) in
 such case:
 
 ```ts
 const executor = executorManager.getOrCreate('test');
 
-executorManager.dispose(executor.key);
+executorManager.detach(executor.key);
 // ⮕ true
 ```
 
-All executor subscribers are unsubscribed after the disposal, and executor is removed from the manager.
+All executor subscribers are now unsubscribed, and executor is removed from the manager.
 
-If an executor is still [active](#activate-an-executor) then it won't be disposed.
+If an executor is still [active](#activate-an-executor) then it won't be detached.
 
 > [!NOTE]\
-> Pending task isn't aborted if the executor is disposed. Use [`abortDeactivated`](#abortdeactivated) plugin to abort
+> Pending task isn't aborted if the executor is detached. Use [`abortDeactivated`](#abortdeactivated) plugin to abort
 > the task of the deactivated executor.
 
 # Plugins
 
 Plugins are callbacks that are invoked only once when the executor is created by the manager. For example, you can
-create a plugin that aborts the pending task and [disposes an executor](#dispose-an-executor) when it is
+create a plugin that aborts the pending task and [detaches an executor](#detach-an-executor) when it is
 [deactivated](#activate-an-executor):
 
 ```ts
-const disposePlugin: ExecutorPlugin = executor => {
+const detachPlugin: ExecutorPlugin = executor => {
   executor.subscribe(event => {
     if (event.type === 'deactivted') {
       executor.abort();
-      executor.dispose();
+      executor.manager.detach(executor.key);
     }
   });
 };
@@ -735,11 +735,11 @@ To apply a plugin, pass it to the
 or to the [`useExecutor`](https://smikhalevski.github.io/react-executor/functions/react_executor.useExecutor.html) hook:
 
 ```ts
-const executor = executorManager.getOrCreate('test', undefined, [disposePlugin]);
+const executor = executorManager.getOrCreate('test', undefined, [detachPlugin]);
 
 const deactivate = executor.activate();
 
-// The executor is instantly disposed by the plugin
+// The executor is instantly detached by the plugin
 deactivate();
 
 executorManager.get('test');
@@ -790,39 +790,39 @@ const { resolve } = useExecutor('test', 'Bye', [bindAll()]);
 resolve('Hello');
 ```
 
-## `disposeDeactivated`
+## `detachDeactivated`
 
 Aborts the pending task after the timeout if the executor is deactivated.
 
 ```ts
-import disposeDeactivated from 'react-executor/plugin/disposeDeactivated';
+import detachDeactivated from 'react-executor/plugin/detachDeactivated';
 
-const executor = useExecutor('test', heavyTask, [disposeDeactivated(2_000)]);
+const executor = useExecutor('test', heavyTask, [detachDeactivated(2_000)]);
 
 executor.activate();
 
-// Executor is disposed in 2 seconds
+// Executor is detached in 2 seconds
 executor.deactivate();
 ```
 
-`disposeDeactivated` has a single argument: the delay after which the executor should be disposed. If an executor is
-re-activated during this delay, the executor won't be disposed.
+`detachDeactivated` has a single argument: the delay after which the executor should be detached. If an executor is
+re-activated during this delay, the executor won't be detached.
 
-Both an executor manager and this plugin don't abort the pending task when executor is disposed.
+Both an executor manager and this plugin don't abort the pending task when executor is detached.
 Use [`abortDeactivated`](#abortdeactivated) to do the job:
 
 ```ts
 import abortDeactivated from 'react-executor/plugin/abortDeactivated';
-import disposeDeactivated from 'react-executor/plugin/disposeDeactivated';
+import detachDeactivated from 'react-executor/plugin/detachDeactivated';
 
 const executor = useExecutor('test', heavyTask, [
   abortDeactivated(2_000),
-  disposeDeactivated(2_000)
+  detachDeactivated(2_000)
 ]);
 
 executor.activate();
 
-// The heavyTask is aborted and the executor is disposed in 2 seconds
+// The heavyTask is aborted and the executor is detached in 2 seconds
 executor.deactivate();
 ```
 
@@ -1013,7 +1013,7 @@ With this plugin, you can synchronize the executor state
 in just one line.
 
 > [!WARNING]\
-> If executor is [disposed](#dispose-an-executor), then the corresponding item is removed from the storage.
+> If executor is [detached](#detach-an-executor), then the corresponding item is removed from the storage.
 
 By default, an executor state is serialized using
 [`JSON`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON). If your executor

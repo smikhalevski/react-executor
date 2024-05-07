@@ -10,7 +10,7 @@
  * @module plugin/retryFocused
  */
 
-import type { ExecutorPlugin } from '../types';
+import type { ExecutorPlugin, PluginConfiguredPayload } from '../types';
 
 /**
  * Retries the latest task of the active executor if the window gains focus.
@@ -42,5 +42,9 @@ const plugin: ExecutorPlugin = executor => {
         window.removeEventListener('focus', handleFocus, false);
         break;
     }
+  });
+
+  executor.publish<PluginConfiguredPayload>('plugin_configured', {
+    type: 'retryFocused',
   });
 };

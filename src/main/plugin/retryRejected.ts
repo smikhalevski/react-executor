@@ -10,7 +10,7 @@
  * @module plugin/retryRejected
  */
 
-import type { Executor, ExecutorPlugin } from '../types';
+import type { Executor, ExecutorPlugin, PluginConfiguredPayload } from '../types';
 
 /**
  * Retries the last task after the execution has failed.
@@ -39,7 +39,7 @@ export default function retryRejected<Value = any>(
                 index++;
                 executor.retry();
               },
-              (typeof ms === 'function' ? ms(index, executor) : ms) - Date.now() + executor.timestamp
+              (typeof ms === 'function' ? ms(index, executor) : ms) - Date.now() + executor.settledAt
             );
           }
           break;
@@ -51,6 +51,11 @@ export default function retryRejected<Value = any>(
           clearTimeout(timer);
           break;
       }
+    });
+
+    executor.publish<PluginConfiguredPayload>('plugin_configured', {
+      type: 'retryRejected',
+      options: { count, ms },
     });
   };
 }

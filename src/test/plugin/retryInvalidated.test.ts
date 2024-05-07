@@ -35,14 +35,20 @@ describe('retryInvalidated', () => {
     expect(executor.isInvalidated).toBe(false);
     expect(executor.value).toBe('bbb');
 
-    expect(listenerMock).toHaveBeenCalledTimes(7);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor, version: 0 });
-    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'pending', target: executor, version: 1 });
-    expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'activated', target: executor, version: 1 });
-    expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'fulfilled', target: executor, version: 2 });
-    expect(listenerMock).toHaveBeenNthCalledWith(5, { type: 'pending', target: executor, version: 4 });
+    expect(listenerMock).toHaveBeenCalledTimes(8);
+    expect(listenerMock).toHaveBeenNthCalledWith(1, {
+      type: 'plugin_configured',
+      target: executor,
+      version: 0,
+      payload: { type: 'retryInvalidated' },
+    });
+    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
+    expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'pending', target: executor, version: 1 });
+    expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'activated', target: executor, version: 1 });
+    expect(listenerMock).toHaveBeenNthCalledWith(5, { type: 'fulfilled', target: executor, version: 2 });
     expect(listenerMock).toHaveBeenNthCalledWith(6, { type: 'invalidated', target: executor, version: 3 });
-    expect(listenerMock).toHaveBeenNthCalledWith(7, { type: 'fulfilled', target: executor, version: 5 });
+    expect(listenerMock).toHaveBeenNthCalledWith(7, { type: 'pending', target: executor, version: 4 });
+    expect(listenerMock).toHaveBeenNthCalledWith(8, { type: 'fulfilled', target: executor, version: 5 });
   });
 
   test('retries the activated and invalidated executor', async () => {
@@ -68,13 +74,19 @@ describe('retryInvalidated', () => {
     expect(executor.isInvalidated).toBe(false);
     expect(executor.value).toBe('bbb');
 
-    expect(listenerMock).toHaveBeenCalledTimes(7);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'configured', target: executor, version: 0 });
-    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'pending', target: executor, version: 1 });
-    expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor, version: 2 });
-    expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'invalidated', target: executor, version: 3 });
-    expect(listenerMock).toHaveBeenNthCalledWith(5, { type: 'pending', target: executor, version: 4 });
+    expect(listenerMock).toHaveBeenCalledTimes(8);
+    expect(listenerMock).toHaveBeenNthCalledWith(1, {
+      type: 'plugin_configured',
+      target: executor,
+      version: 0,
+      payload: { type: 'retryInvalidated' },
+    });
+    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
+    expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'pending', target: executor, version: 1 });
+    expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'fulfilled', target: executor, version: 2 });
+    expect(listenerMock).toHaveBeenNthCalledWith(5, { type: 'invalidated', target: executor, version: 3 });
     expect(listenerMock).toHaveBeenNthCalledWith(6, { type: 'activated', target: executor, version: 3 });
-    expect(listenerMock).toHaveBeenNthCalledWith(7, { type: 'fulfilled', target: executor, version: 5 });
+    expect(listenerMock).toHaveBeenNthCalledWith(7, { type: 'pending', target: executor, version: 4 });
+    expect(listenerMock).toHaveBeenNthCalledWith(8, { type: 'fulfilled', target: executor, version: 5 });
   });
 });

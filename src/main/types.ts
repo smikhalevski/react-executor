@@ -7,10 +7,10 @@ import type { ExecutorManager } from './ExecutorManager';
  * Lifecycle events:
  *
  * <dl>
- *   <dt><i>"configured"</i></dt>
+ *   <dt><i>"attached"</i></dt>
  *   <dd>
  *
- *   The executor was just created and plugins were applied to it.
+ *   The executor was just created, plugins were applied to it, and it was attached to the manager.
  *
  *   </dd>
  *
@@ -75,13 +75,11 @@ import type { ExecutorManager } from './ExecutorManager';
  *
  *   </dd>
  *
- *   <dt><i>"disposed"</i></dt>
+ *   <dt><i>"detached"</i></dt>
  *   <dd>
  *
- *   The executor was just {@link ExecutorManager.dispose disposed}: plugin cleanup callbacks were invoked, and
- *   the {@link Executor.key executor key} isn't known to the manager anymore.
- *
- *   All executor subscribers are unsubscribed after the disposal.
+ *   The executor was just {@link ExecutorManager.detach detached}: it was removed from the manager and all of its
+ *   subscribers were unsubscribed.
  *
  *   </dd>
  * </dl>
@@ -95,16 +93,17 @@ export interface ExecutorEvent<Value = any> {
    * See {@link ExecutorEvent} for more details.
    */
   type:
-    | 'configured'
+    | 'plugin_configured'
+    | 'attached'
+    | 'activated'
     | 'pending'
     | 'fulfilled'
     | 'rejected'
     | 'aborted'
     | 'cleared'
     | 'invalidated'
-    | 'activated'
     | 'deactivated'
-    | 'disposed'
+    | 'detached'
     | (string & {});
 
   /**
@@ -142,7 +141,7 @@ export type ExecutorPlugin<Value = any> = (executor: Executor<Value>) => void;
 export type ExecutorTask<Value = any> = (signal: AbortSignal, executor: Executor<Value>) => PromiseLike<Value> | Value;
 
 /**
- * The serializable state of the {@link Executor}.
+ * The minimal serializable state that is required to hydrate the {@link Executor} instance.
  *
  * @template Value The value stored by the executor.
  */
@@ -158,17 +157,6 @@ export interface ExecutorState<Value = any> {
   readonly isFulfilled: boolean;
 
   /**
-   * `true` if the executor was rejected with a {@link reason}, or `false` otherwise.
-   */
-  readonly isRejected: boolean;
-
-  /**
-   * `true` if {@link Executor.invalidate} was called on a {@link Executor.isSettled settled} executor and a new
-   * settlement hasn't occurred yet.
-   */
-  readonly isInvalidated: boolean;
-
-  /**
    * The value of the latest fulfillment.
    */
   readonly value: Value | undefined;
@@ -179,9 +167,14 @@ export interface ExecutorState<Value = any> {
   readonly reason: any;
 
   /**
-   * The timestamp when the executor was last settled, or 0 if it wasn't settled yet.
+   * The timestamp when the executor was settled, or 0 if it isn't settled.
    */
-  readonly timestamp: number;
+  readonly settledAt: number;
+
+  /**
+   * The timestamp when the executor was invalidated, or 0 if the executor isn't invalidated.
+   */
+  readonly invalidatedAt: number;
 }
 
 /**
@@ -197,6 +190,11 @@ export interface Executor<Value = any> extends ExecutorState<Value> {
   readonly manager: ExecutorManager;
 
   /**
+   * `true` if the executor was rejected with a {@link reason}, or `false` otherwise.
+   */
+  readonly isRejected: boolean;
+
+  /**
    * `true` if the executor is {@link isFulfilled fulfilled} or {@link isRejected rejected}, or `false` otherwise.
    */
   readonly isSettled: boolean;
@@ -210,6 +208,12 @@ export interface Executor<Value = any> extends ExecutorState<Value> {
    * `true` if the execution is currently pending, or `false` otherwise.
    */
   readonly isPending: boolean;
+
+  /**
+   * `true` if {@link invalidate} was called on a {@link isSettled settled} executor and a new settlement hasn't
+   * occurred yet.
+   */
+  readonly isInvalidated: boolean;
 
   /**
    * The latest task that was {@link execute executed}, or `null` if the executor didn't execute any tasks.
@@ -279,8 +283,10 @@ export interface Executor<Value = any> extends ExecutorState<Value> {
 
   /**
    * If the executor is settled the result is masted as {@link isInvalidated invalidated}.
+   *
+   * @param invalidatedAt The timestamp when the executor result was invalidated.
    */
-  invalidate(): void;
+  invalidate(invalidatedAt?: number): void;
 
   /**
    * Aborts pending execution and fulfills the executor with the value.
@@ -288,17 +294,17 @@ export interface Executor<Value = any> extends ExecutorState<Value> {
    * **Note:** If value is a promise-like then {@link execute} is implicitly called which replaces the {@link task}.
    *
    * @param value The value.
-   * @param timestamp The timestamp when the value was acquired. If value is a promise then the timestamp is ignored.
+   * @param settledAt The timestamp when the value was acquired. If value is a promise then the timestamp is ignored.
    */
-  resolve(value: PromiseLike<Value> | Value, timestamp?: number): void;
+  resolve(value: PromiseLike<Value> | Value, settledAt?: number): void;
 
   /**
    * Instantly aborts pending execution and rejects the executor with the reason.
    *
    * @param reason The reason of failure.
-   * @param timestamp The timestamp when the reason was acquired.
+   * @param settledAt The timestamp when the reason was acquired.
    */
-  reject(reason: any, timestamp?: number): void;
+  reject(reason: any, settledAt?: number): void;
 
   /**
    * Marks the executor as being actively monitored by an external consumer.
@@ -322,13 +328,31 @@ export interface Executor<Value = any> extends ExecutorState<Value> {
    *
    * @param eventType The type of the published event.
    * @param payload The optional payload associated with the event.
+   * @templace Payload The payload published with the event.
    */
-  publish(eventType: ExecutorEvent['type'], payload?: unknown): void;
+  publish<Payload>(eventType: ExecutorEvent['type'], payload?: Payload): void;
 
   /**
    * Returns the serializable executor state.
    */
   toJSON(): ExecutorState<Value>;
+}
+
+/**
+ * Payload of the {@link ExecutorEvent plugin_configured} event.
+ */
+export interface PluginConfiguredPayload {
+  /**
+   * The type of the plugin that was configured.
+   *
+   * @example "abortDeactivated"
+   */
+  type: string;
+
+  /**
+   * The options that the plugin now uses.
+   */
+  options?: object;
 }
 
 /**
