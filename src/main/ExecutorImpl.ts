@@ -9,13 +9,14 @@ import { AbortError } from './utils';
  * @internal
  */
 export class ExecutorImpl<Value = any> implements Executor {
-  isFulfilled = false;
+  version = 0;
   value: Value | undefined = undefined;
   reason: any = undefined;
+  annotations: { readonly [annotation: PropertyKey]: any } = Object.create(null);
   task: ExecutorTask<Value> | null = null;
   settledAt = 0;
   invalidatedAt = 0;
-  version = 0;
+  isFulfilled = false;
 
   /**
    * The promise of the pending task execution, or `null` if there's no pending task execution.
@@ -237,18 +238,25 @@ export class ExecutorImpl<Value = any> implements Executor {
     return this._pubSub.subscribe(listener);
   }
 
+  publish(eventType: ExecutorEvent['type'], payload?: unknown): void {
+    this._pubSub.publish({ type: eventType, target: this, version: this.version, payload });
+  }
+
+  annotate(patch: { readonly [annotation: PropertyKey]: any }): void {
+    this.version++;
+    Object.assign(this.annotations, patch);
+    this.publish('annotated');
+  }
+
   toJSON(): ExecutorState<Value> {
     return {
       key: this.key,
       isFulfilled: this.isFulfilled,
       value: this.value,
       reason: this.reason,
+      annotations: this.annotations,
       settledAt: this.settledAt,
       invalidatedAt: this.invalidatedAt,
     };
-  }
-
-  publish(eventType: ExecutorEvent['type'], payload?: unknown): void {
-    this._pubSub.publish({ type: eventType, target: this, version: this.version, payload });
   }
 }
