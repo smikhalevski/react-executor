@@ -24,6 +24,7 @@ describe('ExecutorManager', () => {
             reason: undefined,
             settledAt: 50,
             invalidatedAt: 0,
+            annotations: {},
           },
         ],
       });
@@ -299,7 +300,7 @@ describe('ExecutorManager', () => {
     test('returns an executor manager state', () => {
       manager.getOrCreate('xxx', 111);
 
-      expect(manager.toJSON()).toStrictEqual([
+      expect(manager.toJSON()).toEqual([
         {
           key: 'xxx',
           isFulfilled: true,
@@ -307,6 +308,7 @@ describe('ExecutorManager', () => {
           reason: undefined,
           settledAt: 50,
           invalidatedAt: 0,
+          annotations: {},
         },
       ]);
     });
@@ -315,7 +317,7 @@ describe('ExecutorManager', () => {
       manager.getOrCreate('xxx', 111);
 
       expect(JSON.stringify(manager)).toBe(
-        '[{"key":"xxx","isFulfilled":true,"value":111,"settledAt":50,"invalidatedAt":0}]'
+        '[{"key":"xxx","isFulfilled":true,"value":111,"annotations":{},"settledAt":50,"invalidatedAt":0}]'
       );
     });
   });

@@ -663,13 +663,14 @@ describe('ExecutorImpl', () => {
     test('returns an executor state', () => {
       executor.resolve(111);
 
-      expect(executor.toJSON()).toStrictEqual({
+      expect(executor.toJSON()).toEqual({
         key: 'xxx',
         isFulfilled: true,
         value: 111,
         reason: undefined,
         settledAt: 50,
         invalidatedAt: 0,
+        annotations: {},
       });
     });
 
@@ -677,7 +678,7 @@ describe('ExecutorImpl', () => {
       executor.resolve(111);
 
       expect(JSON.stringify(executor)).toBe(
-        '{"key":"xxx","isFulfilled":true,"value":111,"settledAt":50,"invalidatedAt":0}'
+        '{"key":"xxx","isFulfilled":true,"value":111,"annotations":{},"settledAt":50,"invalidatedAt":0}'
       );
     });
   });

@@ -22,6 +22,7 @@ describe('invalidateAfter', () => {
           isFulfilled: true,
           value: 111,
           reason: undefined,
+          annotations: {},
           settledAt: 50,
           invalidatedAt: 0,
         },
