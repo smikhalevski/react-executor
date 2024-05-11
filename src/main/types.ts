@@ -2,6 +2,15 @@ import type { AbortablePromise } from 'parallel-universe';
 import type { ExecutorManager } from './ExecutorManager';
 
 /**
+ * Annotations that allow to associate arbitrary metadata with the {@link Executor} instance.
+ *
+ * @see {@link Executor.annotate}
+ */
+export interface ExecutorAnnotations {
+  readonly [annotationKey: PropertyKey]: any;
+}
+
+/**
  * The event published by the {@link Executor}.
  *
  * Lifecycle events:
@@ -57,6 +66,9 @@ import type { ExecutorManager } from './ExecutorManager';
  *
  *   <dt><i>"annotated"</i></dt>
  *   <dd>{@link Executor.annotations Annotations} associated with the executor were patched.</dd>
+ *
+ *   <dt><i>"plugin_configured"</i></dt>
+ *   <dd>The configuration of the plugin associated with the executor was updated.</dd>
  * </dl>
  *
  * @template Value The value stored by the executor.
@@ -140,7 +152,7 @@ export interface ExecutorState<Value = any> {
   /**
    * The map of annotations associated with the executor.
    */
-  readonly annotations: { readonly [annotation: PropertyKey]: any };
+  readonly annotations: ExecutorAnnotations;
 
   /**
    * The timestamp when the executor was settled, or 0 if it isn't settled.
@@ -318,7 +330,7 @@ export interface Executor<Value = any> extends ExecutorState<Value> {
    *
    * @param patch The patch containing new annotations.
    */
-  annotate(patch: { readonly [annotation: PropertyKey]: any }): void;
+  annotate(patch: ExecutorAnnotations): void;
 
   /**
    * Returns the serializable executor state.

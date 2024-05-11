@@ -546,6 +546,30 @@ in the [Plugins](#plugins) section.
 
 </dd>
 
+<dt>detached</dt>
+<dd>
+
+The executor was just detached: it was removed from the manager and all of its subscribers were unsubscribed. Read more
+in the [Detach an executor](#detach-an-executor) section.
+
+</dd>
+
+<dt>activated</dt>
+<dd>
+
+The executor was inactive and became active. This means that there are consumers that observe the state of the executor.
+Read more in the [Activate an executor](#activate-an-executor) section.
+
+</dd>
+
+<dt>deactivated</dt>
+<dd>
+
+The executor was active and became inactive. This means that there are no consumers that observe the state of the
+executor. Read more in the [Activate an executor](#activate-an-executor) section.
+
+</dd>
+
 <dt>pending</dt>
 <dd>
 
@@ -594,27 +618,18 @@ Results stored in an executor were [invalidated](#invalidate-results).
 
 </dd>
 
-<dt>activated</dt>
+<dt>annotated</dt>
 <dd>
 
-The executor was inactive and became active. This means that there are consumers that observe the state of the executor.
-Read more in the [Activate an executor](#activate-an-executor) section.
+[Annotations](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#annotations)
+associated with the executor were patched.
 
 </dd>
 
-<dt>deactivated</dt>
+<dt>plugin_configured</dt>
 <dd>
 
-The executor was active and became inactive. This means that there are no consumers that observe the state of the
-executor. Read more in the [Activate an executor](#activate-an-executor) section.
-
-</dd>
-
-<dt>detached</dt>
-<dd>
-
-The executor was just detached: it was removed from the manager and all of its subscribers were unsubscribed. Read more
-in the [Detach an executor](#detach-an-executor) section.
+The configuration of the plugin associated with the executor was updated.
 
 </dd>
 </dl>
