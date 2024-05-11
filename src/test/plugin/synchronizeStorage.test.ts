@@ -90,6 +90,7 @@ describe('synchronizeStorage', () => {
           isFulfilled: true,
           value: 'aaa',
           reason: undefined,
+          annotations: {},
           settledAt: 100,
           invalidatedAt: 0,
         },
@@ -130,7 +131,7 @@ describe('synchronizeStorage', () => {
 
     expect(executor.value).toBe('bbb');
     expect(localStorage.getItem('executor_xxx')).toBe(
-      '{"key":"xxx","isFulfilled":true,"value":"bbb","settledAt":50,"invalidatedAt":0}'
+      '{"key":"xxx","isFulfilled":true,"value":"bbb","annotations":{},"settledAt":50,"invalidatedAt":0}'
     );
 
     expect(listenerMock).toHaveBeenCalledTimes(4);
@@ -155,7 +156,7 @@ describe('synchronizeStorage', () => {
 
     expect(executor.value).toBe('aaa');
     expect(localStorage.getItem('executor_xxx')).toBe(
-      '{"key":"xxx","isFulfilled":true,"value":"aaa","settledAt":50,"invalidatedAt":0}'
+      '{"key":"xxx","isFulfilled":true,"value":"aaa","annotations":{},"settledAt":50,"invalidatedAt":0}'
     );
   });
 
@@ -178,7 +179,7 @@ describe('synchronizeStorage', () => {
     expect(executor.isPending).toBe(false);
     expect(executor.value).toBe('aaa');
     expect(localStorage.getItem('executor_xxx')).toBe(
-      '{"key":"xxx","isFulfilled":true,"value":"aaa","settledAt":50,"invalidatedAt":0}'
+      '{"key":"xxx","isFulfilled":true,"value":"aaa","annotations":{},"settledAt":50,"invalidatedAt":0}'
     );
   });
 
@@ -235,7 +236,7 @@ describe('synchronizeStorage', () => {
 
     expect(executor.value).toBe('aaa');
     expect(localStorage.getItem('executor_xxx')).toBe(
-      '{"key":"xxx","isFulfilled":true,"value":"aaa","settledAt":50,"invalidatedAt":0}'
+      '{"key":"xxx","isFulfilled":true,"value":"aaa","annotations":{},"settledAt":50,"invalidatedAt":0}'
     );
   });
 
