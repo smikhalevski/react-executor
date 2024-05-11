@@ -9,14 +9,14 @@ import { AbortError } from './utils';
  * @internal
  */
 export class ExecutorImpl<Value = any> implements Executor {
-  version = 0;
   value: Value | undefined = undefined;
   reason: any = undefined;
-  annotations: ExecutorAnnotations = Object.create(null);
   task: ExecutorTask<Value> | null = null;
   settledAt = 0;
   invalidatedAt = 0;
   isFulfilled = false;
+  annotations: ExecutorAnnotations = Object.create(null);
+  version = 0;
 
   /**
    * The promise of the pending task execution, or `null` if there's no pending task execution.

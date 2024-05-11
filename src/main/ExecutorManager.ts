@@ -2,6 +2,8 @@ import { AbortablePromise, PubSub } from 'parallel-universe';
 import { ExecutorImpl } from './ExecutorImpl';
 import type { Executor, ExecutorEvent, ExecutorPlugin, ExecutorState, ExecutorTask, NoInfer } from './types';
 
+declare const __REACT_EXECUTOR_DEVTOOLS__: { plugin: ExecutorPlugin } | undefined;
+
 /**
  * Options provided to the {@link ExecutorManager} constructor.
  */
@@ -27,6 +29,13 @@ export interface ExecutorManagerOptions {
    * @param key The key to serialize.
    */
   keySerializer?: (key: any) => any;
+
+  /**
+   * If `true` then executors are registered in the devtools extension.
+   *
+   * @default true
+   */
+  devtools?: boolean;
 }
 
 /**
@@ -60,12 +69,27 @@ export class ExecutorManager implements Iterable<Executor> {
   private readonly _keySerializer: ((key: unknown) => unknown) | undefined;
 
   /**
+   * `true` if {@link ExecutorManagerOptions.devtools devtools} are enabled and the browser extension is available.
+   */
+  readonly hasDevtools: boolean;
+
+  /**
    * Creates a new executor manager.
    *
    * @param options Additional options.
    */
   constructor(options: ExecutorManagerOptions = {}) {
     this._keySerializer = options.keySerializer;
+    this.hasDevtools = false;
+
+    if (options.devtools === undefined || options.devtools) {
+      const devtools = typeof __REACT_EXECUTOR_DEVTOOLS__ !== 'undefined' ? __REACT_EXECUTOR_DEVTOOLS__ : undefined;
+
+      if (devtools !== undefined) {
+        this._plugins.push(devtools.plugin);
+        this.hasDevtools = true;
+      }
+    }
 
     if (options.initialState !== undefined) {
       for (const state of options.initialState) {
