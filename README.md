@@ -47,6 +47,8 @@ npm install --save-prod react-executor
 
 - [Suspense](#suspense)
 
+[**Devtools**](#devtools)
+
 [**Cookbook**](#cookbook)
 
 - [Optimistic updates](#optimistic-updates)
@@ -1037,7 +1039,9 @@ stores a value that may contain circular references, or non-serializable data li
 ```ts
 import { stringify, parse } from 'flatted';
 
-synchronizeStorage(localStorage, { stringify, parse });
+synchronizeStorage(localStorage, {
+  serializer: { stringify, parse }
+});
 ```
 
 # React integration
@@ -1161,6 +1165,42 @@ const shoppingCartExecutor = useExecutor('shoppingCart');
 
 useExecutorSuspense([accountExecutor, shoppingCartExecutor]);
 ```
+
+# Devtools
+
+To inspect the current state of executors in your app, install the
+[React Executor Devtools](https://chromewebstore.google.com/detail/react-executor-devtools/achlflelpafnlpepfpfhildkahbfhgjc)
+browser extension and open its panel in the Chrome Developer Tools:
+
+<br/>
+<p align="center">
+  <img
+    alt="React Executor Devtools Screenshot"
+    src="https://raw.githubusercontent.com/smikhalevski/react-executor-devtools/master/assets/screenshot.png"
+    width="640"
+  />
+</p>
+<br/>
+
+Devtools extensions doesn't require any additional configuration and provides introspection to all executors on the
+page, regardless if they were rendered through React or created outside of the rendering process.
+
+To disable devtools, create a custom
+[`ExecutorManager`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html):
+
+```ts
+import { ExecutorManager } from 'react-executor';
+
+const opaqueExecutorManager = new ExecutorManager({
+  devtools: false
+});
+```
+
+Executors created by the `opaqueExecutorManager` won't be visible in the React Executor Devtools extension. It is
+recommended to use this setting in production.
+
+The extension source can be found in the [react-executor-devtools](https://github.com/smikhalevski/react-executor-devtools)
+repo.
 
 # Cookbook
 
