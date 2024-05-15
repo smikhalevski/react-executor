@@ -1124,6 +1124,65 @@ useEffect(() => {
 }, []);
 ```
 
+## SSR
+
+The app:
+
+```tsx
+export const App = () => (
+  <html>
+    <body>
+      <Suspense fallback={'Loading'}>
+        <User/>
+      </Suspense>
+    </body>
+  </html>
+);
+
+const User = () => {
+  const userExecutor = useExecutorSuspense(useExecutor('user', fetchUser));
+
+  return postsExecutor.get().firstName;
+};
+```
+
+On the server:
+
+```tsx
+import { createServer } from 'http';
+import { renderToPipeableStream } from 'react-dom/server';
+import { ExecutorManagerProvider, SSRExecutorManager } from 'react-executor';
+import { App } from './App';
+
+const server = createServer();
+
+server.on('request', (request, response) => {
+  const executorManager = new SSRExecutorManager(response);
+  
+  const { pipe } = renderToPipeableStream(
+    <ExecutorManagerProvider value={executorManager}>
+      <App/>
+    </ExecutorManagerProvider>,
+    {
+      onShellReady() {
+        pipe(executorManager.stream);
+      }
+    }
+  );
+});
+
+server.listen(8080);
+```
+
+On the client:
+
+```tsx
+import { hydrateRoot } from 'react-dom/client';
+import { App } from './App';
+
+hydrateRoot(document, <App/>);
+```
+
 ## Suspense
 
 Executors support fetch-as-you-render approach and can be integrated with React Suspense. To facilitate the rendering
@@ -1366,11 +1425,6 @@ response.write(`<script>window.__EXECUTORS__ = ${JSON.stringify(executorManager)
 
 On the client, deserialize the initial state and pass it to the `ExecutorManager` constructor:
 
-```ts
-const executorManager = new ExecutorManager({
-  initialState: JSON.parse(window.__EXECUTORS__)
-});
-```
 
 Now when you create a new executor using
 [`getOrCreate`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html#getOrCreate)

@@ -65,7 +65,7 @@ export class ExecutorImpl<Value = any> implements Executor {
     if (this.isRejected) {
       throw this.reason;
     }
-    throw new Error('The executor is not settled');
+    throw new Error('The executor is not settled: ' + this.key);
   }
 
   getOrDefault(defaultValue: Value): Value {
