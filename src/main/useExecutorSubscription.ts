@@ -1,4 +1,5 @@
-import { useDebugValue, useEffect, useState } from 'react';
+import { useCallback, useDebugValue, useEffect } from 'react';
+import { useSyncExternalStore } from 'use-sync-external-store/shim';
 import type { Executor } from './types';
 
 /**
@@ -9,25 +10,13 @@ import type { Executor } from './types';
  * @param executor The executor to subscribe to.
  */
 export function useExecutorSubscription(executor: Executor): void {
-  const [, setVersion] = useState(executor.version);
-
   useDebugValue(executor, toJSON);
 
-  useEffect(() => {
-    const provideVersion = (prevVersion: number) => Math.max(prevVersion, executor.version);
+  const subscribe = useCallback(executor.subscribe.bind(executor), [executor]);
 
-    const deactivate = executor.activate();
-    const unsubscribe = executor.subscribe(() => {
-      setVersion(provideVersion);
-    });
+  useSyncExternalStore(subscribe, () => executor.version);
 
-    setVersion(provideVersion);
-
-    return () => {
-      unsubscribe();
-      deactivate();
-    };
-  }, [executor]);
+  useEffect(executor.activate.bind(executor), [executor]);
 }
 
 function toJSON(executor: Executor) {
