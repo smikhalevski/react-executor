@@ -17,7 +17,7 @@ describe('retryInvalidated', () => {
 
     executor.activate();
 
-    await executor.toPromise();
+    await executor.getOrAwait();
 
     expect(executor.isPending).toBe(false);
     expect(executor.isInvalidated).toBe(false);
@@ -29,7 +29,7 @@ describe('retryInvalidated', () => {
     expect(executor.isInvalidated).toBe(true);
     expect(executor.value).toBe('aaa');
 
-    await executor.toPromise();
+    await executor.getOrAwait();
 
     expect(executor.isPending).toBe(false);
     expect(executor.isInvalidated).toBe(false);
@@ -55,7 +55,7 @@ describe('retryInvalidated', () => {
     const taskMock = jest.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
     const executor = manager.getOrCreate('xxx', taskMock, [retryInvalidated()]);
 
-    await executor.toPromise();
+    await executor.getOrAwait();
 
     expect(executor.isPending).toBe(false);
     expect(executor.isInvalidated).toBe(false);
@@ -68,7 +68,7 @@ describe('retryInvalidated', () => {
     expect(executor.isInvalidated).toBe(true);
     expect(executor.value).toBe('aaa');
 
-    await executor.toPromise();
+    await executor.getOrAwait();
 
     expect(executor.isPending).toBe(false);
     expect(executor.isInvalidated).toBe(false);

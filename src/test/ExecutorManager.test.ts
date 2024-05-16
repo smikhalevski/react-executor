@@ -102,7 +102,7 @@ describe('ExecutorManager', () => {
       expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'attached', target: executor, version: 0 });
       expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'pending', target: executor, version: 1 });
 
-      await expect(executor.toPromise()).resolves.toBe(111);
+      await expect(executor.getOrAwait()).resolves.toBe(111);
 
       expect(executor.isPending).toBe(false);
       expect(executor.isFulfilled).toBe(true);
@@ -157,7 +157,7 @@ describe('ExecutorManager', () => {
       expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'pending', target: executor, version: 1 });
       expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 1 });
 
-      await executor.toPromise();
+      await executor.getOrAwait();
 
       expect(executor.value).toBe(222);
 

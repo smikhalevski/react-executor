@@ -110,7 +110,7 @@ describe('useExecutor', () => {
     expect(taskMock).toHaveBeenCalledTimes(1);
     expect(renderMock).toHaveBeenCalledTimes(2);
 
-    await act(() => executor.toPromise());
+    await act(() => executor.getOrAwait());
 
     expect(executor.isPending).toBe(false);
     expect(executor.isFulfilled).toBe(true);

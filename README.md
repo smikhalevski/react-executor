@@ -383,7 +383,7 @@ Let's consider the scenario where a task is replaced with another task:
 const planetExecutor = executorManager.getOrCreate('planet');
 
 // The promise is resolved only when planetExecutor is settled
-const planetPromise = planetExecutor.toPromise();
+const planetPromise = planetExecutor.getOrAwait();
 
 const plutoPromise = planetExecutor.execute(async signal => 'Pluto');
 
@@ -402,7 +402,7 @@ Here's another example, where executor waits to be settled:
 ```ts
 const printerExecutor = executorManager.getOrCreate('printer');
 
-printerExecutor.toPromise().then(value => {
+printerExecutor.getOrAwait().then(value => {
   console.log(value);
 });
 
@@ -423,7 +423,7 @@ await executor.execute(() => planets.shift());
 
 executor.retry();
 
-await executor.toPromise();
+await executor.getOrAwait();
 
 executor.value;
 // ⮕ 'Mars'
@@ -482,7 +482,7 @@ executor.resolve(planetPromise);
 executor.isPending;
 // ⮕ true
 
-await executor.toPromise();
+await executor.getOrAwait();
 
 executor.value;
 // ⮕ 'Mars'
@@ -994,7 +994,7 @@ const fetchCheese: ExecutorTask = async (signal, executor) => {
   const breadExecutor = await executor.manager.waitFor('bread');
 
   // Wait for the breadExecutor to be settled
-  const bread = await breadExecutor.toPromise();
+  const bread = await breadExecutor.getOrAwait();
   
   // Choose the best cheese for this bread
   return bread === 'Ciabatta' ? 'Mozzarella' : 'Burrata';
@@ -1298,7 +1298,7 @@ const accountExecutor = useExecutor('account', async signal => {
 });
 
 const shoppingCartExecutor = useExecutor('shoppingCart', async signal => {
-  const account = await accountExecutor.toPromise();
+  const account = await accountExecutor.getOrAwait();
   
   // Fetch shopping cart for an account
 });
@@ -1314,7 +1314,7 @@ const shoppingCartExecutor = useExecutor('shoppingCart', async (signal, executor
   const accountExecutor = await executor.manager.waitFor('account');
   
   // 2️⃣ Wait for the account executor to be settled
-  const account = await accountExecutor.toPromise();
+  const account = await accountExecutor.getOrAwait();
 
   // Fetch shopping cart for an account
 });
@@ -1434,7 +1434,7 @@ If during SSR you need to wait for all executors to settle:
 
 ```ts
 await Promise.allSettled(
-  Array.from(executorManager).map(executor => executor.toPromise())
+  Array.from(executorManager).map(executor => executor.getOrAwait())
 );
 ```
 

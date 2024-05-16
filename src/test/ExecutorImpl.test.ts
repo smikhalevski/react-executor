@@ -618,21 +618,21 @@ describe('ExecutorImpl', () => {
     });
   });
 
-  describe('toPromise', () => {
+  describe('getOrAwait', () => {
     test('resolves with the value if an executor is fulfilled', async () => {
       executor.resolve('aaa');
 
-      await expect(executor.toPromise()).resolves.toBe('aaa');
+      await expect(executor.getOrAwait()).resolves.toBe('aaa');
     });
 
     test('rejects with the reason if an executor is fulfilled', async () => {
       executor.reject(expectedReason);
 
-      await expect(executor.toPromise()).rejects.toBe(expectedReason);
+      await expect(executor.getOrAwait()).rejects.toBe(expectedReason);
     });
 
     test('waits for the executor to be fulfilled', async () => {
-      const promise = executor.toPromise();
+      const promise = executor.getOrAwait();
 
       executor.resolve('aaa');
 
@@ -640,7 +640,7 @@ describe('ExecutorImpl', () => {
     });
 
     test('waits for the executor to be rejected', async () => {
-      const promise = executor.toPromise();
+      const promise = executor.getOrAwait();
 
       executor.reject(expectedReason);
 
@@ -651,7 +651,7 @@ describe('ExecutorImpl', () => {
       executor.resolve('aaa');
       executor.execute(() => 'bbb').catch(noop);
 
-      const promise = executor.toPromise();
+      const promise = executor.getOrAwait();
 
       executor.execute(() => 'ccc');
 

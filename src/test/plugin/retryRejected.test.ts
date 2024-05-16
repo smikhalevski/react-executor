@@ -28,21 +28,21 @@ describe('retryRejected', () => {
     executor.activate();
     expect(executor.isPending).toBe(true);
     (executor as ExecutorImpl)._taskPromise!.catch(noop);
-    await executor.toPromise().then(noop, noop);
+    await executor.getOrAwait().then(noop, noop);
     expect(executor.isPending).toBe(false);
 
     // Retry 1
     jest.runAllTimers();
     expect(executor.isPending).toBe(true);
     (executor as ExecutorImpl)._taskPromise!.catch(noop);
-    await executor.toPromise().then(noop, noop);
+    await executor.getOrAwait().then(noop, noop);
     expect(executor.isPending).toBe(false);
 
     // Retry 2
     jest.runAllTimers();
     expect(executor.isPending).toBe(true);
     (executor as ExecutorImpl)._taskPromise!.catch(noop);
-    await executor.toPromise().then(noop, noop);
+    await executor.getOrAwait().then(noop, noop);
     expect(executor.isPending).toBe(false);
 
     // Retry 3
@@ -62,7 +62,7 @@ describe('retryRejected', () => {
     executor.activate();
     expect(executor.isPending).toBe(true);
     (executor as ExecutorImpl)._taskPromise!.catch(noop);
-    await executor.toPromise().then(noop, noop);
+    await executor.getOrAwait().then(noop, noop);
     expect(executor.isPending).toBe(false);
 
     // Retry 1
@@ -89,7 +89,7 @@ describe('retryRejected', () => {
     executor.activate();
     expect(executor.isPending).toBe(true);
     (executor as ExecutorImpl)._taskPromise!.catch(noop);
-    await executor.toPromise().then(noop, noop);
+    await executor.getOrAwait().then(noop, noop);
     expect(executor.isPending).toBe(false);
 
     // Retry 1
@@ -116,7 +116,7 @@ describe('retryRejected', () => {
     const deactivate = executor.activate();
     expect(executor.isPending).toBe(true);
     (executor as ExecutorImpl)._taskPromise!.catch(noop);
-    await executor.toPromise().then(noop, noop);
+    await executor.getOrAwait().then(noop, noop);
     expect(executor.isPending).toBe(false);
 
     // Retry 1
@@ -126,7 +126,7 @@ describe('retryRejected', () => {
     deactivate();
 
     (executor as ExecutorImpl)._taskPromise!.catch(noop);
-    await executor.toPromise().then(noop, noop);
+    await executor.getOrAwait().then(noop, noop);
 
     // Retry 2
     jest.runAllTimers();

@@ -72,7 +72,7 @@ export class ExecutorImpl<Value = any> implements Executor {
     return this.isFulfilled ? this.value! : defaultValue;
   }
 
-  toPromise(): AbortablePromise<Value> {
+  getOrAwait(): AbortablePromise<Value> {
     return new AbortablePromise((resolve, reject, signal) => {
       if (this.isSettled && !this.isPending) {
         resolve(this.get());

@@ -16,7 +16,7 @@ export function useExecutorSuspense(executors: Executor | Executor[]): void {
       throw Promise.all(promises).then(noop, noop);
     }
   } else if (executors.isPending) {
-    throw executors.toPromise().then(noop, noop);
+    throw executors.getOrAwait().then(noop, noop);
   }
 }
 
@@ -25,7 +25,7 @@ function reducePending(promises: PromiseLike<unknown>[] | null, executor: Execut
     if (promises === null) {
       promises = [];
     }
-    promises.push(executor.toPromise().then(noop, noop));
+    promises.push(executor.getOrAwait().then(noop, noop));
   }
   return promises;
 }

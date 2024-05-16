@@ -220,8 +220,8 @@ export interface Executor<Value = any> extends ExecutorState<Value> {
   readonly task: ExecutorTask<Value> | null;
 
   /**
-   * Returns a {@link value} if the executor is {@link isFulfilled fulfilled}. Otherwise, throws the {@link reason} if
-   * the executor is {@link isRejected rejected}, or an {@link Error} if the executor isn't settled.
+   * Returns a {@link value} if the executor is {@link isFulfilled fulfilled}, throws the {@link reason} if the executor
+   * is {@link isRejected rejected}, or throws an {@link Error} if the executor isn't settled.
    */
   get(): Value;
 
@@ -237,7 +237,7 @@ export interface Executor<Value = any> extends ExecutorState<Value> {
    * available {@link value}, or rejected with the available {@link reason}. Otherwise, the promise waits for the
    * executor to become settled and then settles as well.
    */
-  toPromise(): AbortablePromise<Value>;
+  getOrAwait(): AbortablePromise<Value>;
 
   /**
    * Executes a task and populates the executor with the returned result.
