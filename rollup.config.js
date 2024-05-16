@@ -3,6 +3,8 @@ const typescript = require('@rollup/plugin-typescript');
 module.exports = {
   input: [
     './src/main/index.ts',
+    './src/main/ssr/index.ts',
+    './src/main/ssr/node/index.ts',
     './src/main/plugin/abortDeactivated.ts',
     './src/main/plugin/bindAll.ts',
     './src/main/plugin/detachDeactivated.ts',
@@ -20,5 +22,5 @@ module.exports = {
     { format: 'es', entryFileNames: '[name].mjs', dir: './lib', preserveModules: true },
   ],
   plugins: [typescript({ tsconfig: './tsconfig.build.json' })],
-  external: ['react', 'parallel-universe', 'use-sync-external-store/shim'],
+  external: ['react', 'parallel-universe', 'use-sync-external-store/shim', 'stream'],
 };

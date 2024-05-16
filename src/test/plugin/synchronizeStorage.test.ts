@@ -83,21 +83,15 @@ describe('synchronizeStorage', () => {
   });
 
   test('preserves the initial state if it is newer', () => {
-    const manager = new ExecutorManager({
-      initialState: [
-        {
-          key: 'xxx',
-          isFulfilled: true,
-          value: 'aaa',
-          reason: undefined,
-          annotations: {},
-          settledAt: 100,
-          invalidatedAt: 0,
-        },
-      ],
+    manager.hydrate({
+      key: 'xxx',
+      isFulfilled: true,
+      value: 'aaa',
+      reason: undefined,
+      annotations: {},
+      settledAt: 100,
+      invalidatedAt: 0,
     });
-
-    manager.subscribe(listenerMock);
 
     localStorage.setItem(
       'executor_xxx',

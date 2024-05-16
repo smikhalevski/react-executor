@@ -14,7 +14,9 @@ export function useExecutorSubscription(executor: Executor): void {
 
   const subscribe = useCallback(executor.subscribe.bind(executor), [executor]);
 
-  useSyncExternalStore(subscribe, () => executor.version);
+  const getSnapshot = () => executor.version;
+
+  useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
   useEffect(executor.activate.bind(executor), [executor]);
 }

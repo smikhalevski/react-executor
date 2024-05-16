@@ -27,21 +27,21 @@ describe('retryRejected', () => {
 
     executor.activate();
     expect(executor.isPending).toBe(true);
-    (executor as ExecutorImpl)._promise!.catch(noop);
+    (executor as ExecutorImpl)._taskPromise!.catch(noop);
     await executor.toPromise().then(noop, noop);
     expect(executor.isPending).toBe(false);
 
     // Retry 1
     jest.runAllTimers();
     expect(executor.isPending).toBe(true);
-    (executor as ExecutorImpl)._promise!.catch(noop);
+    (executor as ExecutorImpl)._taskPromise!.catch(noop);
     await executor.toPromise().then(noop, noop);
     expect(executor.isPending).toBe(false);
 
     // Retry 2
     jest.runAllTimers();
     expect(executor.isPending).toBe(true);
-    (executor as ExecutorImpl)._promise!.catch(noop);
+    (executor as ExecutorImpl)._taskPromise!.catch(noop);
     await executor.toPromise().then(noop, noop);
     expect(executor.isPending).toBe(false);
 
@@ -61,7 +61,7 @@ describe('retryRejected', () => {
 
     executor.activate();
     expect(executor.isPending).toBe(true);
-    (executor as ExecutorImpl)._promise!.catch(noop);
+    (executor as ExecutorImpl)._taskPromise!.catch(noop);
     await executor.toPromise().then(noop, noop);
     expect(executor.isPending).toBe(false);
 
@@ -69,7 +69,7 @@ describe('retryRejected', () => {
     jest.runAllTimers();
     expect(executor.isPending).toBe(true);
 
-    (executor as ExecutorImpl)._promise!.catch(noop);
+    (executor as ExecutorImpl)._taskPromise!.catch(noop);
     executor.abort();
 
     // Retry 2
@@ -88,7 +88,7 @@ describe('retryRejected', () => {
 
     executor.activate();
     expect(executor.isPending).toBe(true);
-    (executor as ExecutorImpl)._promise!.catch(noop);
+    (executor as ExecutorImpl)._taskPromise!.catch(noop);
     await executor.toPromise().then(noop, noop);
     expect(executor.isPending).toBe(false);
 
@@ -96,7 +96,7 @@ describe('retryRejected', () => {
     jest.runAllTimers();
     expect(executor.isPending).toBe(true);
 
-    (executor as ExecutorImpl)._promise!.catch(noop);
+    (executor as ExecutorImpl)._taskPromise!.catch(noop);
     executor.resolve(undefined);
 
     // Retry 2
@@ -115,7 +115,7 @@ describe('retryRejected', () => {
 
     const deactivate = executor.activate();
     expect(executor.isPending).toBe(true);
-    (executor as ExecutorImpl)._promise!.catch(noop);
+    (executor as ExecutorImpl)._taskPromise!.catch(noop);
     await executor.toPromise().then(noop, noop);
     expect(executor.isPending).toBe(false);
 
@@ -125,7 +125,7 @@ describe('retryRejected', () => {
 
     deactivate();
 
-    (executor as ExecutorImpl)._promise!.catch(noop);
+    (executor as ExecutorImpl)._taskPromise!.catch(noop);
     await executor.toPromise().then(noop, noop);
 
     // Retry 2

@@ -22,7 +22,7 @@ describe('abortDeactivated', () => {
 
     deactivate();
 
-    await expect(promise).rejects.toEqual(AbortError('The executor was aborted: xxx'));
+    await expect(promise).rejects.toEqual(AbortError('The executor was aborted'));
 
     expect(taskMock.mock.calls[0][0].aborted).toBe(true);
 
