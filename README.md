@@ -10,7 +10,9 @@
 npm install --save-prod react-executor
 ```
 
-[**Try executors live**](https://codesandbox.io/p/sandbox/react-executor-example-ltflgy)&ensp;🔥
+**Live examples**&ensp;🔥
+- [TODO app](https://codesandbox.io/p/sandbox/react-executor-example-ltflgy)
+- [Streaming SSR](https://codesandbox.io/p/devbox/react-executor-ssr-streaming-example-mwrmrs)
 
 [**Introduction**](#introduction)
 
@@ -1175,6 +1177,8 @@ useExecutorSuspense([accountExecutor, shoppingCartExecutor]);
 
 # Server-side rendering
 
+Live examples of [streaming ]
+
 Executors can be hydrated on the client after being rendered on the server.
 
 To enable hydration on the client, create the executor manager and provide it through a context:
@@ -1197,7 +1201,7 @@ hydrateRoot(
 );
 ```
 
-Here `App` is the component that renders your application. Inside the `App` you can use `useExecutor` and
+Here, `App` is the component that renders your application. Inside the `App` you can use `useExecutor` and
 [`useExecutorSuspence`](#suspense) to load your data.
 
 [`enableSSRHydration`](https://smikhalevski.github.io/react-executor/functions/react_executor.enableSSRHydration.html)
@@ -1245,7 +1249,7 @@ server.listen(8080);
 ```
 
 In this example, the `App` is expected to render the `<script>` tag that loads the client bundle. Otherwise, you can
-inject client chink manually:
+inject client chunk manually:
 
 ```ts
 html += '<script src="/client.js" async></script>';
@@ -1303,7 +1307,7 @@ server.listen(8080);
 
 State of executors is streamed to the client along with the chunks rendered by React.
 
-In the `App` component use the combination of [`<Suspense>`](https://react.dev/reference/react/Suspense),
+In the `App` component, use the combination of [`<Suspense>`](https://react.dev/reference/react/Suspense),
 [`useExecutor`](https://smikhalevski.github.io/react-executor/functions/react_executor.useExecutor.html) and
 [`useExecutorSuspence`](https://smikhalevski.github.io/react-executor/functions/react_executor.useExecutorSuspence.html)
 to suspend rendering while executors process their tasks:
