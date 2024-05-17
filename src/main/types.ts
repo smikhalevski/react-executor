@@ -220,22 +220,26 @@ export interface Executor<Value = any> extends ExecutorState<Value> {
   readonly task: ExecutorTask<Value> | null;
 
   /**
-   * Returns a {@link value} if the executor is {@link isFulfilled fulfilled}, throws the {@link reason} if the executor
-   * is {@link isRejected rejected}, or throws an {@link Error} if the executor isn't settled.
+   * Returns a {@link value} if the executor is {@link isFulfilled fulfilled}. Throws a {@link reason} if the executor
+   * is {@link isRejected rejected}. Otherwise, throws an {@link !Error Error}.
    */
   get(): Value;
 
   /**
-   * Returns a {@link value} if the executor is {@link isFulfilled fulfilled}, or the default value.
+   * Returns a {@link value} if the executor is {@link isFulfilled fulfilled}. Otherwise, returns the default value.
    *
    * @param defaultValue The default value.
+   * @template DefaultValue The default value.
    */
-  getOrDefault(defaultValue: Value): Value;
+  getOrDefault<DefaultValue>(defaultValue: DefaultValue): Value | DefaultValue;
 
   /**
-   * For a non-{@link isPending pending} and {@link isSettled settled} executor, the promise is resolved with the
-   * available {@link value}, or rejected with the available {@link reason}. Otherwise, the promise waits for the
-   * executor to become settled and then settles as well.
+   * Waits for the executor to become {@link isSettled settled} and non-{@link isPending pending}. Then, the returned
+   * promise is resolved with a {@link value} if the executor is {@link isFulfilled fulfilled}, or rejected with
+   * a {@link reason} if the executor is {@link isRejected rejected}.
+   *
+   * If the executor is detached during this operation, then the returned promise is rejected with the
+   * {@link !AbortError AbortError}.
    */
   getOrAwait(): AbortablePromise<Value>;
 
@@ -321,7 +325,7 @@ export interface Executor<Value = any> extends ExecutorState<Value> {
    *
    * @param eventType The type of the published event.
    * @param payload The optional payload associated with the event.
-   * @templace Payload The payload published with the event.
+   * @template Payload The payload published with the event.
    */
   publish<Payload>(eventType: ExecutorEvent['type'], payload?: Payload): void;
 

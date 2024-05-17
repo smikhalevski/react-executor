@@ -7,7 +7,8 @@
   "disableSources": true,
   "hideGenerator": true,
   "visibilityFilters": {
-    "inherited": true
+    "inherited": true,
+    "protected": false
   },
   "navigation": {
     "includeFolders": false
@@ -18,10 +19,17 @@
   "customCss": "./node_modules/typedoc-custom-css/custom.css",
   "entryPoints": [
     "./src/main/index.ts",
+    "./src/main/ssr/index.ts",
+    "./src/main/ssr/node/index.ts",
     "./src/main/plugin/*.ts"
+  ],
+  "intentionallyNotExported": [
+    "ExecutorImpl",
+    "NoInfer"
   ],
   "externalSymbolLinkMappings": {
     "global": {
+      "Error": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error",
       "AbortError": "https://developer.mozilla.org/en-US/docs/Web/API/DOMException#aborterror"
     },
     "parallel-universe": {

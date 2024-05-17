@@ -2,7 +2,7 @@ import { AbortablePromise } from 'parallel-universe';
 import { ExecutorImpl } from '../main/ExecutorImpl';
 import { AbortError, noop } from '../main/utils';
 
-Date.now = jest.fn(() => 50);
+Date.now = () => 50;
 
 describe('ExecutorImpl', () => {
   const expectedReason = new Error('expected');

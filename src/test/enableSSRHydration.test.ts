@@ -51,7 +51,7 @@ describe('enableSSRHydration', () => {
     expect(executor.settledAt).toBe(50);
   });
 
-  test('hydrates an executors that are added before and after', () => {
+  test('hydrates executors that are added before and after', () => {
     window.__REACT_EXECUTOR_SSR_STATE__ = [
       JSON.stringify({
         key: 'xxx',

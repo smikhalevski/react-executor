@@ -2,7 +2,7 @@ import { fireEvent } from '@testing-library/react';
 import { ExecutorManager } from '../../main';
 import synchronizeStorage from '../../main/plugin/synchronizeStorage';
 
-Date.now = jest.fn(() => 50);
+Date.now = () => 50;
 
 describe('synchronizeStorage', () => {
   let listenerMock: jest.Mock;

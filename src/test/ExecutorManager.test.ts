@@ -1,7 +1,7 @@
 import { ExecutorManager } from '../main';
 import { ExecutorImpl } from '../main/ExecutorImpl';
 
-Date.now = jest.fn(() => 50);
+Date.now = () => 50;
 
 describe('ExecutorManager', () => {
   let listenerMock: jest.Mock;
@@ -213,14 +213,14 @@ describe('ExecutorManager', () => {
     });
   });
 
-  describe('waitFor', () => {
+  describe('getOrAwait', () => {
     test('waits for an executor', async () => {
-      await expect(manager.waitFor('aaa')).resolves.toBe(manager.getOrCreate('aaa'));
+      await expect(manager.getOrAwait('aaa')).resolves.toBe(manager.getOrCreate('aaa'));
     });
 
     test('resolves with the existing executor', async () => {
       const executor = manager.getOrCreate('aaa');
-      const executorPromise = manager.waitFor('aaa');
+      const executorPromise = manager.getOrAwait('aaa');
 
       await expect(executorPromise).resolves.toBe(executor);
     });

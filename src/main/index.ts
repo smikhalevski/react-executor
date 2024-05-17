@@ -16,6 +16,7 @@ export { useExecutorSubscription } from './useExecutorSubscription';
 export { useExecutorSuspense } from './useExecutorSuspense';
 
 export type { SSRHydrationOptions } from './enableSSRHydration';
+export type { ExecutorManagerOptions } from './ExecutorManager';
 export type {
   Executor,
   ExecutorAnnotations,

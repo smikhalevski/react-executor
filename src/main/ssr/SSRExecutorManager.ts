@@ -84,4 +84,32 @@ export class SSRExecutorManager extends ExecutorManager {
       ');var e=document.currentScript;e&&e.parentNode.removeChild(e)</script>'
     );
   }
+
+  /**
+   * Instantly aborts all pending executors and preserves their available results as is.
+   *
+   * @param reason The abort reason that is used for rejection of the pending task promises.
+   */
+  abort(reason?: unknown): void {
+    for (const executor of this) {
+      executor.abort(reason);
+    }
+  }
+
+  /**
+   * Resolves with `true` if there were pending executors and their state has changed after they became non-pending.
+   * Otherwise, resolves with `false`.
+   */
+  hasChanges(): Promise<boolean> {
+    const getVersion = () => Array.from(this).reduce((version, executor) => version + executor.version, 0);
+
+    const initialVersion = getVersion();
+
+    const hasChanges = (): Promise<boolean> =>
+      Promise.allSettled(Array.from(this._executors.values()).map(executor => executor._taskPromise)).then(() =>
+        Array.from(this).some(executor => executor.isPending) ? hasChanges() : getVersion() !== initialVersion
+      );
+
+    return hasChanges();
+  }
 }

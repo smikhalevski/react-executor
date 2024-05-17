@@ -21,13 +21,20 @@ export class PipeableSSRExecutorManager extends SSRExecutorManager {
 
     this.stream = new Writable({
       write: (chunk, encoding, callback) => {
-        stream.write(chunk, encoding, callback);
+        stream.write(chunk, encoding, error => {
+          if (error) {
+            callback(error);
+            return;
+          }
 
-        const hydrationChunk = this.nextHydrationChunk();
+          const hydrationChunk = this.nextHydrationChunk();
 
-        if (hydrationChunk !== undefined) {
-          stream.write(hydrationChunk);
-        }
+          if (hydrationChunk !== undefined) {
+            stream.write(hydrationChunk, callback);
+          } else {
+            callback();
+          }
+        });
       },
 
       final: callback => {

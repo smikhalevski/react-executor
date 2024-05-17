@@ -62,20 +62,21 @@ export class ExecutorImpl<Value = any> implements Executor {
     if (this.isFulfilled) {
       return this.value!;
     }
-    if (this.isRejected) {
-      throw this.reason;
-    }
-    throw new Error('The executor is not settled');
+    throw this.isSettled ? this.reason : new Error('The executor is not settled');
   }
 
-  getOrDefault(defaultValue: Value): Value {
+  getOrDefault<DefaultValue>(defaultValue: DefaultValue): Value | DefaultValue {
     return this.isFulfilled ? this.value! : defaultValue;
   }
 
   getOrAwait(): AbortablePromise<Value> {
     return new AbortablePromise((resolve, reject, signal) => {
       if (this.isSettled && !this.isPending) {
-        resolve(this.get());
+        if (this.isFulfilled) {
+          resolve(this.value!);
+        } else {
+          reject(this.reason);
+        }
         return;
       }
 
@@ -88,10 +89,11 @@ export class ExecutorImpl<Value = any> implements Executor {
 
         if (this.isSettled && !this.isPending) {
           unsubscribe();
-          try {
-            resolve(this.get());
-          } catch (error) {
-            reject(error);
+
+          if (this.isFulfilled) {
+            resolve(this.value!);
+          } else {
+            reject(this.reason);
           }
         }
       });

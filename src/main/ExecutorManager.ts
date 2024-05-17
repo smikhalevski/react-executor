@@ -131,19 +131,10 @@ export class ExecutorManager implements Iterable<Executor> {
       return executor;
     }
 
-    executor = new ExecutorImpl(key, this);
+    executor = Object.assign(new ExecutorImpl(key, this), this._initialState.get(serializedKey));
 
-    const initialState = this._initialState.get(serializedKey);
-
-    // Executor hydration
-    if (initialState !== undefined) {
-      Object.assign(executor, initialState);
-
-      if (executor.isSettled && typeof initialValue === 'function') {
-        executor.task = initialValue as ExecutorTask;
-      }
-
-      this._initialState.delete(serializedKey);
+    if (typeof initialValue === 'function') {
+      executor.task = initialValue as ExecutorTask;
     }
 
     const unsubscribe = executor.subscribe(event => {
@@ -165,6 +156,7 @@ export class ExecutorManager implements Iterable<Executor> {
       throw error;
     }
 
+    this._initialState.delete(serializedKey);
     this._executors.set(serializedKey, executor);
 
     executor.publish('attached');
@@ -185,7 +177,7 @@ export class ExecutorManager implements Iterable<Executor> {
    *
    * @param key The executor key to wait for.
    */
-  waitFor(key: unknown): AbortablePromise<Executor> {
+  getOrAwait(key: unknown): AbortablePromise<Executor> {
     return new AbortablePromise((resolve, _reject, signal) => {
       const serializedKey = this._getSerializedKey(key);
       const executor = this._executors.get(serializedKey);

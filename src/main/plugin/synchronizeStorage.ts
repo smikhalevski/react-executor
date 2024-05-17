@@ -158,7 +158,7 @@ function guessExecutorStorageKey({ key }: Executor): string {
   if (isSerializable(key)) {
     return 'executor_' + key;
   }
-  throw new Error('Cannot guess a storage key for an executor, the "key" option is required');
+  throw new Error('Cannot guess a storage key for an executor, the "storageKey" option is required');
 }
 
 function isSerializable(value: unknown): boolean {
