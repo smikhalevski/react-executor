@@ -47,6 +47,11 @@ npm install --save-prod react-executor
 
 - [Suspense](#suspense)
 
+[**Server-side rendering**](#server-side-rendering)
+
+- [Render to string](#render-to-string)
+- [Streaming SSR](#streaming-ssr)
+
 [**Devtools**](#devtools)
 
 [**Cookbook**](#cookbook)
@@ -72,9 +77,9 @@ controls the executor lifecycle:
 ```ts
 import { ExecutorManager } from 'react-executor';
 
-const executorManager = new ExecutorManager();
+const manager = new ExecutorManager();
 
-const rookyExecutor = executorManager.getOrCreate('rooky');
+const rookyExecutor = manager.getOrCreate('rooky');
 // ⮕ Executor<any>
 ```
 
@@ -87,10 +92,10 @@ If you want to retrieve an existing executor by its key and don't want to create
 [`get`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html#getOrCreate):
 
 ```ts
-executorManager.get('bobby');
+manager.get('bobby');
 // ⮕ undefined
 
-executorManager.get('rooky');
+manager.get('rooky');
 // ⮕ Executor<any>
 ```
 
@@ -104,7 +109,7 @@ rookyExecutor.isSettled;
 An executor can be created with an initial value:
 
 ```ts
-const bobbyExecutor = executorManager.getOrCreate('bobby', 42);
+const bobbyExecutor = manager.getOrCreate('bobby', 42);
 
 bobbyExecutor.isSettled;
 // ⮕ true
@@ -126,7 +131,7 @@ When an executor is created, you can provide an array of plugins:
 ```ts
 import retryRejected from 'react-executor/plugin/retryRejected';
 
-const rookyExecutor = executorManager.getOrCreate('rooky', 42, [retryRejected()]);
+const rookyExecutor = manager.getOrCreate('rooky', 42, [retryRejected()]);
 ```
 
 Plugins can subscribe to [executor events](#events-and-lifecycle) or alter the executor instance. Read more about
@@ -138,9 +143,9 @@ Anything can be an executor key: a string, a number, an object, etc. By default,
 is thrown:
 
 ```ts
-const executorManager = new ExecutorManager();
+const manager = new ExecutorManager();
 
-const userExecutor = executorManager.getOrCreate(['user', 123]);
+const userExecutor = manager.getOrCreate(['user', 123]);
 // ❌ Error
 ```
 
@@ -152,33 +157,33 @@ serialized key form can be anything, but usually you want a stable JSON serializ
 ```ts
 import stringify from 'fast-json-stable-stringify';
 
-const executorManager = new ExecutorManager({
+const manager = new ExecutorManager({
   keySerializer: stringify
 });
 
-const bobrExecutor = executorManager.getOrCreate({ bobrId: 123, favourites: ['wood'] });
+const bobrExecutor = manager.getOrCreate({ bobrId: 123, favourites: ['wood'] });
 // ⮕ Executor<any>
 
-executorManager.get({ favourites: ['wood'], bobrId: 123 });
+manager.get({ favourites: ['wood'], bobrId: 123 });
 // ⮕ bobrExecutor
 ```
 
 If you want to use object identities as executor keys, provide an identity function as a serializer to mute the error:
 
 ```ts
-const executorManager = new ExecutorManager({
+const manager = new ExecutorManager({
   keySerializer: key => key
 });
 
 const bobrKey = { bobrId: 123 };
 
-const bobrExecutor = executorManager.getOrCreate(bobrKey);
+const bobrExecutor = manager.getOrCreate(bobrKey);
 
 // The same executor is returned for the same key
-executorManager.get(bobrKey);
+manager.get(bobrKey);
 // ⮕ bobrExecutor
 
-const anotherBobrExecutor = executorManager.getOrCreate({ bobrId: 123 });
+const anotherBobrExecutor = manager.getOrCreate({ bobrId: 123 });
 
 // 🟡 Executors are different because different object keys were used
 bobrExecutor === anotherBobrExecutor;
@@ -192,9 +197,9 @@ Let's execute a new task:
 ```ts
 import { ExecutorManager, ExecutorTask } from 'react-executor';
 
-const executorManager = new ExecutorManager();
+const manager = new ExecutorManager();
 
-const rookyExecutor = executorManager.getOrCreate('rooky');
+const rookyExecutor = manager.getOrCreate('rooky');
 
 const helloTask: ExecutorTask = async (signal, executor) => 'Hello';
 
@@ -380,7 +385,7 @@ pending while multiple tasks [replace one another](#replace-a-task).
 Let's consider the scenario where a task is replaced with another task:
 
 ```ts
-const planetExecutor = executorManager.getOrCreate('planet');
+const planetExecutor = manager.getOrCreate('planet');
 
 // The promise is resolved only when planetExecutor is settled
 const planetPromise = planetExecutor.getOrAwait();
@@ -400,7 +405,7 @@ not pending anymore.
 Here's another example, where executor waits to be settled:
 
 ```ts
-const printerExecutor = executorManager.getOrCreate('printer');
+const printerExecutor = manager.getOrCreate('printer');
 
 printerExecutor.getOrAwait().then(value => {
   console.log(value);
@@ -511,9 +516,9 @@ Executors publish various events when their state changes. To subscribe to execu
 [`subscribe`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#subscribe) method:
 
 ```ts
-const executorManager = new ExecutorManager();
+const manager = new ExecutorManager();
 
-const rookyExecutor = executorManager.getOrCreate('rooky');
+const rookyExecutor = manager.getOrCreate('rooky');
 
 const unsubscribe = rookyExecutor.subscribe(event => {
   if (event.type === 'fulfilled') {
@@ -528,7 +533,7 @@ You can subscribe to the executor manager to receive events from all executors. 
 any invalidated executor:
 
 ```ts
-executorManager.subscribe(event => {
+manager.subscribe(event => {
   if (event.type === 'invalidated') {
     event.target.retry();
   }
@@ -676,7 +681,7 @@ const retryPlugin: ExecutorPlugin = executor => {
   });
 };
 
-const executor = executorManager.getOrCreate('rooky', heavyTask, [retryPlugin]);
+const executor = manager.getOrCreate('rooky', heavyTask, [retryPlugin]);
 
 executor.activate();
 ```
@@ -716,9 +721,9 @@ Use [`detach`](https://smikhalevski.github.io/react-executor/classes/react_execu
 such case:
 
 ```ts
-const executor = executorManager.getOrCreate('test');
+const executor = manager.getOrCreate('test');
 
-executorManager.detach(executor.key);
+manager.detach(executor.key);
 // ⮕ true
 ```
 
@@ -752,25 +757,25 @@ To apply a plugin, pass it to the
 or to the [`useExecutor`](https://smikhalevski.github.io/react-executor/functions/react_executor.useExecutor.html) hook:
 
 ```ts
-const executor = executorManager.getOrCreate('test', undefined, [detachPlugin]);
+const executor = manager.getOrCreate('test', undefined, [detachPlugin]);
 
 const deactivate = executor.activate();
 
 // The executor is instantly detached by the plugin
 deactivate();
 
-executorManager.get('test');
+manager.get('test');
 // ⮕ undefined
 ```
 
 You can define plugins that are applied to all executors that are created by a manager:
 
 ```ts
-const executorManager = new ExecutorManager({
+const manager = new ExecutorManager({
   plugins: [bindAll()]
 });
 
-const { execute } = executorManager.getOrCreate('test');
+const { execute } = manager.getOrCreate('test');
 
 // Methods can be detached because bindAll plugin was applied
 execute(heavyTask)
@@ -991,7 +996,7 @@ import invalidateByPeers from 'react-executor/plugin/invalidateByPeers';
 const fetchCheese: ExecutorTask = async (signal, executor) => {
   
   // Wait for the breadExecutor to be created
-  const breadExecutor = await executor.manager.waitFor('bread');
+  const breadExecutor = await executor.manager.getOrAwait('bread');
 
   // Wait for the breadExecutor to be settled
   const bread = await breadExecutor.getOrAwait();
@@ -1059,7 +1064,7 @@ const User = (props: { userId: string }) => {
   });
   
   if (executor.isPending) {
-    return 'Loading…';
+    return 'Loading';
   }
   
   // Render the user from the executor.value
@@ -1080,16 +1085,16 @@ the context:
 ```tsx
 import { ExecutorManager, ExecutorManagerProvider } from 'react-executor';
 
-const executorManager = new ExecutorManager();
+const manager = new ExecutorManager();
 
 const App = () => (
-  <ExecutorManagerProvider value={executorManager}>
+  <ExecutorManagerProvider value={manager}>
     <User userId={'28'}/>
   </ExecutorManagerProvider>
 )
 ```
 
-Now you can use `executorManager` to access all the same executors that are available through the `useExecutor` hook.
+Now you can use `manager` to access all the same executors that are available through the `useExecutor` hook.
 
 If you want to have access to an executor in a component, but don't want to re-render the component when the executor's
 state is changed,
@@ -1124,65 +1129,6 @@ useEffect(() => {
 }, []);
 ```
 
-## SSR
-
-The app:
-
-```tsx
-export const App = () => (
-  <html>
-    <body>
-      <Suspense fallback={'Loading'}>
-        <User/>
-      </Suspense>
-    </body>
-  </html>
-);
-
-const User = () => {
-  const userExecutor = useExecutorSuspense(useExecutor('user', fetchUser));
-
-  return postsExecutor.get().firstName;
-};
-```
-
-On the server:
-
-```tsx
-import { createServer } from 'http';
-import { renderToPipeableStream } from 'react-dom/server';
-import { ExecutorManagerProvider, SSRExecutorManager } from 'react-executor';
-import { App } from './App';
-
-const server = createServer();
-
-server.on('request', (request, response) => {
-  const executorManager = new SSRExecutorManager(response);
-  
-  const { pipe } = renderToPipeableStream(
-    <ExecutorManagerProvider value={executorManager}>
-      <App/>
-    </ExecutorManagerProvider>,
-    {
-      onShellReady() {
-        pipe(executorManager.stream);
-      }
-    }
-  );
-});
-
-server.listen(8080);
-```
-
-On the client:
-
-```tsx
-import { hydrateRoot } from 'react-dom/client';
-import { App } from './App';
-
-hydrateRoot(document, <App/>);
-```
-
 ## Suspense
 
 Executors support fetch-as-you-render approach and can be integrated with React Suspense. To facilitate the rendering
@@ -1191,16 +1137,18 @@ suspension, use the
 hook:
 
 ```tsx
-import { useExecutorSuspense } from 'react-executor';
+import { useExecutor, useExecutorSuspense } from 'react-executor';
 
 const Account = () => {
   const accountExecutor = useExecutor('account', signal => {
     // Fetch the account from the server
   });
   
+  // Suspend rendering
   useExecutorSuspense(accountExecutor);
 
-  // 🟡 accountExecutor is already settled here
+  // accountExecutor is settled during render
+  accountExecutor.get();
 };
 ```
 
@@ -1210,7 +1158,7 @@ Now when the `Account` component is rendered, it would be suspended until the `a
 import { Suspense } from 'react';
 
 const App = () => (
-  <Suspense fallback={'Loading…'}>
+  <Suspense fallback={'Loading'}>
     <Account/>
   </Suspense>
 );
@@ -1224,6 +1172,202 @@ const shoppingCartExecutor = useExecutor('shoppingCart');
 
 useExecutorSuspense([accountExecutor, shoppingCartExecutor]);
 ```
+
+# Server-side rendering
+
+Executors can be hydrated on the client after being rendered on the server.
+
+To enable hydration on the client, create the executor manager and provide it through a context:
+
+```tsx
+import React from 'react';
+import { hydrateRoot } from 'react-dom/client';
+import { enableSSRHydration, ExecutorManager, ExecutorManagerProvider } from 'react-executor';
+
+const manager = new ExecutorManager();
+
+// 🟡 Hydrates executors on the client with the server data
+enableSSRHydration(manager);
+
+hydrateRoot(
+  document,
+  <ExecutorManagerProvider value={manager}>
+    <App/>
+  </ExecutorManagerProvider>
+);
+```
+
+Here `App` is the component that renders your application. Inside the `App` you can use `useExecutor` and
+[`useExecutorSuspence`](#suspense) to load your data.
+
+[`enableSSRHydration`](https://smikhalevski.github.io/react-executor/functions/react_executor.enableSSRHydration.html)
+must be called only once, and only one manager of the client-side can receive the dehydrated state
+from the server.
+
+On the server, you can either render your app contents [as a string](#render-to-string) and send it to the client in one
+go, or [stream the contents](#streaming-ssr).
+
+## Render to string
+
+To render your app as an HTML string
+use [`SSRExecutorManager`](https://smikhalevski.github.io/react-executor/classes/ssr.SSRExecutorManager.html):
+
+```tsx
+import { createServer } from 'http';
+import { renderToString } from 'react-dom/server';
+import { ExecutorManagerProvider } from 'react-executor';
+import { SSRExecutorManager } from 'react-executor/ssr';
+
+const server = createServer(async (request, response) => {
+
+  // 1️⃣ Create a new manager for each request
+  const manager = new SSRExecutorManager();
+
+  let html;
+  do {
+    html = renderToString(
+      <ExecutorManagerProvider value={manager}>
+        <App/>
+      </ExecutorManagerProvider>
+    );
+
+    // 2️⃣ Render until there are no more changes
+  } while (await manager.hasChanges());
+
+  // 3️⃣ Attach dehydrated executor states
+  html += manager.nextHydrationChunk();
+
+  // 4️⃣ Send the rendered HTML to the client
+  response.end(html);
+});
+
+server.listen(8080);
+```
+
+In this example, the `App` is expected to render the `<script>` tag that loads the client bundle. Otherwise, you can
+inject client chink manually:
+
+```ts
+html += '<script src="/client.js" async></script>';
+```
+
+A new executor manager must be created for each request, so the results that are stored in executors are served in
+response to a particular request.
+
+[`hasChanges`](https://smikhalevski.github.io/react-executor/classes/ssr.SSRExecutorManager.html#hasChanges) would
+resolve with `true` if state of some executors has changed during rendering.
+
+The hydration chunk returned
+by [`nextHydrationChunk`](https://smikhalevski.github.io/react-executor/classes/ssr.SSRExecutorManager.html#nextHydrationChunk)
+contains the `<script>` tag that hydrates the manager for which
+[`enableSSRHydration`](https://smikhalevski.github.io/react-executor/functions/react_executor.enableSSRHydration.html)
+was invoked.
+
+## Streaming SSR
+
+Thanks to [Suspense](#suspense), React can stream parts of your app while it is being rendered. React Executor provides
+API to inject its hydration chunks into a streaming process. The API is different for NodeJS streams and
+[Readable Web Streams](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream).
+
+In NodeJS environment
+use [`PipeableSSRExecutorManager`](https://smikhalevski.github.io/react-executor/classes/ssr_node.PipeableSSRExecutorManager.html)
+
+```tsx
+import { createServer } from 'http';
+import { renderToPipeableStream } from 'react-dom/server';
+import { ExecutorManagerProvider } from 'react-executor';
+import { PipeableSSRExecutorManager } from 'react-executor/ssr/node';
+
+const server = createServer(async (request, response) => {
+
+  // 1️⃣ Create a new manager for each request
+  const manager = new PipeableSSRExecutorManager(response);
+
+  const stream = renderToPipeableStream(
+    <ExecutorManagerProvider value={manager}>
+      <App/>
+    </ExecutorManagerProvider>,
+    {
+      bootstrapScripts: ['/client.js'],
+
+      onShellReady() {
+        // 2️⃣ Pipe the rendering output to the manager's stream 
+        stream.pipe(manager.stream);
+      },
+    }
+  );
+});
+
+server.listen(8080);
+```
+
+State of executors is streamed to the client along with the chunks rendered by React.
+
+In the `App` component use the combination of [`<Suspense>`](https://react.dev/reference/react/Suspense),
+[`useExecutor`](https://smikhalevski.github.io/react-executor/functions/react_executor.useExecutor.html) and
+[`useExecutorSuspence`](https://smikhalevski.github.io/react-executor/functions/react_executor.useExecutorSuspence.html)
+to suspend rendering while executors process their tasks:
+
+```tsx
+export const App = () => (
+  <html>
+    <head/>
+    <body>
+      <Suspense fallback={'Loading'}>
+        <Hello/>
+      </Suspense>
+    </body>
+  </html>
+);
+
+export const Hello = () => {
+  const helloExecutor = useExecutor('hello', async () => {
+    // Asynchronously return the result
+    return 'Hello, Paul!';
+  });
+
+  // 🟡 Suspend rendering until helloExecutor is settled
+  useExecutorSuspense(helloExecutor);
+
+  return helloExecutor.get();
+};
+```
+
+If the `App` is rendered in streaming mode, it would first show "Loading" and after the executor is settled, it would
+update to "Hello, Paul!". In the meantime `helloExecutor` on the client would be hydrated with the data from the server.
+
+### Readable web streams support
+
+To enable streaming in a modern environment,
+use [`ReadableSSRExecutorManager`](https://smikhalevski.github.io/react-executor/classes/ssr.ReadableSSRExecutorManager.html)
+
+```tsx
+import { renderToReadableStream } from 'react-dom/server';
+import { ExecutorManagerProvider } from 'react-executor';
+import { ReadableSSRExecutorManager } from 'react-executor/ssr';
+
+async function handler(request) {
+
+  // 1️⃣ Create a new manager for each request
+  const manager = new ReadableSSRExecutorManager();
+
+  const stream = await renderToReadableStream(
+    <ExecutorManagerProvider value={manager}>
+      <App />
+    </ExecutorManagerProvider>,
+    {
+      bootstrapScripts: ['/client.js'],
+    }
+  );
+
+  // 2️⃣ Pipe the response through the manager
+  return new Response(stream.pipeThrough(manager), {
+    headers: { 'content-type': 'text/html' },
+  });
+}
+```
+
+State of executors is streamed to the client along with the chunks rendered by React.
 
 # Devtools
 
@@ -1311,7 +1455,7 @@ state is changed. To avoid unnecessary re-renders, you can acquire an executor t
 const shoppingCartExecutor = useExecutor('shoppingCart', async (signal, executor) => {
   
   // 1️⃣ Wait for the account executor to be created
-  const accountExecutor = await executor.manager.waitFor('account');
+  const accountExecutor = await executor.manager.getOrAwait('account');
   
   // 2️⃣ Wait for the account executor to be settled
   const account = await accountExecutor.getOrAwait();
@@ -1366,9 +1510,9 @@ is iterable and provides access to all executors that it has created. You can pe
 in for-loop:
 
 ```ts
-const executorManager = useExecutorManager();
+const manager = useExecutorManager();
 
-for (const executor of executorManager) {
+for (const executor of manager) {
   executor.invalidate();
 }
 ```
@@ -1378,7 +1522,7 @@ By default, invalidating an executor has no additional effect. If you want to
 [`retry`](https://smikhalevski.github.io/react-executor/interface/react_executor.Executor.html#retry):
 
 ```ts
-for (const executor of executorManager) {
+for (const executor of manager) {
   executor.retry();
 }
 ```
@@ -1402,13 +1546,13 @@ time. The `User` component _won't be re-rendered_ if the state of this executor 
 To do prefetching before the application is even rendered, create an executor manager beforehand:
 
 ```tsx
-const executorManager = new ExecutorManager();
+const manager = new ExecutorManager();
 
 // Prefetch the shopping cart
-executorManager.getOrCreate('shoppingCart', fetchShoppingCart);
+manager.getOrCreate('shoppingCart', fetchShoppingCart);
 
 const App = () => (
-  <ExecutorManagerProvider value={executorManager}>
+  <ExecutorManagerProvider value={manager}>
     {/* Render you app here */}
   </ExecutorManagerProvider>
 );
@@ -1420,7 +1564,7 @@ Both [`Executor`](https://smikhalevski.github.io/react-executor/interfaces/react
 the executor manager and send its state to the client:
 
 ```ts
-response.write(`<script>window.__EXECUTORS__ = ${JSON.stringify(executorManager)}</script>`);
+response.write(`<script>window.__EXECUTORS__ = ${JSON.stringify(manager)}</script>`);
 ```
 
 On the client, deserialize the initial state and pass it to the `ExecutorManager` constructor:
@@ -1434,7 +1578,7 @@ If during SSR you need to wait for all executors to settle:
 
 ```ts
 await Promise.allSettled(
-  Array.from(executorManager).map(executor => executor.getOrAwait())
+  Array.from(manager).map(executor => executor.getOrAwait())
 );
 ```
 
