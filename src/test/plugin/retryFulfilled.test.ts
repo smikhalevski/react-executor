@@ -22,19 +22,19 @@ describe('retryFulfilled', () => {
 
     executor.activate();
     expect(executor.isPending).toBe(true);
-    await executor.toPromise();
+    await executor.getOrAwait();
     expect(executor.isPending).toBe(false);
 
     // Retry 1
     jest.runAllTimers();
     expect(executor.isPending).toBe(true);
-    await executor.toPromise();
+    await executor.getOrAwait();
     expect(executor.isPending).toBe(false);
 
     // Retry 2
     jest.runAllTimers();
     expect(executor.isPending).toBe(true);
-    await executor.toPromise();
+    await executor.getOrAwait();
     expect(executor.isPending).toBe(false);
 
     // Retry 3
@@ -50,14 +50,14 @@ describe('retryFulfilled', () => {
 
     executor.activate();
     expect(executor.isPending).toBe(true);
-    await executor.toPromise();
+    await executor.getOrAwait();
     expect(executor.isPending).toBe(false);
 
     // Retry 1
     jest.runAllTimers();
     expect(executor.isPending).toBe(true);
 
-    (executor as ExecutorImpl)._promise!.catch(noop);
+    (executor as ExecutorImpl)._taskPromise!.catch(noop);
     executor.abort();
 
     // Retry 2
@@ -73,14 +73,14 @@ describe('retryFulfilled', () => {
 
     executor.activate();
     expect(executor.isPending).toBe(true);
-    await executor.toPromise();
+    await executor.getOrAwait();
     expect(executor.isPending).toBe(false);
 
     // Retry 1
     jest.runAllTimers();
     expect(executor.isPending).toBe(true);
 
-    (executor as ExecutorImpl)._promise!.catch(noop);
+    (executor as ExecutorImpl)._taskPromise!.catch(noop);
     executor.reject(undefined);
 
     // Retry 2
@@ -96,7 +96,7 @@ describe('retryFulfilled', () => {
 
     const deactivate = executor.activate();
     expect(executor.isPending).toBe(true);
-    await executor.toPromise();
+    await executor.getOrAwait();
     expect(executor.isPending).toBe(false);
 
     // Retry 1
@@ -104,7 +104,7 @@ describe('retryFulfilled', () => {
     expect(executor.isPending).toBe(true);
 
     deactivate();
-    await executor.toPromise();
+    await executor.getOrAwait();
 
     // Retry 2
     jest.runAllTimers();

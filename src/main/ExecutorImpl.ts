@@ -21,12 +21,12 @@ export class ExecutorImpl<Value = any> implements Executor {
   /**
    * The promise of the pending task execution, or `null` if there's no pending task execution.
    */
-  _promise: AbortablePromise<Value> | null = null;
+  _taskPromise: AbortablePromise<Value> | null = null;
 
   /**
-   * The number times the executor was activated.
+   * The number of consumers that activated the executor.
    */
-  _activeCount = 0;
+  _consumerCount = 0;
 
   /**
    * The pubsub that handles the executor subscriptions.
@@ -42,11 +42,11 @@ export class ExecutorImpl<Value = any> implements Executor {
   }
 
   get isActive(): boolean {
-    return this._activeCount !== 0;
+    return this._consumerCount !== 0;
   }
 
   get isPending(): boolean {
-    return this._promise !== null;
+    return this._taskPromise !== null;
   }
 
   get isInvalidated(): boolean {
@@ -62,36 +62,38 @@ export class ExecutorImpl<Value = any> implements Executor {
     if (this.isFulfilled) {
       return this.value!;
     }
-    if (this.isRejected) {
-      throw this.reason;
-    }
-    throw new Error('The executor is not settled');
+    throw this.isSettled ? this.reason : new Error('The executor is not settled');
   }
 
-  getOrDefault(defaultValue: Value): Value {
+  getOrDefault<DefaultValue>(defaultValue: DefaultValue): Value | DefaultValue {
     return this.isFulfilled ? this.value! : defaultValue;
   }
 
-  toPromise(): AbortablePromise<Value> {
+  getOrAwait(): AbortablePromise<Value> {
     return new AbortablePromise((resolve, reject, signal) => {
       if (this.isSettled && !this.isPending) {
-        resolve(this.get());
+        if (this.isFulfilled) {
+          resolve(this.value!);
+        } else {
+          reject(this.reason);
+        }
         return;
       }
 
       const unsubscribe = this.subscribe(event => {
         if (event.type === 'detached') {
           unsubscribe();
-          reject(AbortError('The executor was detached: ' + this.key));
+          reject(AbortError('The executor was detached'));
           return;
         }
 
         if (this.isSettled && !this.isPending) {
           unsubscribe();
-          try {
-            resolve(this.get());
-          } catch (error) {
-            reject(error);
+
+          if (this.isFulfilled) {
+            resolve(this.value!);
+          } else {
+            reject(this.reason);
           }
         }
       });
@@ -101,10 +103,10 @@ export class ExecutorImpl<Value = any> implements Executor {
   }
 
   execute(task: ExecutorTask<Value>): AbortablePromise<Value> {
-    const promise = new AbortablePromise<Value>((resolve, reject, signal) => {
+    const taskPromise = new AbortablePromise<Value>((resolve, reject, signal) => {
       signal.addEventListener('abort', () => {
-        if (this._promise === promise) {
-          this._promise = null;
+        if (this._taskPromise === taskPromise) {
+          this._taskPromise = null;
           this.version++;
         }
         this.publish('aborted');
@@ -118,7 +120,7 @@ export class ExecutorImpl<Value = any> implements Executor {
           if (signal.aborted) {
             return;
           }
-          this._promise = null;
+          this._taskPromise = null;
           this.resolve(value);
           resolve(value);
         },
@@ -127,28 +129,28 @@ export class ExecutorImpl<Value = any> implements Executor {
           if (signal.aborted) {
             return;
           }
-          this._promise = null;
+          this._taskPromise = null;
           this.reject(reason);
           reject(reason);
         }
       );
     });
 
-    const prevPromise = this._promise;
-    this._promise = promise;
+    const prevTaskPromise = this._taskPromise;
+    this._taskPromise = taskPromise;
 
-    if (prevPromise !== null) {
-      prevPromise.abort(AbortError('The task was replaced: ' + this.key));
+    if (prevTaskPromise !== null) {
+      prevTaskPromise.abort(AbortError('The task was replaced'));
     } else {
       this.version++;
     }
 
-    if (this._promise === promise) {
+    if (this._taskPromise === taskPromise) {
       this.task = task;
       this.publish('pending');
     }
 
-    return promise;
+    return taskPromise;
   }
 
   retry(): void {
@@ -167,9 +169,9 @@ export class ExecutorImpl<Value = any> implements Executor {
     }
   }
 
-  abort(reason: unknown = AbortError('The executor was aborted: ' + this.key)): void {
-    if (this._promise !== null) {
-      this._promise.abort(reason);
+  abort(reason: unknown = AbortError('The executor was aborted')): void {
+    if (this._taskPromise !== null) {
+      this._taskPromise.abort(reason);
     }
   }
 
@@ -187,11 +189,11 @@ export class ExecutorImpl<Value = any> implements Executor {
       return;
     }
 
-    const promise = this._promise;
-    this._promise = null;
+    const taskPromise = this._taskPromise;
+    this._taskPromise = null;
 
-    if (promise !== null) {
-      promise.abort();
+    if (taskPromise !== null) {
+      taskPromise.abort();
     }
 
     this.isFulfilled = true;
@@ -204,11 +206,11 @@ export class ExecutorImpl<Value = any> implements Executor {
   }
 
   reject(reason: any, settledAt = Date.now()): void {
-    const promise = this._promise;
-    this._promise = null;
+    const taskPromise = this._taskPromise;
+    this._taskPromise = null;
 
-    if (promise !== null) {
-      promise.abort();
+    if (taskPromise !== null) {
+      taskPromise.abort();
     }
 
     this.isFulfilled = false;
@@ -223,12 +225,12 @@ export class ExecutorImpl<Value = any> implements Executor {
   activate(): () => void {
     let isApplicable = true;
 
-    if (this._activeCount++ === 0) {
+    if (this._consumerCount++ === 0) {
       this.publish('activated');
     }
 
     return () => {
-      if (isApplicable && ((isApplicable = false), --this._activeCount === 0)) {
+      if (isApplicable && ((isApplicable = false), --this._consumerCount === 0)) {
         this.publish('deactivated');
       }
     };

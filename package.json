@@ -11,6 +11,16 @@
       "import": "./index.mjs",
       "require": "./index.js"
     },
+    "./ssr": {
+      "types": "./ssr/index.d.ts",
+      "import": "./ssr/index.mjs",
+      "require": "./ssr/index.js"
+    },
+    "./ssr/node": {
+      "types": "./ssr/node/index.d.ts",
+      "import": "./ssr/node/index.mjs",
+      "require": "./ssr/node/index.js"
+    },
     "./plugin/abortDeactivated": {
       "types": "./plugin/abortDeactivated.d.ts",
       "import": "./plugin/abortDeactivated.mjs",

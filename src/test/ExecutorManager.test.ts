@@ -1,7 +1,7 @@
 import { ExecutorManager } from '../main';
 import { ExecutorImpl } from '../main/ExecutorImpl';
 
-Date.now = jest.fn(() => 50);
+Date.now = () => 50;
 
 describe('ExecutorManager', () => {
   let listenerMock: jest.Mock;
@@ -14,29 +14,6 @@ describe('ExecutorManager', () => {
   });
 
   describe('constructor', () => {
-    test('creates executors with the initial state', () => {
-      const manager = new ExecutorManager({
-        initialState: [
-          {
-            key: 'xxx',
-            isFulfilled: true,
-            value: 111,
-            reason: undefined,
-            settledAt: 50,
-            invalidatedAt: 0,
-            annotations: {},
-          },
-        ],
-      });
-
-      expect(manager.get('xxx')).toBeUndefined();
-
-      const executor = manager.getOrCreate('xxx');
-
-      expect(executor.value).toBe(111);
-      expect(executor.settledAt).toBe(50);
-    });
-
     test('creates executors with plugins', () => {
       const pluginMock = jest.fn(_executor => {});
 
@@ -125,7 +102,7 @@ describe('ExecutorManager', () => {
       expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'attached', target: executor, version: 0 });
       expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'pending', target: executor, version: 1 });
 
-      await expect(executor.toPromise()).resolves.toBe(111);
+      await expect(executor.getOrAwait()).resolves.toBe(111);
 
       expect(executor.isPending).toBe(false);
       expect(executor.isFulfilled).toBe(true);
@@ -180,7 +157,7 @@ describe('ExecutorManager', () => {
       expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'pending', target: executor, version: 1 });
       expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 1 });
 
-      await executor.toPromise();
+      await executor.getOrAwait();
 
       expect(executor.value).toBe(222);
 
@@ -236,14 +213,14 @@ describe('ExecutorManager', () => {
     });
   });
 
-  describe('waitFor', () => {
+  describe('getOrAwait', () => {
     test('waits for an executor', async () => {
-      await expect(manager.waitFor('aaa')).resolves.toBe(manager.getOrCreate('aaa'));
+      await expect(manager.getOrAwait('aaa')).resolves.toBe(manager.getOrCreate('aaa'));
     });
 
     test('resolves with the existing executor', async () => {
       const executor = manager.getOrCreate('aaa');
-      const executorPromise = manager.waitFor('aaa');
+      const executorPromise = manager.getOrAwait('aaa');
 
       await expect(executorPromise).resolves.toBe(executor);
     });
@@ -319,6 +296,100 @@ describe('ExecutorManager', () => {
       expect(JSON.stringify(manager)).toBe(
         '[{"key":"xxx","isFulfilled":true,"value":111,"annotations":{},"settledAt":50,"invalidatedAt":0}]'
       );
+    });
+  });
+
+  describe('hydrate', () => {
+    test('hydrates the non-existent executor', () => {
+      expect(
+        manager.hydrate({
+          key: 'xxx',
+          isFulfilled: true,
+          value: 111,
+          reason: undefined,
+          settledAt: 50,
+          invalidatedAt: 0,
+          annotations: {},
+        })
+      ).toBe(true);
+
+      expect(manager.get('xxx')).toBeUndefined();
+
+      const executor = manager.getOrCreate('xxx');
+
+      expect(executor.value).toBe(111);
+      expect(executor.settledAt).toBe(50);
+    });
+
+    test('overwrites the previous hydration state', () => {
+      manager.hydrate({
+        key: 'xxx',
+        isFulfilled: true,
+        value: 111,
+        reason: undefined,
+        settledAt: 50,
+        invalidatedAt: 0,
+        annotations: {},
+      });
+
+      expect(
+        manager.hydrate({
+          key: 'xxx',
+          isFulfilled: true,
+          value: 222,
+          reason: undefined,
+          settledAt: 100,
+          invalidatedAt: 0,
+          annotations: {},
+        })
+      ).toBe(true);
+
+      expect(manager.get('xxx')).toBeUndefined();
+
+      const executor = manager.getOrCreate('xxx');
+
+      expect(executor.value).toBe(222);
+      expect(executor.settledAt).toBe(100);
+    });
+
+    test('does not hydrate the existing executor', () => {
+      const executor = manager.getOrCreate('xxx');
+
+      expect(
+        manager.hydrate({
+          key: 'xxx',
+          isFulfilled: true,
+          value: 111,
+          reason: undefined,
+          settledAt: 50,
+          invalidatedAt: 0,
+          annotations: {},
+        })
+      ).toBe(false);
+
+      expect(executor.value).toBe(undefined);
+      expect(executor.settledAt).toBe(0);
+    });
+
+    test('preserves initial task of the hydrated executor', () => {
+      expect(
+        manager.hydrate({
+          key: 'xxx',
+          isFulfilled: true,
+          value: 111,
+          reason: undefined,
+          settledAt: 50,
+          invalidatedAt: 0,
+          annotations: {},
+        })
+      ).toBe(true);
+
+      const task = () => 222;
+      const executor = manager.getOrCreate('xxx', task);
+
+      expect(executor.value).toBe(111);
+      expect(executor.settledAt).toBe(50);
+      expect(executor.task).toBe(task);
     });
   });
 });

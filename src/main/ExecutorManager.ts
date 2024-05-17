@@ -2,17 +2,10 @@ import { AbortablePromise, PubSub } from 'parallel-universe';
 import { ExecutorImpl } from './ExecutorImpl';
 import type { Executor, ExecutorEvent, ExecutorPlugin, ExecutorState, ExecutorTask, NoInfer } from './types';
 
-declare const __REACT_EXECUTOR_DEVTOOLS__: { plugin: ExecutorPlugin } | undefined;
-
 /**
  * Options provided to the {@link ExecutorManager} constructor.
  */
 export interface ExecutorManagerOptions {
-  /**
-   * The initial state of executors that are created via {@link ExecutorManager.getOrCreate}.
-   */
-  initialState?: ExecutorState[];
-
   /**
    * Plugins that are applied to all executors.
    */
@@ -45,33 +38,28 @@ export class ExecutorManager implements Iterable<Executor> {
   /**
    * The map from a key to an executor.
    */
-  private readonly _executors = new Map<unknown, ExecutorImpl>();
+  protected readonly _executors = new Map<unknown, ExecutorImpl>();
 
   /**
    * The pubsub that handles the manager subscriptions.
    */
-  private readonly _pubSub = new PubSub<ExecutorEvent>();
+  protected readonly _pubSub = new PubSub<ExecutorEvent>();
 
   /**
    * The map from a key to an initial state that must be set to an executor before plugins are applied. Entries from
    * this map are deleted after the executor is initialized.
    */
-  private readonly _initialState = new Map<unknown, ExecutorState>();
+  protected readonly _initialState = new Map<unknown, ExecutorState>();
 
   /**
    * Plugins that are applied to all executors.
    */
-  private readonly _plugins: ExecutorPlugin[] = [];
+  protected readonly _plugins: ExecutorPlugin[] = [];
 
   /**
    * Serializes executor keys.
    */
-  private readonly _keySerializer: ((key: unknown) => unknown) | undefined;
-
-  /**
-   * `true` if {@link ExecutorManagerOptions.devtools devtools} are enabled and the browser extension is available.
-   */
-  readonly hasDevtools: boolean;
+  protected readonly _keySerializer: ((key: unknown) => unknown) | undefined;
 
   /**
    * Creates a new executor manager.
@@ -80,20 +68,12 @@ export class ExecutorManager implements Iterable<Executor> {
    */
   constructor(options: ExecutorManagerOptions = {}) {
     this._keySerializer = options.keySerializer;
-    this.hasDevtools = false;
 
     if (options.devtools === undefined || options.devtools) {
       const devtools = typeof __REACT_EXECUTOR_DEVTOOLS__ !== 'undefined' ? __REACT_EXECUTOR_DEVTOOLS__ : undefined;
 
       if (devtools !== undefined) {
         this._plugins.push(devtools.plugin);
-        this.hasDevtools = true;
-      }
-    }
-
-    if (options.initialState !== undefined) {
-      for (const state of options.initialState) {
-        this._initialState.set(this._toSerializedKey(state.key), state);
       }
     }
 
@@ -112,7 +92,7 @@ export class ExecutorManager implements Iterable<Executor> {
    * @param key The unique executor key.
    */
   get(key: unknown): Executor | undefined {
-    return this._executors.get(this._toSerializedKey(key));
+    return this._executors.get(this._getSerializedKey(key));
   }
 
   /**
@@ -142,17 +122,20 @@ export class ExecutorManager implements Iterable<Executor> {
   ): Executor<Value>;
 
   getOrCreate(key: unknown, initialValue?: unknown, plugins?: Array<ExecutorPlugin | null | undefined>): Executor {
-    const serializedKey = this._toSerializedKey(key);
+    const serializedKey = this._getSerializedKey(key);
 
     let executor = this._executors.get(serializedKey);
 
     if (executor !== undefined) {
+      // Existing executor
       return executor;
     }
 
     executor = Object.assign(new ExecutorImpl(key, this), this._initialState.get(serializedKey));
 
-    this._initialState.delete(serializedKey);
+    if (typeof initialValue === 'function') {
+      executor.task = initialValue as ExecutorTask;
+    }
 
     const unsubscribe = executor.subscribe(event => {
       this._pubSub.publish(event);
@@ -173,6 +156,7 @@ export class ExecutorManager implements Iterable<Executor> {
       throw error;
     }
 
+    this._initialState.delete(serializedKey);
     this._executors.set(serializedKey, executor);
 
     executor.publish('attached');
@@ -193,9 +177,9 @@ export class ExecutorManager implements Iterable<Executor> {
    *
    * @param key The executor key to wait for.
    */
-  waitFor(key: unknown): AbortablePromise<Executor> {
+  getOrAwait(key: unknown): AbortablePromise<Executor> {
     return new AbortablePromise((resolve, _reject, signal) => {
-      const serializedKey = this._toSerializedKey(key);
+      const serializedKey = this._getSerializedKey(key);
       const executor = this._executors.get(serializedKey);
 
       if (executor !== undefined) {
@@ -204,7 +188,7 @@ export class ExecutorManager implements Iterable<Executor> {
       }
 
       const unsubscribe = this.subscribe(event => {
-        if (event.type === 'attached' && this._toSerializedKey(event.target.key) === serializedKey) {
+        if (event.type === 'attached' && this._getSerializedKey(event.target.key) === serializedKey) {
           unsubscribe();
           resolve(event.target);
         }
@@ -224,7 +208,7 @@ export class ExecutorManager implements Iterable<Executor> {
    * @returns `true` if the executor was detached, or `false` if there's no such executor, or the executor is active.
    */
   detach(key: unknown): boolean {
-    const serializedKey = this._toSerializedKey(key);
+    const serializedKey = this._getSerializedKey(key);
     const executor = this._executors.get(serializedKey);
 
     if (executor === undefined || executor.isActive) {
@@ -264,12 +248,29 @@ export class ExecutorManager implements Iterable<Executor> {
   }
 
   /**
+   * Injects the initial state for the executor that is created in the future.
+   *
+   * @param initialState The initial state of the hydrated executor that can be created via
+   * {@link ExecutorManager.getOrCreate}.
+   * @returns `true` if the executor was hydrated, or `false` if the executor already exists and cannot be hydrated.
+   */
+  hydrate(initialState: ExecutorState): boolean {
+    const serializedKey = this._getSerializedKey(initialState.key);
+
+    if (this._executors.has(serializedKey)) {
+      return false;
+    }
+    this._initialState.set(serializedKey, initialState);
+    return true;
+  }
+
+  /**
    * Converts a key into its serialized form.
    *
    * @param key The key to convert.
    * @returns The serialized key.
    */
-  private _toSerializedKey(key: unknown): unknown {
+  protected _getSerializedKey(key: unknown): unknown {
     if (this._keySerializer !== undefined) {
       return this._keySerializer(key);
     }

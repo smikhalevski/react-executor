@@ -2,7 +2,7 @@ import { fireEvent } from '@testing-library/react';
 import { ExecutorManager } from '../../main';
 import synchronizeStorage from '../../main/plugin/synchronizeStorage';
 
-Date.now = jest.fn(() => 50);
+Date.now = () => 50;
 
 describe('synchronizeStorage', () => {
   let listenerMock: jest.Mock;
@@ -83,21 +83,15 @@ describe('synchronizeStorage', () => {
   });
 
   test('preserves the initial state if it is newer', () => {
-    const manager = new ExecutorManager({
-      initialState: [
-        {
-          key: 'xxx',
-          isFulfilled: true,
-          value: 'aaa',
-          reason: undefined,
-          annotations: {},
-          settledAt: 100,
-          invalidatedAt: 0,
-        },
-      ],
+    manager.hydrate({
+      key: 'xxx',
+      isFulfilled: true,
+      value: 'aaa',
+      reason: undefined,
+      annotations: {},
+      settledAt: 100,
+      invalidatedAt: 0,
     });
-
-    manager.subscribe(listenerMock);
 
     localStorage.setItem(
       'executor_xxx',
@@ -174,7 +168,7 @@ describe('synchronizeStorage', () => {
     expect(executor.value).toBeUndefined();
     expect(localStorage.getItem('executor_xxx')).toBeNull();
 
-    await executor.toPromise();
+    await executor.getOrAwait();
 
     expect(executor.isPending).toBe(false);
     expect(executor.value).toBe('aaa');

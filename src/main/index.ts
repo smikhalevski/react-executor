@@ -8,12 +8,15 @@
  * @module react-executor
  */
 
+export { enableSSRHydration } from './enableSSRHydration';
 export { ExecutorManager } from './ExecutorManager';
 export { useExecutor } from './useExecutor';
 export { useExecutorManager, ExecutorManagerProvider } from './useExecutorManager';
 export { useExecutorSubscription } from './useExecutorSubscription';
 export { useExecutorSuspense } from './useExecutorSuspense';
 
+export type { SSRHydrationOptions } from './enableSSRHydration';
+export type { ExecutorManagerOptions } from './ExecutorManager';
 export type {
   Executor,
   ExecutorAnnotations,
