@@ -181,10 +181,6 @@ describe('ExecutorManager', () => {
       expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'fulfilled', target: executor2, version: 1 });
     });
 
-    test('throws is an object key is used without keySerializer', () => {
-      expect(() => manager.getOrCreate(['aaa'])).toThrow();
-    });
-
     test('creates an executor with an object key', () => {
       const manager = new ExecutorManager({
         keySerializer: JSON.stringify,

@@ -62,10 +62,17 @@ export default function synchronizeStorage<Value = any>(
   storage: Pick<Storage, 'setItem' | 'getItem' | 'removeItem'>,
   options: SynchronizeStorageOptions<Value> = {}
 ): ExecutorPlugin<Value> {
-  const { serializer = JSON, storageKey = guessExecutorStorageKey } = options;
+  const { serializer = JSON, storageKey } = options;
 
   return executor => {
-    const executorStorageKey = typeof storageKey === 'function' ? storageKey(executor) : storageKey;
+    const executorStorageKey =
+      typeof storageKey === 'function'
+        ? storageKey(executor)
+        : storageKey ?? executor.manager.keySerializer(executor.key);
+
+    if (typeof executorStorageKey !== 'string') {
+      throw new Error('Cannot guess a storage key for an executor, the "storageKey" option is required');
+    }
 
     let latestStateStr: string | null | undefined;
 
@@ -149,18 +156,4 @@ export default function synchronizeStorage<Value = any>(
       options: { storageKey: executorStorageKey },
     });
   };
-}
-
-function guessExecutorStorageKey({ key }: Executor): string {
-  if (Array.isArray(key) && key.every(isSerializable)) {
-    return 'executor_' + key.join('_');
-  }
-  if (isSerializable(key)) {
-    return 'executor_' + key;
-  }
-  throw new Error('Cannot guess a storage key for an executor, the "storageKey" option is required');
-}
-
-function isSerializable(value: unknown): boolean {
-  return typeof value === 'string' || typeof value === 'number';
 }
