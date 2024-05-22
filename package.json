@@ -127,7 +127,6 @@
     "react": ">=16.8.0"
   },
   "dependencies": {
-    "parallel-universe": "^6.0.0",
-    "use-sync-external-store": "^1.2.2"
+    "parallel-universe": "^6.0.0"
   }
 }

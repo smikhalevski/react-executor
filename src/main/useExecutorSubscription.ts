@@ -1,5 +1,4 @@
-import { useCallback, useDebugValue, useEffect } from 'react';
-import { useSyncExternalStore } from 'use-sync-external-store/shim';
+import React from 'react';
 import type { Executor } from './types';
 
 /**
@@ -10,15 +9,39 @@ import type { Executor } from './types';
  * @param executor The executor to subscribe to.
  */
 export function useExecutorSubscription(executor: Executor): void {
-  useDebugValue(executor, toJSON);
+  React.useDebugValue(executor, toJSON);
 
-  const subscribe = useCallback(executor.subscribe.bind(executor), [executor]);
+  if (typeof React.useSyncExternalStore !== 'function') {
+    const subscribe = React.useCallback(executor.subscribe.bind(executor), [executor]);
 
-  const getSnapshot = () => executor.version;
+    const getSnapshot = () => executor.version;
 
-  useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+    React.useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
-  useEffect(executor.activate.bind(executor), [executor]);
+    React.useEffect(executor.activate.bind(executor), [executor]);
+
+    return;
+  }
+
+  const [, setVersion] = React.useState(executor.version);
+
+  React.useEffect(() => {
+    let version = executor.version;
+
+    const deactivate = executor.activate();
+    const unsubscribe = executor.subscribe(() => {
+      if (version < executor.version) {
+        setVersion((version = executor.version));
+      }
+    });
+
+    setVersion(version);
+
+    return () => {
+      unsubscribe();
+      deactivate();
+    };
+  }, [executor]);
 }
 
 function toJSON(executor: Executor) {
