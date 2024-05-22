@@ -10,11 +10,11 @@
 npm install --save-prod react-executor
 ```
 
-**Live examples**&ensp;🔥
+🔥&ensp;**Live examples**
 - [TODO app](https://codesandbox.io/p/sandbox/react-executor-example-ltflgy)
 - [Streaming SSR](https://codesandbox.io/p/devbox/react-executor-ssr-streaming-example-mwrmrs)
 
-[**Introduction**](#introduction)
+🔰&ensp;[**Introduction**](#introduction)
 
 - [Executor keys](#executor-keys)
 - [Execute a task](#execute-a-task)
@@ -25,13 +25,13 @@ npm install --save-prod react-executor
 - [Settle an executor](#settle-an-executor)
 - [Clear an executor](#clear-an-executor)
 
-[**Events and lifecycle**](#events-and-lifecycle)
+📢&ensp;[**Events and lifecycle**](#events-and-lifecycle)
 
 - [Activate an executor](#activate-an-executor)
 - [Invalidate results](#invalidate-results)
 - [Detach an executor](#detach-an-executor)
 
-[**Plugins**](#plugins)
+🔌&ensp;[**Plugins**](#plugins)
 
 - [`abortDeactivated`](#abortdeactivated)
 - [`bindAll`](#bindall)
@@ -45,18 +45,19 @@ npm install --save-prod react-executor
 - [`retryInvalidated`](#retryinvalidated)
 - [`synchronizeStorage`](#synchronizestorage)
 
-[**React integration**](#react-integration)
+⚛️&ensp;[**React integration**](#react-integration)
 
 - [Suspense](#suspense)
 
-[**Server-side rendering**](#server-side-rendering)
+🚀&ensp;[**Server-side rendering**](#server-side-rendering)
 
 - [Render to string](#render-to-string)
 - [Streaming SSR](#streaming-ssr)
+- [State serialization](#state-serialization)
 
-[**Devtools**](#devtools)
+⚙️&ensp;[**Devtools**](#devtools)
 
-[**Cookbook**](#cookbook)
+🍪&ensp;**Cookbook**
 
 - [Optimistic updates](#optimistic-updates)
 - [Dependent tasks](#dependent-tasks)
@@ -64,11 +65,10 @@ npm install --save-prod react-executor
 - [Infinite scroll](#infinite-scroll)
 - [Invalidate all executors](#invalidate-all-executors)
 - [Prefetching](#prefetching)
-- [Server rendering](#server-rendering)
 
 # Introduction
 
-An executor executes tasks, stores the execution result, and provides access to it. Tasks are callbacks that return a
+An executor executes a task, stores the execution result, and provides access to it. Tasks are callbacks that return a
 value or throw an error.
 
 An [`Executor`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html) is created and
@@ -141,43 +141,55 @@ plugins in the [Plugins](#plugins) section.
 
 ## Executor keys
 
-Anything can be an executor key: a string, a number, an object, etc. By default, if you use an object as a key, an error
-is thrown:
+Anything can be an executor key: a string, a number, an object, etc. By default, keys are considered identical if
+their [`JSON`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON)-serialized form is
+identical:
 
 ```ts
 const manager = new ExecutorManager();
 
 const userExecutor = manager.getOrCreate(['user', 123]);
-// ❌ Error
+
+// 🟡 
+manager.get(['user', 123]);
+// ⮕ userExecutor
 ```
 
-To enable object keys an executor manager must be created with the
-[`keySerializer`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html#keySerializer)
-option. Key serializer is a function that receives the requested executor key and returns its serialized form. The
-serialized key form can be anything, but usually you want a stable JSON serialization for your keys:
+To override, how keys are serialized
+pass [`keySerializer`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.ExecutorManagerOptions.html#keySerializer)
+option to `ExecutorManager` constructor. Key serializer is a function that receives the requested executor key and
+returns its serialized form. The returned serialized key form can be anything, a string, or an object.
+
+If you're using objects as executor keys, then you may want to enable stable serialization (when keys are always sorted
+alphabetically when serialized). In this case use any library that supports stable JSON serialization:
 
 ```ts
-import stringify from 'fast-json-stable-stringify';
+import { stringify } from 'json-marshal';
 
 const manager = new ExecutorManager({
-  keySerializer: stringify
+  keySerializer: key => stringify(key, { stable: true })
 });
 
-const bobrExecutor = manager.getOrCreate({ bobrId: 123, favourites: ['wood'] });
+const bobrExecutor = manager.getOrCreate({ id: 123, name: 'Woody' });
 // ⮕ Executor<any>
 
-manager.get({ favourites: ['wood'], bobrId: 123 });
+// 🟡 Key properties are listed in a different order
+manager.get({ name: 'Woody', id: 123 });
 // ⮕ bobrExecutor
 ```
 
-If you want to use object identities as executor keys, provide an identity function as a serializer to mute the error:
+> [!TIP]\
+> With additional configuration, [json-marshal](https://github.com/smikhalevski/json-marshal#readme) can stringify and
+> parse any data structure.
+
+If you want to use object references as executor keys, provide an identity function as a serializer:
 
 ```ts
 const manager = new ExecutorManager({
   keySerializer: key => key
 });
 
-const bobrKey = { bobrId: 123 };
+const bobrKey = { id: 123 };
 
 const bobrExecutor = manager.getOrCreate(bobrKey);
 
@@ -185,9 +197,9 @@ const bobrExecutor = manager.getOrCreate(bobrKey);
 manager.get(bobrKey);
 // ⮕ bobrExecutor
 
-const anotherBobrExecutor = manager.getOrCreate({ bobrId: 123 });
+const anotherBobrExecutor = manager.getOrCreate({ id: 123 });
 
-// 🟡 Executors are different because different object keys were used
+// 🟡 Executors are different because different objects were used as keys
 bobrExecutor === anotherBobrExecutor;
 // ⮕ false
 ```
@@ -392,16 +404,16 @@ const planetExecutor = manager.getOrCreate('planet');
 // The promise is resolved only when planetExecutor is settled
 const planetPromise = planetExecutor.getOrAwait();
 
-const plutoPromise = planetExecutor.execute(async signal => 'Pluto');
+const marsPromise = planetExecutor.execute(async signal => 'Mars');
 
-// plutoPromise is aborted
+// 🟡 marsPromise is aborted, because task was replaced
 const venusPromise = planetExecutor.execute(async signal => 'Venus');
 
 await planetPromise;
 // ⮕ 'Venus'
 ```
 
-In this example, `plutoPromise` is aborted, and `planetPromise` is resolved only after executor itself is settled and
+In this example, `marsPromise` is aborted, and `planetPromise` is resolved only after executor itself is settled and
 not pending anymore.
 
 Here's another example, where executor waits to be settled:
@@ -814,6 +826,25 @@ const { resolve } = useExecutor('test', 'Bye', [bindAll()]);
 resolve('Hello');
 ```
 
+You can enable this plugin for all executors created by the execution manager:
+
+```ts
+import { ExecutorManager } from 'react-executor';
+import bindAll from 'react-executor/plugin/bindAll';
+
+const manager = new ExecutorManager({
+  plugins: [bindAll()]
+});
+```
+
+Provide the manager so the `useExecutor` hook would employ it to create new executors:
+
+```tsx
+<ExecutorManagerProvider value={manager}>
+  <App/>
+</ExecutorManagerProvider>
+```
+
 ## `detachDeactivated`
 
 Aborts the pending task after the timeout if the executor is deactivated.
@@ -1036,24 +1067,52 @@ With this plugin, you can synchronize the executor state
 [across multiple browser tabs](https://codesandbox.io/p/sandbox/react-executor-example-ltflgy?file=%2Fsrc%2FApp.tsx%3A25%2C1)
 in just one line.
 
-> [!WARNING]\
+> [!IMPORTANT]\
 > If executor is [detached](#detach-an-executor), then the corresponding item is removed from the storage.
 
 By default, an executor state is serialized using
 [`JSON`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON). If your executor
-stores a value that may contain circular references, or non-serializable data like `BigInt`, use a custom serializer:
+stores a value that may contain circular references, or non-serializable data like `BigInt`, use a custom serializer.
+
+Here's how you can enable serialization of objects with circular references:
 
 ```ts
-import { stringify, parse } from 'flatted';
+import { stringify, parse } from 'json-marshal';
 
-synchronizeStorage(localStorage, {
-  serializer: { stringify, parse }
-});
+const executor = useExecutor('test', 42, [
+  synchronizeStorage(localStorage, {
+    serializer: { stringify, parse },
+  })
+]);
+```
+
+> [!TIP]\
+> With additional configuration, [json-marshal](https://github.com/smikhalevski/json-marshal#readme) can stringify and
+> parse any data structure.
+
+By default, `synchronizeStorage` plugin uses a [serialized executor key](#executor-keys) as a storage key. You can
+provide a custom key
+via [`storageKey`](https://smikhalevski.github.io/react-executor/interfaces/plugin_synchronizeStorage.SynchronizeStorageOptions.html#storageKey)
+option:
+
+```ts
+useExecutor('test', 42, [
+  synchronizeStorage(localStorage, { storageKey: 'helloBobr' })
+]);
+```
+
+In the environment where storage is unavailable (for example, [during SSR](#server-side-rendering)), you can
+conditionally disable the plugin:
+
+```ts
+useExecutor('test', 42, [
+  typeof localStorage !== 'undefined' ? synchronizeStorage(localStorage) : null
+]);
 ```
 
 # React integration
 
-To use executors in React you don't need any additional configuration, just use
+In the basic scenario, to use executors in your React app, you don't need any additional configuration, just use
 the [`useExecutor`](https://smikhalevski.github.io/react-executor/functions/react_executor.useExecutor.html) hook right
 away:
 
@@ -1061,7 +1120,8 @@ away:
 import { useExecutor } from 'react-executor';
 
 const User = (props: { userId: string }) => {
-  const executor = useExecutor(`user-${props.userId}`, async signal => {
+
+  const executor = useExecutor(['user', props.userId], async signal => {
     // Fetch the user from the server
   });
   
@@ -1080,6 +1140,10 @@ The hook has the exact same signature as
 the [`ExecutorManager.getOrCreate`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html#getOrCreate)
 method, described in the [Introduction](#introduction) section.
 
+> [!TIP]\
+> Check out the live example
+> of [the TODO app](https://codesandbox.io/p/sandbox/react-executor-example-ltflgy) that employs React Executor.
+
 You can use executors both inside and outside the rendering process. To do this, provide a custom
 [`ExecutorManager`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html) through
 the context:
@@ -1096,7 +1160,11 @@ const App = () => (
 )
 ```
 
-Now you can use `manager` to access all the same executors that are available through the `useExecutor` hook.
+Now you can use `manager` to access all the same executors that are available through the `useExecutor` hook:
+
+```ts
+const executor = manager.get(['user', '28']);
+```
 
 If you want to have access to an executor in a component, but don't want to re-render the component when the executor's
 state is changed,
@@ -1177,7 +1245,9 @@ useExecutorSuspense([accountExecutor, shoppingCartExecutor]);
 
 # Server-side rendering
 
-Live examples of [streaming ]
+> [!TIP]\
+> Check out the live example
+> of [streaming SSR](https://codesandbox.io/p/devbox/react-executor-ssr-streaming-example-mwrmrs) with React Executor.
 
 Executors can be hydrated on the client after being rendered on the server.
 
@@ -1259,7 +1329,7 @@ A new executor manager must be created for each request, so the results that are
 response to a particular request.
 
 [`hasChanges`](https://smikhalevski.github.io/react-executor/classes/ssr.SSRExecutorManager.html#hasChanges) would
-resolve with `true` if state of some executors has changed during rendering.
+resolve with `true` if state of some executors have changed during rendering.
 
 The hydration chunk returned
 by [`nextHydrationChunk`](https://smikhalevski.github.io/react-executor/classes/ssr.SSRExecutorManager.html#nextHydrationChunk)
@@ -1372,6 +1442,53 @@ async function handler(request) {
 ```
 
 State of executors is streamed to the client along with the chunks rendered by React.
+
+## State serialization
+
+By default, an executor state is serialized using
+[`JSON.stringify`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify) that
+has quite a few limitations. If your executor stores a value that may contain circular references, or non-serializable
+data like `BigInt`, use a custom state serialization.
+
+On the client, pass
+a [`stateParser`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.SSRHydrationOptions.html#stateParser)
+option to `enableSSRHydration`:
+
+```tsx
+import React from 'react';
+import { hydrateRoot } from 'react-dom/client';
+import { enableSSRHydration, ExecutorManager, ExecutorManagerProvider } from 'react-executor';
+import { parse } from 'json-marshal';
+
+const manager = new ExecutorManager();
+
+// 🟡 Pass a custom state parser
+enableSSRHydration(manager, { stateParser: parse });
+
+hydrateRoot(
+  document,
+  <ExecutorManagerProvider value={manager}>
+    <App/>
+  </ExecutorManagerProvider>
+);
+```
+
+On the server, pass
+a [`stateStringifier`](https://smikhalevski.github.io/react-executor/interfaces/ssr.SSRExecutorManagerOptions.html#stateStringifier)
+option to [`SSRExecutorManager`](#render-to-string),
+[`PipeableSSRExecutorManager`](#streaming-ssr),
+or [`ReadableSSRExecutorManager`](#readable-web-streams-support), depending on your setup:
+
+```ts
+import { SSRExecutorManager } from 'react-executor/ssr';
+import { stringify } from 'json-marshal';
+
+const manager = new SSRExecutorManager({ stateStringifier: stringify });
+```
+
+> [!TIP]\
+> With additional configuration, [json-marshal](https://github.com/smikhalevski/json-marshal#readme) can stringify and
+> parse any data structure.
 
 # Devtools
 
@@ -1559,30 +1676,6 @@ const App = () => (
   <ExecutorManagerProvider value={manager}>
     {/* Render you app here */}
   </ExecutorManagerProvider>
-);
-```
-
-## Server rendering
-
-Both [`Executor`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html) and [`ExecutorManager`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html) are JSON-serializable. After server rendering is competed, serialize
-the executor manager and send its state to the client:
-
-```ts
-response.write(`<script>window.__EXECUTORS__ = ${JSON.stringify(manager)}</script>`);
-```
-
-On the client, deserialize the initial state and pass it to the `ExecutorManager` constructor:
-
-
-Now when you create a new executor using
-[`getOrCreate`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html#getOrCreate)
-it would be initialized with the state delivered from the server.
-
-If during SSR you need to wait for all executors to settle:
-
-```ts
-await Promise.allSettled(
-  Array.from(manager).map(executor => executor.getOrAwait())
 );
 ```
 
