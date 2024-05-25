@@ -3,6 +3,7 @@ const typescript = require('@rollup/plugin-typescript');
 module.exports = {
   input: [
     './src/main/index.ts',
+    './src/main/core.ts',
     './src/main/ssr/index.ts',
     './src/main/ssr/node/index.ts',
     './src/main/plugin/abortDeactivated.ts',
