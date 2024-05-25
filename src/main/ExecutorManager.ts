@@ -14,12 +14,11 @@ export interface ExecutorManagerOptions {
   /**
    * Serializes executor keys.
    *
-   * A serializer is required to support objects as executor keys, otherwise an error is thrown.
-   *
    * The serialized key form can be anything. If you want to use object identities as executor keys, provide an identity
    * function as a serializer to mute the error.
    *
    * @param key The key to serialize.
+   * @default JSON.stringify
    */
   keySerializer?: (key: any) => any;
 
@@ -57,9 +56,9 @@ export class ExecutorManager implements Iterable<Executor> {
   protected readonly _plugins: ExecutorPlugin[] = [];
 
   /**
-   * Serializes executor keys.
+   * Serializes keys of executors.
    */
-  protected readonly _keySerializer: ((key: unknown) => unknown) | undefined;
+  readonly keySerializer: (key: unknown) => unknown;
 
   /**
    * Creates a new executor manager.
@@ -67,7 +66,7 @@ export class ExecutorManager implements Iterable<Executor> {
    * @param options Additional options.
    */
   constructor(options: ExecutorManagerOptions = {}) {
-    this._keySerializer = options.keySerializer;
+    this.keySerializer = options.keySerializer || (value => JSON.stringify(value));
 
     if (options.devtools === undefined || options.devtools) {
       const devtools = typeof __REACT_EXECUTOR_DEVTOOLS__ !== 'undefined' ? __REACT_EXECUTOR_DEVTOOLS__ : undefined;
@@ -92,7 +91,7 @@ export class ExecutorManager implements Iterable<Executor> {
    * @param key The unique executor key.
    */
   get(key: unknown): Executor | undefined {
-    return this._executors.get(this._getSerializedKey(key));
+    return this._executors.get(this.keySerializer(key));
   }
 
   /**
@@ -122,7 +121,7 @@ export class ExecutorManager implements Iterable<Executor> {
   ): Executor<Value>;
 
   getOrCreate(key: unknown, initialValue?: unknown, plugins?: Array<ExecutorPlugin | null | undefined>): Executor {
-    const serializedKey = this._getSerializedKey(key);
+    const serializedKey = this.keySerializer(key);
 
     let executor = this._executors.get(serializedKey);
 
@@ -179,7 +178,7 @@ export class ExecutorManager implements Iterable<Executor> {
    */
   getOrAwait(key: unknown): AbortablePromise<Executor> {
     return new AbortablePromise((resolve, _reject, signal) => {
-      const serializedKey = this._getSerializedKey(key);
+      const serializedKey = this.keySerializer(key);
       const executor = this._executors.get(serializedKey);
 
       if (executor !== undefined) {
@@ -188,7 +187,7 @@ export class ExecutorManager implements Iterable<Executor> {
       }
 
       const unsubscribe = this.subscribe(event => {
-        if (event.type === 'attached' && this._getSerializedKey(event.target.key) === serializedKey) {
+        if (event.type === 'attached' && this.keySerializer(event.target.key) === serializedKey) {
           unsubscribe();
           resolve(event.target);
         }
@@ -208,7 +207,7 @@ export class ExecutorManager implements Iterable<Executor> {
    * @returns `true` if the executor was detached, or `false` if there's no such executor, or the executor is active.
    */
   detach(key: unknown): boolean {
-    const serializedKey = this._getSerializedKey(key);
+    const serializedKey = this.keySerializer(key);
     const executor = this._executors.get(serializedKey);
 
     if (executor === undefined || executor.isActive) {
@@ -255,28 +254,12 @@ export class ExecutorManager implements Iterable<Executor> {
    * @returns `true` if the executor was hydrated, or `false` if the executor already exists and cannot be hydrated.
    */
   hydrate(initialState: ExecutorState): boolean {
-    const serializedKey = this._getSerializedKey(initialState.key);
+    const serializedKey = this.keySerializer(initialState.key);
 
     if (this._executors.has(serializedKey)) {
       return false;
     }
     this._initialState.set(serializedKey, initialState);
     return true;
-  }
-
-  /**
-   * Converts a key into its serialized form.
-   *
-   * @param key The key to convert.
-   * @returns The serialized key.
-   */
-  protected _getSerializedKey(key: unknown): unknown {
-    if (this._keySerializer !== undefined) {
-      return this._keySerializer(key);
-    }
-    if ((key !== null && typeof key === 'object') || typeof key === 'function') {
-      throw new Error('Object keys require the "keySerializer" option');
-    }
-    return key;
   }
 }
