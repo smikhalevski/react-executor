@@ -21,7 +21,8 @@
     "./src/main/index.ts",
     "./src/main/ssr/index.ts",
     "./src/main/ssr/node/index.ts",
-    "./src/main/plugin/*.ts"
+    "./src/main/plugin/*.ts",
+    "./src/main/core.ts"
   ],
   "intentionallyNotExported": [
     "ExecutorImpl",

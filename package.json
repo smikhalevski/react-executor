@@ -11,6 +11,11 @@
       "import": "./index.mjs",
       "require": "./index.js"
     },
+    "./core": {
+      "types": "./core.d.ts",
+      "import": "./core.mjs",
+      "require": "./core.js"
+    },
     "./ssr": {
       "types": "./ssr/index.d.ts",
       "import": "./ssr/index.mjs",
@@ -118,8 +123,8 @@
     "typedoc-custom-css": "github:smikhalevski/typedoc-custom-css#master",
     "typescript": "^5.4.5"
   },
-  "peerDependencies": {
-    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0"
+  "optionalDependencies": {
+    "react": ">=16.8.0"
   },
   "dependencies": {
     "parallel-universe": "^6.0.0",
