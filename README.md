@@ -91,7 +91,7 @@ Managers create a new executor when you call
 with a new key. Each consequent call with that key returns the same executor.
 
 If you want to retrieve an existing executor by its key and don't want to create a new executor if it doesn't exist, use
-[`get`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html#getOrCreate):
+[`get`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html#get):
 
 ```ts
 manager.get('bobby');
@@ -333,7 +333,7 @@ rookyExecutor.value;
 
 The promise returned by
 the [`execute`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#execute)
-method is [abortable](https://smikhalevski.github.io/parallel-universe/classes/react_executor.AbortablePromise.html) so
+method is [abortable](https://smikhalevski.github.io/parallel-universe/classes/AbortablePromise.html) so
 the task can be prematurely aborted. Results of the aborted task are discarded:
 
 ```ts
@@ -729,8 +729,8 @@ as [invalidated](https://smikhalevski.github.io/react-executor/interfaces/react_
 ## Detach an executor
 
 By default, executors that a manager has created are preserved indefinitely and are always available though
-[`get`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html#getOrCreate). This
-isn't always optimal, and you may want to detach an executor when it isn't needed anymore.
+[`get`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html#get). This isn't
+always optimal, and you may want to detach an executor when it isn't needed anymore.
 Use [`detach`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html#detach) in
 such case:
 
@@ -1379,7 +1379,7 @@ State of executors is streamed to the client along with the chunks rendered by R
 
 In the `App` component, use the combination of [`<Suspense>`](https://react.dev/reference/react/Suspense),
 [`useExecutor`](https://smikhalevski.github.io/react-executor/functions/react_executor.useExecutor.html) and
-[`useExecutorSuspence`](https://smikhalevski.github.io/react-executor/functions/react_executor.useExecutorSuspence.html)
+[`useExecutorSuspence`](https://smikhalevski.github.io/react-executor/functions/react_executor.useExecutorSuspense.html)
 to suspend rendering while executors process their tasks:
 
 ```tsx
@@ -1506,7 +1506,7 @@ browser extension and open its panel in the Chrome Developer Tools:
 </p>
 <br/>
 
-Devtools extensions doesn't require any additional configuration and provides introspection to all executors on the
+Devtools extension doesn't require any additional configuration and provides introspection to all executors on the
 page, regardless if they were rendered through React or created outside of the rendering process.
 
 To disable devtools, create a custom
@@ -1640,7 +1640,7 @@ for (const executor of manager) {
 
 By default, invalidating an executor has no additional effect. If you want to
 [retry the latest task](#retry-the-latest-task) that each executor has executed, use
-[`retry`](https://smikhalevski.github.io/react-executor/interface/react_executor.Executor.html#retry):
+[`retry`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#retry):
 
 ```ts
 for (const executor of manager) {
@@ -1649,7 +1649,8 @@ for (const executor of manager) {
 ```
 
 It isn't optimal to retry all executors even if they aren't [actively used](#activate-an-executor). Use the
-[`retryInvalidated`](https://smikhalevski.github.io/react-executor/interface/react_executor.Executor.html#retry) to retry active executors when they are invalidated.
+[`retryInvalidated`](https://smikhalevski.github.io/react-executor/modules/plugin_retryInvalidated.html) to retry active
+executors when they are invalidated.
 
 ## Prefetching
 
