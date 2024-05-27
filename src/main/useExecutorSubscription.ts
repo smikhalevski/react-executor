@@ -11,7 +11,7 @@ import type { Executor } from './types';
 export function useExecutorSubscription(executor: Executor): void {
   React.useDebugValue(executor, toJSON);
 
-  if (typeof React.useSyncExternalStore !== 'function') {
+  if (typeof React.useSyncExternalStore === 'function') {
     const subscribe = React.useCallback(executor.subscribe.bind(executor), [executor]);
 
     const getSnapshot = () => executor.version;
