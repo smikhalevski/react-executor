@@ -80,18 +80,18 @@ export interface ExecutorEvent<Value = any> {
    * See {@link ExecutorEvent} for more details.
    */
   type:
-    | 'plugin_configured'
     | 'attached'
+    | 'detached'
     | 'activated'
-    | 'annotated'
+    | 'deactivated'
     | 'pending'
     | 'fulfilled'
     | 'rejected'
     | 'aborted'
     | 'cleared'
     | 'invalidated'
-    | 'deactivated'
-    | 'detached'
+    | 'annotated'
+    | 'plugin_configured'
     | (string & {});
 
   /**

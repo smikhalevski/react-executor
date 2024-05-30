@@ -28,6 +28,41 @@ describe('enableSSRHydration', () => {
     expect(executor.settledAt).toBe(50);
   });
 
+  test('hydrates multiple executors that are added after', () => {
+    const manager = new ExecutorManager();
+
+    enableSSRHydration(manager);
+
+    window.__REACT_EXECUTOR_SSR_STATE__!.push(
+      JSON.stringify({
+        key: 'xxx',
+        isFulfilled: true,
+        value: 111,
+        reason: undefined,
+        settledAt: 50,
+        invalidatedAt: 0,
+        annotations: {},
+      }),
+      JSON.stringify({
+        key: 'yyy',
+        isFulfilled: true,
+        value: 222,
+        reason: undefined,
+        settledAt: 100,
+        invalidatedAt: 0,
+        annotations: {},
+      })
+    );
+
+    const executor1 = manager.getOrCreate('xxx');
+    const executor2 = manager.getOrCreate('yyy');
+
+    expect(executor1.value).toBe(111);
+    expect(executor1.settledAt).toBe(50);
+    expect(executor2.value).toBe(222);
+    expect(executor2.settledAt).toBe(100);
+  });
+
   test('hydrates an executor that was added before', () => {
     window.__REACT_EXECUTOR_SSR_STATE__ = [
       JSON.stringify({

@@ -62,25 +62,25 @@ export class SSRExecutorManager extends ExecutorManager {
    * state changes since the last time {@link nextHydrationChunk} was called.
    */
   nextHydrationChunk(): string | undefined {
-    const sources = [];
+    const stateStrs = [];
 
     for (const executor of this._executors.values()) {
       const hydratedVersion = this._hydratedVersions.get(executor);
 
       if ((hydratedVersion === undefined || hydratedVersion !== executor.version) && this._executorFilter(executor)) {
-        sources.push(JSON.stringify(this._stateStringifier(executor.toJSON())));
+        stateStrs.push(JSON.stringify(this._stateStringifier(executor.toJSON())));
 
         this._hydratedVersions.set(executor, executor.version);
       }
     }
 
-    if (sources.length === 0) {
+    if (stateStrs.length === 0) {
       return;
     }
 
     return (
       '<script>(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push(' +
-      sources.join(',') +
+      stateStrs.join(',') +
       ');var e=document.currentScript;e&&e.parentNode.removeChild(e)</script>'
     );
   }

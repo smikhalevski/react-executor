@@ -36,8 +36,10 @@ export function enableSSRHydration(executorManager: ExecutorManager, options: SS
   }
 
   window.__REACT_EXECUTOR_SSR_STATE__ = {
-    push(chunk) {
-      executorManager.hydrate(stateParser(chunk));
+    push() {
+      for (let i = 0; i < arguments.length; ++i) {
+        executorManager.hydrate(stateParser(arguments[i]));
+      }
     },
   };
 }
