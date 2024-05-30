@@ -23,7 +23,7 @@ export class ReadableSSRExecutorManager extends SSRExecutorManager implements Re
 
         const hydrationChunk = this.nextHydrationChunk();
 
-        if (hydrationChunk !== undefined) {
+        if (hydrationChunk !== '') {
           controller.enqueue(hydrationChunk);
         }
       },

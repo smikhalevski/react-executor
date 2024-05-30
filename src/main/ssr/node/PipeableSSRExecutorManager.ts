@@ -29,11 +29,12 @@ export class PipeableSSRExecutorManager extends SSRExecutorManager {
 
           const hydrationChunk = this.nextHydrationChunk();
 
-          if (hydrationChunk !== undefined) {
+          if (hydrationChunk !== '') {
             stream.write(hydrationChunk, callback);
-          } else {
-            callback();
+            return;
           }
+
+          callback();
         });
       },
 
