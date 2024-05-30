@@ -10,24 +10,45 @@ describe('SSRExecutorManager', () => {
 
       manager.getOrCreate('xxx');
 
-      expect(manager.nextHydrationChunk()).toBeUndefined();
+      expect(manager.nextHydrationChunk()).toBe('');
     });
 
-    test('returns a hydration chunk', async () => {
+    test('returns the hydration chunk for a single executor', async () => {
       const manager = new SSRExecutorManager();
 
       const executor = manager.getOrCreate('xxx');
 
-      expect(manager.nextHydrationChunk()).toBeUndefined();
+      expect(manager.nextHydrationChunk()).toBe('');
 
       const promise = executor.execute(() => 111);
 
-      expect(manager.nextHydrationChunk()).toBeUndefined();
+      expect(manager.nextHydrationChunk()).toBe('');
 
       await promise;
 
       expect(manager.nextHydrationChunk()).toBe(
         '<script>(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("{\\"key\\":\\"xxx\\",\\"isFulfilled\\":true,\\"value\\":111,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e)</script>'
+      );
+    });
+
+    test('returns the hydration chunk for multiple executors', async () => {
+      const manager = new SSRExecutorManager();
+
+      const executor1 = manager.getOrCreate('xxx');
+      const executor2 = manager.getOrCreate('yyy');
+
+      expect(manager.nextHydrationChunk()).toBe('');
+
+      const promise1 = executor1.execute(() => 111);
+      const promise2 = executor2.execute(() => 222);
+
+      expect(manager.nextHydrationChunk()).toBe('');
+
+      await promise1;
+      await promise2;
+
+      expect(manager.nextHydrationChunk()).toBe(
+        '<script>(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("{\\"key\\":\\"xxx\\",\\"isFulfilled\\":true,\\"value\\":111,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}","{\\"key\\":\\"yyy\\",\\"isFulfilled\\":true,\\"value\\":222,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e)</script>'
       );
     });
 
@@ -43,7 +64,7 @@ describe('SSRExecutorManager', () => {
 
       const promise = executor2.execute(() => 222);
 
-      expect(manager.nextHydrationChunk()).toBeUndefined();
+      expect(manager.nextHydrationChunk()).toBe('');
 
       await promise;
 
@@ -60,7 +81,7 @@ describe('SSRExecutorManager', () => {
         .execute(() => Promise.reject('expected'))
         .catch(noop);
 
-      expect(manager.nextHydrationChunk()).toBeUndefined();
+      expect(manager.nextHydrationChunk()).toBe('');
     });
 
     test('respects executorFilter option', async () => {
@@ -78,7 +99,7 @@ describe('SSRExecutorManager', () => {
       );
     });
 
-    test('respects executorFilter option', async () => {
+    test('respects stateStringifier option', async () => {
       const stateStringifierMock = jest.fn(JSON.stringify);
 
       const manager = new SSRExecutorManager({

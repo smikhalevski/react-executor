@@ -58,10 +58,10 @@ export class SSRExecutorManager extends ExecutorManager {
   }
 
   /**
-   * Returns a chunk that hydrates the client with the state accumulated during SSR, or `undefined` if there are no
+   * Returns a chunk that hydrates the client with the state accumulated during SSR, or an empty string if there are no
    * state changes since the last time {@link nextHydrationChunk} was called.
    */
-  nextHydrationChunk(): string | undefined {
+  nextHydrationChunk(): string {
     const stateStrs = [];
 
     for (const executor of this._executors.values()) {
@@ -75,7 +75,7 @@ export class SSRExecutorManager extends ExecutorManager {
     }
 
     if (stateStrs.length === 0) {
-      return;
+      return '';
     }
 
     return (
