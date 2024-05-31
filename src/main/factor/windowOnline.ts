@@ -20,12 +20,8 @@ import { noop } from '../utils';
 
 const pubSub = new PubSub<boolean>();
 
-function get() {
-  return typeof navigator === 'undefined' || navigator.onLine;
-}
-
-function handleEvent() {
-  pubSub.publish(get());
+function publish() {
+  pubSub.publish(typeof navigator === 'undefined' || navigator.onLine);
 }
 
 /**
@@ -33,26 +29,26 @@ function handleEvent() {
  * [`navigator.onLine`](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/onLine).
  */
 const windowOnline: Observable<boolean> = {
-  get,
-
   subscribe(listener) {
     if (typeof window === 'undefined') {
       return noop;
     }
 
     if (pubSub.listenerCount === 0) {
-      window.addEventListener('offline', handleEvent, false);
-      window.addEventListener('online', handleEvent, false);
+      window.addEventListener('offline', publish, false);
+      window.addEventListener('online', publish, false);
     }
 
     const unsubscribe = pubSub.subscribe(listener);
+
+    setTimeout(publish, 0);
 
     return () => {
       unsubscribe();
 
       if (pubSub.listenerCount === 0) {
-        window.removeEventListener('offline', handleEvent, false);
-        window.removeEventListener('online', handleEvent, false);
+        window.removeEventListener('offline', publish, false);
+        window.removeEventListener('online', publish, false);
       }
     };
   },

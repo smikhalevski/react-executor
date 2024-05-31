@@ -976,7 +976,7 @@ import { useExecutor } from 'react-executor';
 import abortFactor from 'react-executor/plugin/abortFactor';
 import retryFactor from 'react-executor/plugin/retryFactor';
 import retryFulfilled from 'react-executor/plugin/retryFulfilled';
-import windowFocus from 'react-executor/factor/windowFocus';
+import windowFocused from 'react-executor/factor/windowFocused';
 import windowOnline from 'react-executor/factor/windowOnline';
 
 useExecutor('test', heavyTask, [
@@ -986,11 +986,11 @@ useExecutor('test', heavyTask, [
   
   // Abort the task and prevent future executions
   // if the window looses focus for at least 10 seconds
-  abortFactor(windowFocus, 10_000),
+  abortFactor(windowFocused, 10_000),
 
   // Retry the latest task if the window gains focus
   // after being out of focus for at least 10 seconds
-  retryFactor(windowFocus, 10_000),
+  retryFactor(windowFocused, 10_000),
   
   // Instantly abort the pending task if the window goes offline
   abortFactor(windowOnline),
@@ -998,6 +998,45 @@ useExecutor('test', heavyTask, [
   // Retry the latest task if the window goes online
   retryFactor(windowOnline)
 ]);
+```
+
+Factor is an [`Observable`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Observable.html)
+that pushes the boolean value to its subscribers:
+
+```ts
+import { Observable } from 'react-executor';
+
+const externalFactor: Observable<boolean> = {
+  subscribe(listener) {
+    // Subscribe the listener to external changes
+
+    return () => {
+      // Unsubscribe the listener
+    };
+  }
+};
+
+useExecutor('test', heavyTask, [
+  retryFactor(externalFactor)
+]);
+```
+
+Use [`PubSub`](https://smikhalevski.github.io/parallel-universe/classes/PubSub.html) as a factor:
+
+```ts
+import { PubSub } from 'parallel-universe';
+
+const externalFactor = new PubSub<boolean>();
+
+const executor = useExecutor('test', heavyTask, [
+  retryFactor(externalFactor)
+]);
+
+// Disable external factor
+externalFactor.publish(false);
+
+// Enable external factor
+externalFactor.publish(true);
 ```
 
 ## `retryFulfilled`

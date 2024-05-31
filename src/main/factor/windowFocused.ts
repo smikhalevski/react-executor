@@ -20,12 +20,8 @@ import { noop } from '../utils';
 
 const pubSub = new PubSub<boolean>();
 
-function get() {
-  return typeof document === 'undefined' || document.visibilityState === 'visible';
-}
-
-function handleEvent() {
-  pubSub.publish(get());
+function publish() {
+  pubSub.publish(typeof document === 'undefined' || document.visibilityState === 'visible');
 }
 
 /**
@@ -33,26 +29,26 @@ function handleEvent() {
  * [`document.visibilityState`](https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState).
  */
 const windowFocused: Observable<boolean> = {
-  get,
-
   subscribe(listener) {
     if (typeof window === 'undefined') {
       return noop;
     }
 
     if (pubSub.listenerCount === 0) {
-      window.addEventListener('visibilitychange', handleEvent, false);
-      window.addEventListener('focus', handleEvent, false);
+      window.addEventListener('visibilitychange', publish, false);
+      window.addEventListener('focus', publish, false);
     }
 
     const unsubscribe = pubSub.subscribe(listener);
+
+    setTimeout(publish, 0);
 
     return () => {
       unsubscribe();
 
       if (pubSub.listenerCount === 0) {
-        window.removeEventListener('visibilitychange', handleEvent, false);
-        window.removeEventListener('focus', handleEvent, false);
+        window.removeEventListener('visibilitychange', publish, false);
+        window.removeEventListener('focus', publish, false);
       }
     };
   },

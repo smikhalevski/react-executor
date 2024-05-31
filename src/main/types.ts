@@ -366,11 +366,6 @@ export interface PluginConfiguredPayload {
  */
 export interface Observable<T> {
   /**
-   * Returns the latest value that was pushed to listeners.
-   */
-  get?(): T;
-
-  /**
    * Subscribes the listener to changes of the observed value.
    *
    * @param listener The listener to subscribe.

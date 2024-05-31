@@ -26,7 +26,7 @@ export default function retryFactor(factor: Observable<boolean>, ms = 0): Execut
     let timer: NodeJS.Timeout | undefined;
     let shouldRetry = false;
 
-    const listener = (isEnabled: boolean) => {
+    const unsubscribe = factor.subscribe(isEnabled => {
       if (isEnabled) {
         clearTimeout(timer);
         timer = undefined;
@@ -46,13 +46,7 @@ export default function retryFactor(factor: Observable<boolean>, ms = 0): Execut
         timer = undefined;
         shouldRetry = true;
       }, ms);
-    };
-
-    if (factor.get !== undefined) {
-      listener(factor.get());
-    }
-
-    const unsubscribe = factor.subscribe(listener);
+    });
 
     executor.subscribe(event => {
       switch (event.type) {

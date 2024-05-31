@@ -1,5 +1,5 @@
 /**
- * The plugin that aborts the pending task if the factor is disabled.
+ * The plugin that aborts the pending task if the factor is `false`.
  *
  * ```ts
  * import abortFactor from 'react-executor/plugin/abortFactor';
@@ -16,9 +16,9 @@
 import type { ExecutorPlugin, Observable, PluginConfiguredPayload } from '../types';
 
 /**
- * Aborts the pending task if the factor is disabled.
+ * Aborts the pending task if the factor is `false`.
  *
- * @param factor The factor that must become disabled to abort the executor.
+ * @param factor The factor that must become `false` to abort the executor.
  * @param ms The timeout in milliseconds that the factor must stay disabled to abort the executor.
  */
 export default function abortFactor(factor: Observable<boolean>, ms = 0): ExecutorPlugin {
@@ -26,7 +26,7 @@ export default function abortFactor(factor: Observable<boolean>, ms = 0): Execut
     let timer: NodeJS.Timeout | undefined;
     let shouldAbort = false;
 
-    const listener = (isEnabled: boolean) => {
+    const unsubscribe = factor.subscribe(isEnabled => {
       if (isEnabled) {
         clearTimeout(timer);
         timer = undefined;
@@ -43,13 +43,7 @@ export default function abortFactor(factor: Observable<boolean>, ms = 0): Execut
         shouldAbort = true;
         executor.abort();
       }, ms);
-    };
-
-    if (factor.get !== undefined) {
-      listener(factor.get());
-    }
-
-    const unsubscribe = factor.subscribe(listener);
+    });
 
     executor.subscribe(event => {
       switch (event.type) {
