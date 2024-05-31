@@ -34,12 +34,13 @@ npm install --save-prod react-executor
 🔌&ensp;[**Plugins**](#plugins)
 
 - [`abortDeactivated`](#abortdeactivated)
+- [`abortFactor`](#abortfactor)
 - [`bindAll`](#bindall)
 - [`detachDeactivated`](#detachdeactivated)
 - [`invalidateAfter`](#invalidateafter)
 - [`invalidateByPeers`](#invalidatebypeers)
 - [`invalidatePeers`](#invalidatepeers)
-- [`retryFocused`](#retryfocused)
+- [`retryFactor`](#retryfactor)
 - [`retryFulfilled`](#retryfulfilled)
 - [`retryRejected`](#retryrejected)
 - [`retryInvalidated`](#retryinvalidated)
@@ -813,6 +814,27 @@ executor.deactivate();
 `abortDeactivated` has a single argument: the delay after which the task should be aborted. If an executor is
 re-activated during this delay, the task won't be aborted. 
 
+## `abortFactor`
+
+[Aborts the pending task](#abort-a-task) if the factor is disabled.
+
+For example, if the window was offline for more than 5 seconds then the pending task is aborted:
+
+```ts
+import abortFactor from 'react-executor/plugin/abortFactor';
+import windowOnline from 'react-executor/factor/windowOnline';
+
+const executor = useExecutor('test', heavyTask, [
+  abortFactor(windowOnline, 5_000)
+]);
+```
+
+If a new task is passed to the
+[`Executor.execute`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#execute)
+method after the abort factor has triggered then the task is instantly aborted.
+
+Read more about factors in the [`retryFactor`](#retryfactor) section.
+
 ## `bindAll`
 
 Binds all executor methods to the instance.
@@ -925,21 +947,62 @@ const breadExecutor = useExecutor('bread', 'Focaccia');
 cheeseExecutor.resolve('Mozzarella');
 ```
 
-## `retryFocused`
+## `retryFactor`
 
-Retries the latest task of the active executor if the window gains focus.
+[Retries the latest task](#retry-the-latest-task) if the external factor was disabled and then enabled again.
+
+For example, if the window was offline for more than 5 seconds, the executor would retry the `heavyTask` after
+the window is back online:
 
 ```ts
-import retryFocused from 'react-executor/plugin/retryFocused';
+import retryFactor from 'react-executor/plugin/retryFactor';
+import windowOnline from 'react-executor/factor/windowOnline';
 
-const executor = useExecutor('test', 42, [retryFocused()]);
+const executor = useExecutor('test', heavyTask, [
+  retryFactor(windowOnline, 5_000)
+]);
 ```
 
-This plugin is no-op in the server environment.
+Combining multiple plugins, you can set up a complex executor behaviour. For example, let's create an executor that
+follows these requirements:
+
+1. Executes the task every 5 seconds.
+2. Aborts the pending task if the window loses focus for more than 10 seconds.
+3. Aborts instantly if the window goes offline.
+4. Resumes the periodic task execution if window gains focus or goes back online.
+
+```ts
+import { useExecutor } from 'react-executor';
+import abortFactor from 'react-executor/plugin/abortFactor';
+import retryFactor from 'react-executor/plugin/retryFactor';
+import retryFulfilled from 'react-executor/plugin/retryFulfilled';
+import windowFocus from 'react-executor/factor/windowFocus';
+import windowOnline from 'react-executor/factor/windowOnline';
+
+useExecutor('test', heavyTask, [
+
+  // Execute the task every 5 seconds
+  retryFulfilled(Infinity, 5_000),
+  
+  // Abort the task and prevent future executions
+  // if the window looses focus for at least 10 seconds
+  abortFactor(windowFocus, 10_000),
+
+  // Retry the latest task if the window gains focus
+  // after being out of focus for at least 10 seconds
+  retryFactor(windowFocus, 10_000),
+  
+  // Instantly abort the pending task if the window goes offline
+  abortFactor(windowOnline),
+
+  // Retry the latest task if the window goes online
+  retryFactor(windowOnline)
+]);
+```
 
 ## `retryFulfilled`
 
-Repeats the last task after the execution was fulfilled.
+[Retries the latest task](#retry-the-latest-task) after the execution was fulfilled.
 
 ```ts
 import retryFulfilled from 'react-executor/plugin/retryFulfilled';
@@ -1064,7 +1127,7 @@ executor.activate();
 ```
 
 With this plugin, you can synchronize the executor state
-[across multiple browser tabs](https://codesandbox.io/p/sandbox/react-executor-example-ltflgy?file=%2Fsrc%2FApp.tsx%3A25%2C1)
+[across multiple browser tabs](https://codesandbox.io/p/sandbox/react-executor-example-ltflgy)
 in just one line.
 
 > [!IMPORTANT]\
@@ -1275,8 +1338,7 @@ Here, `App` is the component that renders your application. Inside the `App` you
 [`useExecutorSuspence`](#suspense) to load your data.
 
 [`enableSSRHydration`](https://smikhalevski.github.io/react-executor/functions/react_executor.enableSSRHydration.html)
-must be called only once, and only one manager of the client-side can receive the dehydrated state
-from the server.
+must be called only once, and only one manager on the client-side can receive the dehydrated state from the server.
 
 On the server, you can either render your app contents [as a string](#render-to-string) and send it to the client in one
 go, or [stream the contents](#streaming-ssr).
