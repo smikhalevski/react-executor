@@ -2,15 +2,15 @@
  * The plugin that aborts the pending task if the factor is `false`.
  *
  * ```ts
- * import abortFactor from 'react-executor/plugin/abortFactor';
+ * import abortWhen from 'react-executor/plugin/abortWhen';
  * import windowFocused from 'react-executor/factor/windowFocused';
  *
  * const executor = useExecutor('test', heavyTask, [
- *   abortFactor(windowFocused)
+ *   abortWhen(windowFocused)
  * ]);
  * ```
  *
- * @module plugin/abortFactor
+ * @module plugin/abortWhen
  */
 
 import type { ExecutorPlugin, Observable, PluginConfiguredPayload } from '../types';
@@ -18,15 +18,15 @@ import type { ExecutorPlugin, Observable, PluginConfiguredPayload } from '../typ
 /**
  * Aborts the pending task if the factor is `false`.
  *
- * @param factor The factor that must become `false` to abort the executor.
+ * @param observable The factor that must become `false` to abort the executor.
  * @param ms The timeout in milliseconds that the factor must stay disabled to abort the executor.
  */
-export default function abortFactor(factor: Observable<boolean>, ms = 0): ExecutorPlugin {
+export default function abortWhen(observable: Observable<boolean>, ms = 0): ExecutorPlugin {
   return executor => {
     let timer: NodeJS.Timeout | undefined;
     let shouldAbort = false;
 
-    const unsubscribe = factor.subscribe(isEnabled => {
+    const unsubscribe = observable.subscribe(isEnabled => {
       if (isEnabled) {
         clearTimeout(timer);
         timer = undefined;
@@ -60,8 +60,8 @@ export default function abortFactor(factor: Observable<boolean>, ms = 0): Execut
     });
 
     executor.publish<PluginConfiguredPayload>('plugin_configured', {
-      type: 'abortFactor',
-      options: { factor, ms },
+      type: 'abortWhen',
+      options: { observable, ms },
     });
   };
 }

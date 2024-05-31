@@ -1,10 +1,10 @@
 import { PubSub } from 'parallel-universe';
 import { ExecutorManager } from '../../main';
-import retryFactor from '../../main/plugin/retryFactor';
+import retryWhen from '../../main/plugin/retryWhen';
 
 jest.useFakeTimers();
 
-describe('retryFactor', () => {
+describe('retryWhen', () => {
   let manager: ExecutorManager;
 
   beforeEach(() => {
@@ -16,7 +16,7 @@ describe('retryFactor', () => {
 
     const taskMock = jest.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
 
-    const executor = manager.getOrCreate('xxx', taskMock, [retryFactor(pubSub)]);
+    const executor = manager.getOrCreate('xxx', taskMock, [retryWhen(pubSub)]);
 
     executor.activate();
 
@@ -43,7 +43,7 @@ describe('retryFactor', () => {
 
     const taskMock = jest.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
 
-    const executor = manager.getOrCreate('xxx', taskMock, [retryFactor(pubSub)]);
+    const executor = manager.getOrCreate('xxx', taskMock, [retryWhen(pubSub)]);
 
     await expect(executor.getOrAwait()).resolves.toBe('aaa');
 
@@ -65,7 +65,7 @@ describe('retryFactor', () => {
 
     const taskMock = jest.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
 
-    const executor = manager.getOrCreate('xxx', taskMock, [retryFactor(pubSub, 10_000)]);
+    const executor = manager.getOrCreate('xxx', taskMock, [retryWhen(pubSub, 10_000)]);
 
     executor.activate();
 
@@ -93,7 +93,7 @@ describe('retryFactor', () => {
 
     const taskMock = jest.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
 
-    const executor = manager.getOrCreate('xxx', taskMock, [retryFactor(pubSub, 5_000)]);
+    const executor = manager.getOrCreate('xxx', taskMock, [retryWhen(pubSub, 5_000)]);
 
     executor.activate();
 

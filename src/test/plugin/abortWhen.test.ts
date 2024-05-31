@@ -1,11 +1,11 @@
 import { delay, PubSub } from 'parallel-universe';
 import { ExecutorManager } from '../../main';
-import abortFactor from '../../main/plugin/abortFactor';
+import abortWhen from '../../main/plugin/abortWhen';
 import { noop } from '../../main/utils';
 
 jest.useFakeTimers();
 
-describe('abortFactor', () => {
+describe('abortWhen', () => {
   let manager: ExecutorManager;
 
   beforeEach(() => {
@@ -17,7 +17,7 @@ describe('abortFactor', () => {
 
     const taskMock = jest.fn(_signal => delay(10_000));
 
-    const executor = manager.getOrCreate('xxx', undefined, [abortFactor(pubSub)]);
+    const executor = manager.getOrCreate('xxx', undefined, [abortWhen(pubSub)]);
 
     executor.execute(taskMock).catch(noop);
 
@@ -33,7 +33,7 @@ describe('abortFactor', () => {
 
     const taskMock = jest.fn();
 
-    const executor = manager.getOrCreate('xxx', undefined, [abortFactor(pubSub)]);
+    const executor = manager.getOrCreate('xxx', undefined, [abortWhen(pubSub)]);
 
     pubSub.publish(false);
 
@@ -49,7 +49,7 @@ describe('abortFactor', () => {
 
     const taskMock = jest.fn(_signal => delay(15_000, 'aaa'));
 
-    const executor = manager.getOrCreate('xxx', undefined, [abortFactor(pubSub, 10_000)]);
+    const executor = manager.getOrCreate('xxx', undefined, [abortWhen(pubSub, 10_000)]);
 
     executor.execute(taskMock).catch(noop);
 

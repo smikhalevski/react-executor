@@ -3,11 +3,11 @@
  * [`navigator.onLine`](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/onLine).
  *
  * ```ts
- * import abortFactor from 'react-executor/plugin/abortFactor';
+ * import retryWhen from 'react-executor/plugin/retryWhen';
  * import windowOnline from 'react-executor/factor/windowOnline';
  *
  * const executor = useExecutor('test', heavyTask, [
- *   abortFactor(windowOnline)
+ *   retryWhen(windowOnline)
  * ]);
  * ```
  *

@@ -2,15 +2,15 @@
  * The plugin that retries the latest task if the factor was disabled and then enabled again.
  *
  * ```ts
- * import retryFactor from 'react-executor/plugin/retryFactor';
+ * import retryWhen from 'react-executor/plugin/retryWhen';
  * import windowFocused from 'react-executor/factor/windowFocused';
  *
  * const executor = useExecutor('test', heavyTask, [
- *   retryFactor(windowFocused)
+ *   retryWhen(windowFocused)
  * ]);
  * ```
  *
- * @module plugin/retryFactor
+ * @module plugin/retryWhen
  */
 
 import type { ExecutorPlugin, Observable, PluginConfiguredPayload } from '../types';
@@ -18,15 +18,15 @@ import type { ExecutorPlugin, Observable, PluginConfiguredPayload } from '../typ
 /**
  * Retries the latest task if the factor was disabled and then enabled again.
  *
- * @param factor The factor that must be disabled and enabled again.
+ * @param observable The factor that must be disabled and enabled again.
  * @param ms The timeout in milliseconds that the factor must stay disabled to schedule the retry of the latest task.
  */
-export default function retryFactor(factor: Observable<boolean>, ms = 0): ExecutorPlugin {
+export default function retryWhen(observable: Observable<boolean>, ms = 0): ExecutorPlugin {
   return executor => {
     let timer: NodeJS.Timeout | undefined;
     let shouldRetry = false;
 
-    const unsubscribe = factor.subscribe(isEnabled => {
+    const unsubscribe = observable.subscribe(isEnabled => {
       if (isEnabled) {
         clearTimeout(timer);
         timer = undefined;
@@ -70,8 +70,8 @@ export default function retryFactor(factor: Observable<boolean>, ms = 0): Execut
     });
 
     executor.publish<PluginConfiguredPayload>('plugin_configured', {
-      type: 'retryFactor',
-      options: { factor, ms },
+      type: 'retryWhen',
+      options: { observable, ms },
     });
   };
 }

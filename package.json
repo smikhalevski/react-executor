@@ -41,10 +41,10 @@
       "import": "./plugin/abortDeactivated.mjs",
       "require": "./plugin/abortDeactivated.js"
     },
-    "./plugin/abortFactor": {
-      "types": "./plugin/abortFactor.d.ts",
-      "import": "./plugin/abortFactor.mjs",
-      "require": "./plugin/abortFactor.js"
+    "./plugin/abortWhen": {
+      "types": "./plugin/abortWhen.d.ts",
+      "import": "./plugin/abortWhen.mjs",
+      "require": "./plugin/abortWhen.js"
     },
     "./plugin/bindAll": {
       "types": "./plugin/bindAll.d.ts",
@@ -71,25 +71,30 @@
       "import": "./plugin/invalidateByPeers.mjs",
       "require": "./plugin/invalidateByPeers.js"
     },
-    "./plugin/retryFactor": {
-      "types": "./plugin/retryFactor.d.ts",
-      "import": "./plugin/retryFactor.mjs",
-      "require": "./plugin/retryFactor.js"
+    "./plugin/resolveWhen": {
+      "types": "./plugin/resolveWhen.d.ts",
+      "import": "./plugin/resolveWhen.mjs",
+      "require": "./plugin/resolveWhen.js"
     },
     "./plugin/retryFulfilled": {
       "types": "./plugin/retryFulfilled.d.ts",
       "import": "./plugin/retryFulfilled.mjs",
       "require": "./plugin/retryFulfilled.js"
     },
+    "./plugin/retryInvalidated": {
+      "types": "./plugin/retryInvalidated.d.ts",
+      "import": "./plugin/retryInvalidated.mjs",
+      "require": "./plugin/retryInvalidated.js"
+    },
     "./plugin/retryRejected": {
       "types": "./plugin/retryRejected.d.ts",
       "import": "./plugin/retryRejected.mjs",
       "require": "./plugin/retryRejected.js"
     },
-    "./plugin/retryInvalidated": {
-      "types": "./plugin/retryInvalidated.d.ts",
-      "import": "./plugin/retryInvalidated.mjs",
-      "require": "./plugin/retryInvalidated.js"
+    "./plugin/retryWhen": {
+      "types": "./plugin/retryWhen.d.ts",
+      "import": "./plugin/retryWhen.mjs",
+      "require": "./plugin/retryWhen.js"
     },
     "./plugin/synchronizeStorage": {
       "types": "./plugin/synchronizeStorage.d.ts",

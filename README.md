@@ -34,16 +34,17 @@ npm install --save-prod react-executor
 🔌&ensp;[**Plugins**](#plugins)
 
 - [`abortDeactivated`](#abortdeactivated)
-- [`abortFactor`](#abortfactor)
+- [`abortWhen`](#abortwhen)
 - [`bindAll`](#bindall)
 - [`detachDeactivated`](#detachdeactivated)
 - [`invalidateAfter`](#invalidateafter)
 - [`invalidateByPeers`](#invalidatebypeers)
 - [`invalidatePeers`](#invalidatepeers)
-- [`retryFactor`](#retryfactor)
+- [`resolveWhen`](#resolvewhen)
 - [`retryFulfilled`](#retryfulfilled)
-- [`retryRejected`](#retryrejected)
 - [`retryInvalidated`](#retryinvalidated)
+- [`retryRejected`](#retryrejected)
+- [`retryWhen`](#retrywhen)
 - [`synchronizeStorage`](#synchronizestorage)
 
 ⚛️&ensp;[**React integration**](#react-integration)
@@ -814,18 +815,18 @@ executor.deactivate();
 `abortDeactivated` has a single argument: the delay after which the task should be aborted. If an executor is
 re-activated during this delay, the task won't be aborted. 
 
-## `abortFactor`
+## `abortWhen`
 
 [Aborts the pending task](#abort-a-task) if the factor is disabled.
 
 For example, if the window was offline for more than 5 seconds then the pending task is aborted:
 
 ```ts
-import abortFactor from 'react-executor/plugin/abortFactor';
+import abortWhen from 'react-executor/plugin/abortWhen';
 import windowOnline from 'react-executor/factor/windowOnline';
 
 const executor = useExecutor('test', heavyTask, [
-  abortFactor(windowOnline, 5_000)
+  abortWhen(windowOnline, 5_000)
 ]);
 ```
 
@@ -833,7 +834,7 @@ If a new task is passed to the
 [`Executor.execute`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#execute)
 method after the abort factor has triggered then the task is instantly aborted.
 
-Read more about factors in the [`retryFactor`](#retryfactor) section.
+Read more about factors in the [`retryWhen`](#retrywhen) section.
 
 ## `bindAll`
 
@@ -947,97 +948,7 @@ const breadExecutor = useExecutor('bread', 'Focaccia');
 cheeseExecutor.resolve('Mozzarella');
 ```
 
-## `retryFactor`
-
-[Retries the latest task](#retry-the-latest-task) if the external factor was disabled and then enabled again.
-
-For example, if the window was offline for more than 5 seconds, the executor would retry the `heavyTask` after
-the window is back online:
-
-```ts
-import retryFactor from 'react-executor/plugin/retryFactor';
-import windowOnline from 'react-executor/factor/windowOnline';
-
-const executor = useExecutor('test', heavyTask, [
-  retryFactor(windowOnline, 5_000)
-]);
-```
-
-Combining multiple plugins, you can set up a complex executor behaviour. For example, let's create an executor that
-follows these requirements:
-
-1. Executes the task every 5 seconds.
-2. Aborts the pending task if the window loses focus for more than 10 seconds.
-3. Aborts instantly if the window goes offline.
-4. Resumes the periodic task execution if window gains focus or goes back online.
-
-```ts
-import { useExecutor } from 'react-executor';
-import abortFactor from 'react-executor/plugin/abortFactor';
-import retryFactor from 'react-executor/plugin/retryFactor';
-import retryFulfilled from 'react-executor/plugin/retryFulfilled';
-import windowFocused from 'react-executor/factor/windowFocused';
-import windowOnline from 'react-executor/factor/windowOnline';
-
-useExecutor('test', heavyTask, [
-
-  // Execute the task every 5 seconds
-  retryFulfilled(Infinity, 5_000),
-  
-  // Abort the task and prevent future executions
-  // if the window looses focus for at least 10 seconds
-  abortFactor(windowFocused, 10_000),
-
-  // Retry the latest task if the window gains focus
-  // after being out of focus for at least 10 seconds
-  retryFactor(windowFocused, 10_000),
-  
-  // Instantly abort the pending task if the window goes offline
-  abortFactor(windowOnline),
-
-  // Retry the latest task if the window goes online
-  retryFactor(windowOnline)
-]);
-```
-
-Factor is an [`Observable`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Observable.html)
-that pushes the boolean value to its subscribers:
-
-```ts
-import { Observable } from 'react-executor';
-
-const externalFactor: Observable<boolean> = {
-  subscribe(listener) {
-    // Subscribe the listener to external changes
-
-    return () => {
-      // Unsubscribe the listener
-    };
-  }
-};
-
-useExecutor('test', heavyTask, [
-  retryFactor(externalFactor)
-]);
-```
-
-Use [`PubSub`](https://smikhalevski.github.io/parallel-universe/classes/PubSub.html) as a factor:
-
-```ts
-import { PubSub } from 'parallel-universe';
-
-const externalFactor = new PubSub<boolean>();
-
-const executor = useExecutor('test', heavyTask, [
-  retryFactor(externalFactor)
-]);
-
-// Disable external factor
-externalFactor.publish(false);
-
-// Enable external factor
-externalFactor.publish(true);
-```
+## `resolveWhen`
 
 ## `retryFulfilled`
 
@@ -1073,40 +984,6 @@ Provide a function that returns the delay depending on the number of retries:
 
 ```ts
 retryFulfilled(5, (index, executor) => 1000 * index);
-```
-
-## `retryRejected`
-
-Retries the last task after the execution has failed.
-
-```ts
-import retryRejected from 'react-executor/plugin/retryRejected';
-
-const executor = useExecutor('test', heavyTask, [retryRejected()]);
-
-executor.activate();
-```
-
-If the task succeeds, is aborted, or if an executor is deactivated then the plugin stops the retry process.
-
-With the default configuration, the plugin would retry the task 3 times with an exponential delay between retries.
-
-Specify the number of times the task should be re-executed if it fails:
-
-```ts
-retryRejected(3)
-```
-
-Specify the delay in milliseconds between retries:
-
-```ts
-retryRejected(3, 5_000);
-```
-
-Provide a function that returns the delay depending on the number of retries:
-
-```ts
-retryRejected(5, (index, executor) => 1000 * 1.8 ** index);
 ```
 
 ## `retryInvalidated`
@@ -1152,6 +1029,132 @@ breadExecutor.resolve('Ciabatta');
 ```
 
 Read more about [dependent tasks](#dependent-tasks).
+
+## `retryRejected`
+
+Retries the last task after the execution has failed.
+
+```ts
+import retryRejected from 'react-executor/plugin/retryRejected';
+
+const executor = useExecutor('test', heavyTask, [retryRejected()]);
+
+executor.activate();
+```
+
+If the task succeeds, is aborted, or if an executor is deactivated then the plugin stops the retry process.
+
+With the default configuration, the plugin would retry the task 3 times with an exponential delay between retries.
+
+Specify the number of times the task should be re-executed if it fails:
+
+```ts
+retryRejected(3)
+```
+
+Specify the delay in milliseconds between retries:
+
+```ts
+retryRejected(3, 5_000);
+```
+
+Provide a function that returns the delay depending on the number of retries:
+
+```ts
+retryRejected(5, (index, executor) => 1000 * 1.8 ** index);
+```
+
+## `retryWhen`
+
+[Retries the latest task](#retry-the-latest-task) if the external factor was disabled and then enabled again.
+
+For example, if the window was offline for more than 5 seconds, the executor would retry the `heavyTask` after
+the window is back online:
+
+```ts
+import retryWhen from 'react-executor/plugin/retryWhen';
+import windowOnline from 'react-executor/factor/windowOnline';
+
+const executor = useExecutor('test', heavyTask, [
+  retryWhen(windowOnline, 5_000)
+]);
+```
+
+Combining multiple plugins, you can set up a complex executor behaviour. For example, let's create an executor that
+follows these requirements:
+
+1. Executes the task every 5 seconds.
+2. Aborts the pending task if the window loses focus for more than 10 seconds.
+3. Aborts instantly if the window goes offline.
+4. Resumes the periodic task execution if window gains focus or goes back online.
+
+```ts
+import { useExecutor } from 'react-executor';
+import abortWhen from 'react-executor/plugin/abortWhen';
+import retryWhen from 'react-executor/plugin/retryWhen';
+import retryFulfilled from 'react-executor/plugin/retryFulfilled';
+import windowFocused from 'react-executor/factor/windowFocused';
+import windowOnline from 'react-executor/factor/windowOnline';
+
+useExecutor('test', heavyTask, [
+
+  // Execute the task every 5 seconds
+  retryFulfilled(Infinity, 5_000),
+  
+  // Abort the task and prevent future executions
+  // if the window looses focus for at least 10 seconds
+  abortWhen(windowFocused, 10_000),
+
+  // Retry the latest task if the window gains focus
+  // after being out of focus for at least 10 seconds
+  retryWhen(windowFocused, 10_000),
+  
+  // Instantly abort the pending task if the window goes offline
+  abortWhen(windowOnline),
+
+  // Retry the latest task if the window goes online
+  retryWhen(windowOnline)
+]);
+```
+
+Factor is an [`Observable`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Observable.html)
+that pushes the boolean value to its subscribers:
+
+```ts
+import { Observable } from 'react-executor';
+
+const externalFactor: Observable<boolean> = {
+  subscribe(listener) {
+    // Subscribe the listener to external changes
+
+    return () => {
+      // Unsubscribe the listener
+    };
+  }
+};
+
+useExecutor('test', heavyTask, [
+  retryWhen(externalFactor)
+]);
+```
+
+Use [`PubSub`](https://smikhalevski.github.io/parallel-universe/classes/PubSub.html) as a factor:
+
+```ts
+import { PubSub } from 'parallel-universe';
+
+const externalFactor = new PubSub<boolean>();
+
+const executor = useExecutor('test', heavyTask, [
+  retryWhen(externalFactor)
+]);
+
+// Disable external factor
+externalFactor.publish(false);
+
+// Enable external factor
+externalFactor.publish(true);
+```
 
 ## `synchronizeStorage`
 

@@ -3,11 +3,11 @@
  * [`document.visibilityState`](https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState).
  *
  * ```ts
- * import abortFactor from 'react-executor/plugin/abortFactor';
+ * import retryWhen from 'react-executor/plugin/retryWhen';
  * import windowFocused from 'react-executor/factor/windowFocused';
  *
  * const executor = useExecutor('test', heavyTask, [
- *   abortFactor(windowFocused)
+ *   retryWhen(windowFocused)
  * ]);
  * ```
  *
