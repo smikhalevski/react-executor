@@ -1,9 +1,9 @@
 /**
- * The plugin that aborts the pending task if the factor is `false`.
+ * The plugin that aborts the pending task if the observable pushes `false`.
  *
  * ```ts
  * import abortWhen from 'react-executor/plugin/abortWhen';
- * import windowFocused from 'react-executor/factor/windowFocused';
+ * import windowFocused from 'react-executor/observable/windowFocused';
  *
  * const executor = useExecutor('test', heavyTask, [
  *   abortWhen(windowFocused)
@@ -16,10 +16,10 @@
 import type { ExecutorPlugin, Observable, PluginConfiguredPayload } from '../types';
 
 /**
- * Aborts the pending task if the factor is `false`.
+ * Aborts the pending task if the observable pushes `false`.
  *
- * @param observable The factor that must become `false` to abort the executor.
- * @param ms The timeout in milliseconds that the factor must stay disabled to abort the executor.
+ * @param observable The observable that trigger the abort of the executor.
+ * @param ms The timeout in milliseconds after `false` is pushed by observer before the executor is aborted.
  */
 export default function abortWhen(observable: Observable<boolean>, ms = 0): ExecutorPlugin {
   return executor => {

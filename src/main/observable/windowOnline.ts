@@ -4,14 +4,14 @@
  *
  * ```ts
  * import retryWhen from 'react-executor/plugin/retryWhen';
- * import windowOnline from 'react-executor/factor/windowOnline';
+ * import windowOnline from 'react-executor/observable/windowOnline';
  *
  * const executor = useExecutor('test', heavyTask, [
  *   retryWhen(windowOnline)
  * ]);
  * ```
  *
- * @module factor/windowOnline
+ * @module observable/windowOnline
  */
 
 import { PubSub } from 'parallel-universe';

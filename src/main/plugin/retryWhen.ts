@@ -1,9 +1,9 @@
 /**
- * The plugin that retries the latest task if the factor was disabled and then enabled again.
+ * The plugin that retries the latest task if the observable pushes `false` and then `true`.
  *
  * ```ts
  * import retryWhen from 'react-executor/plugin/retryWhen';
- * import windowFocused from 'react-executor/factor/windowFocused';
+ * import windowFocused from 'react-executor/observable/windowFocused';
  *
  * const executor = useExecutor('test', heavyTask, [
  *   retryWhen(windowFocused)
@@ -16,10 +16,11 @@
 import type { ExecutorPlugin, Observable, PluginConfiguredPayload } from '../types';
 
 /**
- * Retries the latest task if the factor was disabled and then enabled again.
+ * Retries the latest task if the observable pushes `false` and then `true`.
  *
- * @param observable The factor that must be disabled and enabled again.
- * @param ms The timeout in milliseconds that the factor must stay disabled to schedule the retry of the latest task.
+ * @param observable The observable that triggers the retry of the latest task.
+ * @param ms The timeout in milliseconds that should pass after `false` was pushed to retry the executor when `true` is
+ * pushed.
  */
 export default function retryWhen(observable: Observable<boolean>, ms = 0): ExecutorPlugin {
   return executor => {

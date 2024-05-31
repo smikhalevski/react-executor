@@ -60,7 +60,7 @@ describe('retryWhen', () => {
     expect(taskMock).toHaveBeenCalledTimes(1);
   });
 
-  test('does not retry if factor was enabled before timeout', async () => {
+  test('does not retry if observable has pushed true before timeout', async () => {
     const pubSub = new PubSub<boolean>();
 
     const taskMock = jest.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
@@ -88,7 +88,7 @@ describe('retryWhen', () => {
     expect(taskMock).toHaveBeenCalledTimes(1);
   });
 
-  test('retries if factor was enabled after timeout', async () => {
+  test('retries if observable has pushed true after timeout', async () => {
     const pubSub = new PubSub<boolean>();
 
     const taskMock = jest.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');

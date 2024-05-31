@@ -22,7 +22,7 @@
     "./src/main/ssr/index.ts",
     "./src/main/ssr/node/index.ts",
     "./src/main/plugin/*.ts",
-    "./src/main/factor/*.ts",
+    "./src/main/observable/*.ts",
     "./src/main/core.ts"
   ],
   "intentionallyNotExported": [

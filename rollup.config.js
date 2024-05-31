@@ -2,8 +2,8 @@ const typescript = require('@rollup/plugin-typescript');
 
 module.exports = {
   input: [
-    './src/main/factor/windowFocused.ts',
-    './src/main/factor/windowOnline.ts',
+    './src/main/observable/windowFocused.ts',
+    './src/main/observable/windowOnline.ts',
     './src/main/plugin/abortDeactivated.ts',
     './src/main/plugin/abortWhen.ts',
     './src/main/plugin/bindAll.ts',

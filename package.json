@@ -26,15 +26,15 @@
       "import": "./ssr/node/index.mjs",
       "require": "./ssr/node/index.js"
     },
-    "./factor/windowFocused": {
-      "types": "./factor/windowFocused.d.ts",
-      "import": "./factor/windowFocused.mjs",
-      "require": "./factor/windowFocused.js"
+    "./observable/windowFocused": {
+      "types": "./observable/windowFocused.d.ts",
+      "import": "./observable/windowFocused.mjs",
+      "require": "./observable/windowFocused.js"
     },
-    "./factor/windowOnline": {
-      "types": "./factor/windowOnline.d.ts",
-      "import": "./factor/windowOnline.mjs",
-      "require": "./factor/windowOnline.js"
+    "./observable/windowOnline": {
+      "types": "./observable/windowOnline.d.ts",
+      "import": "./observable/windowOnline.mjs",
+      "require": "./observable/windowOnline.js"
     },
     "./plugin/abortDeactivated": {
       "types": "./plugin/abortDeactivated.d.ts",

@@ -44,7 +44,7 @@ describe('abortWhen', () => {
     expect(taskMock.mock.calls[0][0].aborted).toBe(true);
   });
 
-  test('does not abort if factor was enabled before timeout', async () => {
+  test('does not abort if observable has pushed true before timeout', async () => {
     const pubSub = new PubSub<boolean>();
 
     const taskMock = jest.fn(_signal => delay(15_000, 'aaa'));

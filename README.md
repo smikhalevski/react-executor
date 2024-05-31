@@ -817,13 +817,14 @@ re-activated during this delay, the task won't be aborted.
 
 ## `abortWhen`
 
-[Aborts the pending task](#abort-a-task) if the factor is disabled.
+[Aborts the pending task](#abort-a-task) depending on boolean values pushed by an
+[`Observable`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Observable.html).
 
 For example, if the window was offline for more than 5 seconds then the pending task is aborted:
 
 ```ts
 import abortWhen from 'react-executor/plugin/abortWhen';
-import windowOnline from 'react-executor/factor/windowOnline';
+import windowOnline from 'react-executor/observable/windowOnline';
 
 const executor = useExecutor('test', heavyTask, [
   abortWhen(windowOnline, 5_000)
@@ -832,9 +833,9 @@ const executor = useExecutor('test', heavyTask, [
 
 If a new task is passed to the
 [`Executor.execute`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#execute)
-method after the abort factor has triggered then the task is instantly aborted.
+method after the timeout has run out then the task is instantly aborted.
 
-Read more about factors in the [`retryWhen`](#retrywhen) section.
+Read more about observables in the [`retryWhen`](#retrywhen) section.
 
 ## `bindAll`
 
@@ -949,6 +950,48 @@ cheeseExecutor.resolve('Mozzarella');
 ```
 
 ## `resolveWhen`
+
+[Resolves the executor](#settle-an-executor) with values pushed by an
+[`Observable`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Observable.html).
+
+```ts
+import { Observable } from 'react-executor';
+import resolveWhen from 'react-executor/plugin/resolveWhen';
+
+const observable: Observable<string> = {
+  subscribe(listener) {
+    // Call the listener when value is changed
+    const timer = setTimeout(listener, 1_000, 'Venus');
+
+    return () => {
+      // Unsubscribe the listener
+      clearTimeout(timer);
+    };
+  }
+};
+
+const executor = useExecutor('planet', 'Mars', [
+  resolveWhen(observable)
+]);
+```
+
+[`PubSub`](https://smikhalevski.github.io/parallel-universe/classes/PubSub.html) can be used do decouple the lazy data source from the executor:
+
+```ts
+import { PubSub } from 'parallel-universe';
+
+const pubSub = new PubSub<string>();
+
+const executor = useExecutor('planet', 'Mars', [
+  resolveWhen(pubSub)
+]);
+
+pubSub.publish('Venus');
+
+executor.value;
+// ⮕ 'Venus'
+```
+
 
 ## `retryFulfilled`
 
@@ -1066,14 +1109,15 @@ retryRejected(5, (index, executor) => 1000 * 1.8 ** index);
 
 ## `retryWhen`
 
-[Retries the latest task](#retry-the-latest-task) if the external factor was disabled and then enabled again.
+[Retries the latest task](#retry-the-latest-task) depending on boolean values pushed by an
+[`Observable`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Observable.html).
 
 For example, if the window was offline for more than 5 seconds, the executor would retry the `heavyTask` after
 the window is back online:
 
 ```ts
 import retryWhen from 'react-executor/plugin/retryWhen';
-import windowOnline from 'react-executor/factor/windowOnline';
+import windowOnline from 'react-executor/observable/windowOnline';
 
 const executor = useExecutor('test', heavyTask, [
   retryWhen(windowOnline, 5_000)
@@ -1093,8 +1137,8 @@ import { useExecutor } from 'react-executor';
 import abortWhen from 'react-executor/plugin/abortWhen';
 import retryWhen from 'react-executor/plugin/retryWhen';
 import retryFulfilled from 'react-executor/plugin/retryFulfilled';
-import windowFocused from 'react-executor/factor/windowFocused';
-import windowOnline from 'react-executor/factor/windowOnline';
+import windowFocused from 'react-executor/observable/windowFocused';
+import windowOnline from 'react-executor/observable/windowOnline';
 
 useExecutor('test', heavyTask, [
 
@@ -1115,45 +1159,6 @@ useExecutor('test', heavyTask, [
   // Retry the latest task if the window goes online
   retryWhen(windowOnline)
 ]);
-```
-
-Factor is an [`Observable`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Observable.html)
-that pushes the boolean value to its subscribers:
-
-```ts
-import { Observable } from 'react-executor';
-
-const externalFactor: Observable<boolean> = {
-  subscribe(listener) {
-    // Subscribe the listener to external changes
-
-    return () => {
-      // Unsubscribe the listener
-    };
-  }
-};
-
-useExecutor('test', heavyTask, [
-  retryWhen(externalFactor)
-]);
-```
-
-Use [`PubSub`](https://smikhalevski.github.io/parallel-universe/classes/PubSub.html) as a factor:
-
-```ts
-import { PubSub } from 'parallel-universe';
-
-const externalFactor = new PubSub<boolean>();
-
-const executor = useExecutor('test', heavyTask, [
-  retryWhen(externalFactor)
-]);
-
-// Disable external factor
-externalFactor.publish(false);
-
-// Enable external factor
-externalFactor.publish(true);
 ```
 
 ## `synchronizeStorage`

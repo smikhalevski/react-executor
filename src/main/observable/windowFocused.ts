@@ -4,14 +4,14 @@
  *
  * ```ts
  * import retryWhen from 'react-executor/plugin/retryWhen';
- * import windowFocused from 'react-executor/factor/windowFocused';
+ * import windowFocused from 'react-executor/observable/windowFocused';
  *
  * const executor = useExecutor('test', heavyTask, [
  *   retryWhen(windowFocused)
  * ]);
  * ```
  *
- * @module factor/windowFocused
+ * @module observable/windowFocused
  */
 
 import { PubSub } from 'parallel-universe';
