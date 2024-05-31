@@ -141,6 +141,7 @@
     "tslib": "^2.6.2",
     "typedoc": "^0.25.13",
     "typedoc-custom-css": "github:smikhalevski/typedoc-custom-css#master",
+    "typedoc-plugin-mdn-links": "^3.1.27",
     "typescript": "^5.4.5"
   },
   "optionalDependencies": {

@@ -29,18 +29,12 @@
     "ExecutorImpl",
     "NoInfer"
   ],
+  "plugin": [
+    "typedoc-plugin-mdn-links"
+  ],
   "externalSymbolLinkMappings": {
-    "global": {
-      "Error": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error",
-      "AbortError": "https://developer.mozilla.org/en-US/docs/Web/API/DOMException#aborterror"
-    },
     "parallel-universe": {
       "AbortablePromise": "https://smikhalevski.github.io/parallel-universe/classes/AbortablePromise.html"
-    },
-    "typescript": {
-      "AbortSignal": "https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal",
-      "JSON": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON",
-      "Promise": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise"
     }
   }
 }

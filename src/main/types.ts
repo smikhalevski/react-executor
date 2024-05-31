@@ -7,7 +7,7 @@ import type { ExecutorManager } from './ExecutorManager';
  * @see {@link Executor.annotate}
  */
 export interface ExecutorAnnotations {
-  readonly [annotationKey: PropertyKey]: any;
+  readonly [key: PropertyKey]: any;
 }
 
 /**
@@ -221,7 +221,7 @@ export interface Executor<Value = any> extends ExecutorState<Value>, Observable<
 
   /**
    * Returns a {@link value} if the executor is {@link isFulfilled fulfilled}. Throws a {@link reason} if the executor
-   * is {@link isRejected rejected}. Otherwise, throws an {@link !Error Error}.
+   * is {@link isRejected rejected}. Otherwise, throws an {@link !Error}.
    */
   get(): Value;
 
@@ -239,7 +239,7 @@ export interface Executor<Value = any> extends ExecutorState<Value>, Observable<
    * a {@link reason} if the executor is {@link isRejected rejected}.
    *
    * If the executor is detached during this operation, then the returned promise is rejected with the
-   * {@link !AbortError AbortError}.
+   * {@link !DOMException AbortError}.
    */
   getOrAwait(): AbortablePromise<Value>;
 

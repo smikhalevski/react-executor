@@ -23,7 +23,7 @@ export interface ExecutorManagerOptions {
    * Serializes executor keys.
    *
    * The serialized key form can be anything. If you want to use object identities as executor keys, provide an identity
-   * function as a serializer to mute the error.
+   * function as a serializer.
    *
    * @param key The key to serialize.
    * @default JSON.stringify

@@ -152,18 +152,17 @@ const manager = new ExecutorManager();
 
 const userExecutor = manager.getOrCreate(['user', 123]);
 
-// 🟡 
 manager.get(['user', 123]);
 // ⮕ userExecutor
 ```
 
 To override, how keys are serialized
 pass [`keySerializer`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.ExecutorManagerOptions.html#keySerializer)
-option to `ExecutorManager` constructor. Key serializer is a function that receives the requested executor key and
+option to the `ExecutorManager` constructor. Key serializer is a function that receives the requested executor key and
 returns its serialized form. The returned serialized key form can be anything, a string, or an object.
 
 If you're using objects as executor keys, then you may want to enable stable serialization (when keys are always sorted
-alphabetically when serialized). In this case use any library that supports stable JSON serialization:
+during serialized). In this case use any library that supports stable JSON serialization:
 
 ```ts
 import { stringify } from 'json-marshal';
@@ -230,7 +229,7 @@ const helloPromise = rookyExecutor.execute(task);
 While tasks can be synchronous or asynchronous, executors always handle them in an asynchronous fashion. The executor is
 marked as [pending](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#isPending)
 immediately after
-[`execute`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#execute) was called:
+[`execute`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#execute) is called:
 
 ```ts
 // The executor is waiting for the task to complete
@@ -382,9 +381,7 @@ discarded:
 ```ts
 executor.execute(async signal => 'Pluto');
 
-const marsPromise = executor.execute(async signal => 'Mars');
-
-await marsPromise;
+await executor.execute(async signal => 'Mars');
 
 executor.value;
 // ⮕ 'Mars'
@@ -418,7 +415,7 @@ await planetPromise;
 In this example, `marsPromise` is aborted, and `planetPromise` is resolved only after executor itself is settled and
 not pending anymore.
 
-Here's another example, where executor waits to be settled:
+Here's another example, where the executor waits to be settled:
 
 ```ts
 const printerExecutor = manager.getOrCreate('printer');
