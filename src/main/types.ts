@@ -176,7 +176,7 @@ export interface ExecutorState<Value = any> {
  *
  * @template Value The value stored by the executor.
  */
-export interface Executor<Value = any> extends ExecutorState<Value> {
+export interface Executor<Value = any> extends ExecutorState<Value>, Observable<ExecutorEvent<Value>> {
   /**
    * The integer version of {@link ExecutorState the state of this executor} that is incremented every time the executor
    * is mutated.
@@ -311,14 +311,6 @@ export interface Executor<Value = any> extends ExecutorState<Value> {
    * @returns The callback that deactivates the executor if there are no more active consumers.
    */
   activate(): () => void;
-
-  /**
-   * Subscribes a listener to events published by the executor.
-   *
-   * @param listener The listener to subscribe.
-   * @returns The callback that unsubscribes the listener.
-   */
-  subscribe(listener: (event: ExecutorEvent<Value>) => void): () => void;
 
   /**
    * Publishes the event for subscribers of the executor and its manager.

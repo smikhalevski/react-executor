@@ -11,6 +11,7 @@ module.exports = {
     './src/main/plugin/invalidateAfter.ts',
     './src/main/plugin/invalidateByPeers.ts',
     './src/main/plugin/invalidatePeers.ts',
+    './src/main/plugin/resolveWhen.ts',
     './src/main/plugin/retryWhen.ts',
     './src/main/plugin/retryFulfilled.ts',
     './src/main/plugin/retryInvalidated.ts',
