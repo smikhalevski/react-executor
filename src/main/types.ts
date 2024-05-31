@@ -360,8 +360,25 @@ export interface PluginConfiguredPayload {
 }
 
 /**
- * Poor Man's NoInfer polyfill.
+ * The observable that allows to subscribe to a stream of values.
+ *
+ * @template T The value pushed by the observable.
  */
+export interface Observable<T> {
+  /**
+   * Returns the latest value that was pushed to listeners.
+   */
+  get?(): T;
+
+  /**
+   * Subscribes the listener to changes of the observed value.
+   *
+   * @param listener The listener to subscribe.
+   */
+  subscribe(listener: (value: T) => void): () => void;
+}
+
+// NoInfer polyfill
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-2-8.html#type-inference-in-conditional-types
 // https://devblogs.microsoft.com/typescript/announcing-typescript-5-4-beta/#the-noinfer-utility-type
 export type NoInfer<T> = [T][T extends any ? 0 : never];

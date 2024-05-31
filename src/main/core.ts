@@ -20,4 +20,5 @@ export type {
   ExecutorState,
   ExecutorPlugin,
   ExecutorTask,
+  Observable,
 } from './types';

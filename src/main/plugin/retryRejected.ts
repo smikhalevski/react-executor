@@ -4,7 +4,7 @@
  * ```ts
  * import retryRejected from 'react-executor/plugin/retryRejected';
  *
- * const executor = useExecutor('test', 42, [retryRejected()]);
+ * const executor = useExecutor('test', heavyTask, [retryRejected()]);
  * ```
  *
  * @module plugin/retryRejected

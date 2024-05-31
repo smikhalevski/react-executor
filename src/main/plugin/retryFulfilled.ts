@@ -4,7 +4,7 @@
  * ```ts
  * import retryFulfilled from 'react-executor/plugin/retryFulfilled';
  *
- * const executor = useExecutor('test', 42, [retryFulfilled()]);
+ * const executor = useExecutor('test', heavyTask, [retryFulfilled()]);
  * ```
  *
  * @module plugin/retryFulfilled

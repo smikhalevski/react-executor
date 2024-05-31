@@ -26,10 +26,25 @@
       "import": "./ssr/node/index.mjs",
       "require": "./ssr/node/index.js"
     },
+    "./factor/windowFocused": {
+      "types": "./factor/windowFocused.d.ts",
+      "import": "./factor/windowFocused.mjs",
+      "require": "./factor/windowFocused.js"
+    },
+    "./factor/windowOnline": {
+      "types": "./factor/windowOnline.d.ts",
+      "import": "./factor/windowOnline.mjs",
+      "require": "./factor/windowOnline.js"
+    },
     "./plugin/abortDeactivated": {
       "types": "./plugin/abortDeactivated.d.ts",
       "import": "./plugin/abortDeactivated.mjs",
       "require": "./plugin/abortDeactivated.js"
+    },
+    "./plugin/abortFactor": {
+      "types": "./plugin/abortFactor.d.ts",
+      "import": "./plugin/abortFactor.mjs",
+      "require": "./plugin/abortFactor.js"
     },
     "./plugin/bindAll": {
       "types": "./plugin/bindAll.d.ts",
@@ -56,10 +71,10 @@
       "import": "./plugin/invalidateByPeers.mjs",
       "require": "./plugin/invalidateByPeers.js"
     },
-    "./plugin/retryFocused": {
-      "types": "./plugin/retryFocused.d.ts",
-      "import": "./plugin/retryFocused.mjs",
-      "require": "./plugin/retryFocused.js"
+    "./plugin/retryFactor": {
+      "types": "./plugin/retryFactor.d.ts",
+      "import": "./plugin/retryFactor.mjs",
+      "require": "./plugin/retryFactor.js"
     },
     "./plugin/retryFulfilled": {
       "types": "./plugin/retryFulfilled.d.ts",
