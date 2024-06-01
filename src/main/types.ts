@@ -7,7 +7,7 @@ import type { ExecutorManager } from './ExecutorManager';
  * @see {@link Executor.annotate}
  */
 export interface ExecutorAnnotations {
-  readonly [annotationKey: PropertyKey]: any;
+  readonly [key: PropertyKey]: any;
 }
 
 /**
@@ -176,7 +176,7 @@ export interface ExecutorState<Value = any> {
  *
  * @template Value The value stored by the executor.
  */
-export interface Executor<Value = any> extends ExecutorState<Value> {
+export interface Executor<Value = any> extends ExecutorState<Value>, Observable<ExecutorEvent<Value>> {
   /**
    * The integer version of {@link ExecutorState the state of this executor} that is incremented every time the executor
    * is mutated.
@@ -221,7 +221,7 @@ export interface Executor<Value = any> extends ExecutorState<Value> {
 
   /**
    * Returns a {@link value} if the executor is {@link isFulfilled fulfilled}. Throws a {@link reason} if the executor
-   * is {@link isRejected rejected}. Otherwise, throws an {@link !Error Error}.
+   * is {@link isRejected rejected}. Otherwise, throws an {@link !Error}.
    */
   get(): Value;
 
@@ -239,7 +239,7 @@ export interface Executor<Value = any> extends ExecutorState<Value> {
    * a {@link reason} if the executor is {@link isRejected rejected}.
    *
    * If the executor is detached during this operation, then the returned promise is rejected with the
-   * {@link !AbortError AbortError}.
+   * {@link !DOMException AbortError}.
    */
   getOrAwait(): AbortablePromise<Value>;
 
@@ -313,14 +313,6 @@ export interface Executor<Value = any> extends ExecutorState<Value> {
   activate(): () => void;
 
   /**
-   * Subscribes a listener to events published by the executor.
-   *
-   * @param listener The listener to subscribe.
-   * @returns The callback that unsubscribes the listener.
-   */
-  subscribe(listener: (event: ExecutorEvent<Value>) => void): () => void;
-
-  /**
    * Publishes the event for subscribers of the executor and its manager.
    *
    * @param eventType The type of the published event.
@@ -360,8 +352,20 @@ export interface PluginConfiguredPayload {
 }
 
 /**
- * Poor Man's NoInfer polyfill.
+ * The observable that allows to subscribe to a stream of values.
+ *
+ * @template T The value pushed by the observable.
  */
+export interface Observable<T> {
+  /**
+   * Subscribes the listener to changes of the observed value.
+   *
+   * @param listener The listener to subscribe.
+   */
+  subscribe(listener: (value: T) => void): () => void;
+}
+
+// NoInfer polyfill
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-2-8.html#type-inference-in-conditional-types
 // https://devblogs.microsoft.com/typescript/announcing-typescript-5-4-beta/#the-noinfer-utility-type
 export type NoInfer<T> = [T][T extends any ? 0 : never];

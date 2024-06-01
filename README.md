@@ -34,15 +34,17 @@ npm install --save-prod react-executor
 🔌&ensp;[**Plugins**](#plugins)
 
 - [`abortDeactivated`](#abortdeactivated)
+- [`abortWhen`](#abortwhen)
 - [`bindAll`](#bindall)
 - [`detachDeactivated`](#detachdeactivated)
 - [`invalidateAfter`](#invalidateafter)
 - [`invalidateByPeers`](#invalidatebypeers)
 - [`invalidatePeers`](#invalidatepeers)
-- [`retryFocused`](#retryfocused)
+- [`resolveWhen`](#resolvewhen)
 - [`retryFulfilled`](#retryfulfilled)
-- [`retryRejected`](#retryrejected)
 - [`retryInvalidated`](#retryinvalidated)
+- [`retryRejected`](#retryrejected)
+- [`retryWhen`](#retrywhen)
 - [`synchronizeStorage`](#synchronizestorage)
 
 ⚛️&ensp;[**React integration**](#react-integration)
@@ -150,18 +152,17 @@ const manager = new ExecutorManager();
 
 const userExecutor = manager.getOrCreate(['user', 123]);
 
-// 🟡 
 manager.get(['user', 123]);
 // ⮕ userExecutor
 ```
 
 To override, how keys are serialized
 pass [`keySerializer`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.ExecutorManagerOptions.html#keySerializer)
-option to `ExecutorManager` constructor. Key serializer is a function that receives the requested executor key and
+option to the `ExecutorManager` constructor. Key serializer is a function that receives the requested executor key and
 returns its serialized form. The returned serialized key form can be anything, a string, or an object.
 
 If you're using objects as executor keys, then you may want to enable stable serialization (when keys are always sorted
-alphabetically when serialized). In this case use any library that supports stable JSON serialization:
+during serialized). In this case use any library that supports stable JSON serialization:
 
 ```ts
 import { stringify } from 'json-marshal';
@@ -228,7 +229,7 @@ const helloPromise = rookyExecutor.execute(task);
 While tasks can be synchronous or asynchronous, executors always handle them in an asynchronous fashion. The executor is
 marked as [pending](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#isPending)
 immediately after
-[`execute`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#execute) was called:
+[`execute`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#execute) is called:
 
 ```ts
 // The executor is waiting for the task to complete
@@ -380,9 +381,7 @@ discarded:
 ```ts
 executor.execute(async signal => 'Pluto');
 
-const marsPromise = executor.execute(async signal => 'Mars');
-
-await marsPromise;
+await executor.execute(async signal => 'Mars');
 
 executor.value;
 // ⮕ 'Mars'
@@ -416,7 +415,7 @@ await planetPromise;
 In this example, `marsPromise` is aborted, and `planetPromise` is resolved only after executor itself is settled and
 not pending anymore.
 
-Here's another example, where executor waits to be settled:
+Here's another example, where the executor waits to be settled:
 
 ```ts
 const printerExecutor = manager.getOrCreate('printer');
@@ -813,6 +812,28 @@ executor.deactivate();
 `abortDeactivated` has a single argument: the delay after which the task should be aborted. If an executor is
 re-activated during this delay, the task won't be aborted. 
 
+## `abortWhen`
+
+[Aborts the pending task](#abort-a-task) depending on boolean values pushed by an
+[`Observable`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Observable.html).
+
+For example, if the window was offline for more than 5 seconds then the pending task is aborted:
+
+```ts
+import abortWhen from 'react-executor/plugin/abortWhen';
+import windowOnline from 'react-executor/observable/windowOnline';
+
+const executor = useExecutor('test', heavyTask, [
+  abortWhen(windowOnline, 5_000)
+]);
+```
+
+If a new task is passed to the
+[`Executor.execute`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#execute)
+method after the timeout has run out then the task is instantly aborted.
+
+Read more about observables in the [`retryWhen`](#retrywhen) section.
+
 ## `bindAll`
 
 Binds all executor methods to the instance.
@@ -925,21 +946,53 @@ const breadExecutor = useExecutor('bread', 'Focaccia');
 cheeseExecutor.resolve('Mozzarella');
 ```
 
-## `retryFocused`
+## `resolveWhen`
 
-Retries the latest task of the active executor if the window gains focus.
+[Resolves the executor](#settle-an-executor) with values pushed by an
+[`Observable`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Observable.html).
 
 ```ts
-import retryFocused from 'react-executor/plugin/retryFocused';
+import { Observable } from 'react-executor';
+import resolveWhen from 'react-executor/plugin/resolveWhen';
 
-const executor = useExecutor('test', 42, [retryFocused()]);
+const observable: Observable<string> = {
+  subscribe(listener) {
+    // Call the listener when value is changed
+    const timer = setTimeout(listener, 1_000, 'Venus');
+
+    return () => {
+      // Unsubscribe the listener
+      clearTimeout(timer);
+    };
+  }
+};
+
+const executor = useExecutor('planet', 'Mars', [
+  resolveWhen(observable)
+]);
 ```
 
-This plugin is no-op in the server environment.
+[`PubSub`](https://smikhalevski.github.io/parallel-universe/classes/PubSub.html) can be used do decouple the lazy data source from the executor:
+
+```ts
+import { PubSub } from 'parallel-universe';
+
+const pubSub = new PubSub<string>();
+
+const executor = useExecutor('planet', 'Mars', [
+  resolveWhen(pubSub)
+]);
+
+pubSub.publish('Venus');
+
+executor.value;
+// ⮕ 'Venus'
+```
+
 
 ## `retryFulfilled`
 
-Repeats the last task after the execution was fulfilled.
+[Retries the latest task](#retry-the-latest-task) after the execution was fulfilled.
 
 ```ts
 import retryFulfilled from 'react-executor/plugin/retryFulfilled';
@@ -971,40 +1024,6 @@ Provide a function that returns the delay depending on the number of retries:
 
 ```ts
 retryFulfilled(5, (index, executor) => 1000 * index);
-```
-
-## `retryRejected`
-
-Retries the last task after the execution has failed.
-
-```ts
-import retryRejected from 'react-executor/plugin/retryRejected';
-
-const executor = useExecutor('test', heavyTask, [retryRejected()]);
-
-executor.activate();
-```
-
-If the task succeeds, is aborted, or if an executor is deactivated then the plugin stops the retry process.
-
-With the default configuration, the plugin would retry the task 3 times with an exponential delay between retries.
-
-Specify the number of times the task should be re-executed if it fails:
-
-```ts
-retryRejected(3)
-```
-
-Specify the delay in milliseconds between retries:
-
-```ts
-retryRejected(3, 5_000);
-```
-
-Provide a function that returns the delay depending on the number of retries:
-
-```ts
-retryRejected(5, (index, executor) => 1000 * 1.8 ** index);
 ```
 
 ## `retryInvalidated`
@@ -1051,6 +1070,94 @@ breadExecutor.resolve('Ciabatta');
 
 Read more about [dependent tasks](#dependent-tasks).
 
+## `retryRejected`
+
+Retries the last task after the execution has failed.
+
+```ts
+import retryRejected from 'react-executor/plugin/retryRejected';
+
+const executor = useExecutor('test', heavyTask, [retryRejected()]);
+
+executor.activate();
+```
+
+If the task succeeds, is aborted, or if an executor is deactivated then the plugin stops the retry process.
+
+With the default configuration, the plugin would retry the task 3 times with an exponential delay between retries.
+
+Specify the number of times the task should be re-executed if it fails:
+
+```ts
+retryRejected(3)
+```
+
+Specify the delay in milliseconds between retries:
+
+```ts
+retryRejected(3, 5_000);
+```
+
+Provide a function that returns the delay depending on the number of retries:
+
+```ts
+retryRejected(5, (index, executor) => 1000 * 1.8 ** index);
+```
+
+## `retryWhen`
+
+[Retries the latest task](#retry-the-latest-task) depending on boolean values pushed by an
+[`Observable`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Observable.html).
+
+For example, if the window was offline for more than 5 seconds, the executor would retry the `heavyTask` after
+the window is back online:
+
+```ts
+import retryWhen from 'react-executor/plugin/retryWhen';
+import windowOnline from 'react-executor/observable/windowOnline';
+
+const executor = useExecutor('test', heavyTask, [
+  retryWhen(windowOnline, 5_000)
+]);
+```
+
+Combining multiple plugins, you can set up a complex executor behaviour. For example, let's create an executor that
+follows these requirements:
+
+1. Executes the task every 5 seconds.
+2. Aborts the pending task if the window loses focus for more than 10 seconds.
+3. Aborts instantly if the window goes offline.
+4. Resumes the periodic task execution if window gains focus or goes back online.
+
+```ts
+import { useExecutor } from 'react-executor';
+import abortWhen from 'react-executor/plugin/abortWhen';
+import retryWhen from 'react-executor/plugin/retryWhen';
+import retryFulfilled from 'react-executor/plugin/retryFulfilled';
+import windowFocused from 'react-executor/observable/windowFocused';
+import windowOnline from 'react-executor/observable/windowOnline';
+
+useExecutor('test', heavyTask, [
+
+  // Execute the task every 5 seconds
+  retryFulfilled(Infinity, 5_000),
+  
+  // Abort the task and prevent future executions
+  // if the window looses focus for at least 10 seconds
+  abortWhen(windowFocused, 10_000),
+
+  // Retry the latest task if the window gains focus
+  // after being out of focus for at least 10 seconds
+  retryWhen(windowFocused, 10_000),
+  
+  // Instantly abort the pending task if the window goes offline
+  abortWhen(windowOnline),
+
+  // Retry the latest task if the window goes online
+  retryWhen(windowOnline)
+]);
+```
+
 ## `synchronizeStorage`
 
 Persists the executor value in the synchronous storage.
@@ -1064,7 +1171,7 @@ executor.activate();
 ```
 
 With this plugin, you can synchronize the executor state
-[across multiple browser tabs](https://codesandbox.io/p/sandbox/react-executor-example-ltflgy?file=%2Fsrc%2FApp.tsx%3A25%2C1)
+[across multiple browser tabs](https://codesandbox.io/p/sandbox/react-executor-example-ltflgy)
 in just one line.
 
 > [!IMPORTANT]\
@@ -1275,8 +1382,7 @@ Here, `App` is the component that renders your application. Inside the `App` you
 [`useExecutorSuspence`](#suspense) to load your data.
 
 [`enableSSRHydration`](https://smikhalevski.github.io/react-executor/functions/react_executor.enableSSRHydration.html)
-must be called only once, and only one manager of the client-side can receive the dehydrated state
-from the server.
+must be called only once, and only one manager on the client-side can receive the dehydrated state from the server.
 
 On the server, you can either render your app contents [as a string](#render-to-string) and send it to the client in one
 go, or [stream the contents](#streaming-ssr).

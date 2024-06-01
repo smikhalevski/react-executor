@@ -4,7 +4,7 @@
  * ```ts
  * import retryInvalidated from 'react-executor/plugin/retryInvalidated';
  *
- * const executor = useExecutor('test', 42, [retryInvalidated()]);
+ * const executor = useExecutor('test', heavyTask, [retryInvalidated()]);
  * ```
  *
  * @module plugin/retryInvalidated

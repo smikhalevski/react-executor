@@ -26,10 +26,25 @@
       "import": "./ssr/node/index.mjs",
       "require": "./ssr/node/index.js"
     },
+    "./observable/windowFocused": {
+      "types": "./observable/windowFocused.d.ts",
+      "import": "./observable/windowFocused.mjs",
+      "require": "./observable/windowFocused.js"
+    },
+    "./observable/windowOnline": {
+      "types": "./observable/windowOnline.d.ts",
+      "import": "./observable/windowOnline.mjs",
+      "require": "./observable/windowOnline.js"
+    },
     "./plugin/abortDeactivated": {
       "types": "./plugin/abortDeactivated.d.ts",
       "import": "./plugin/abortDeactivated.mjs",
       "require": "./plugin/abortDeactivated.js"
+    },
+    "./plugin/abortWhen": {
+      "types": "./plugin/abortWhen.d.ts",
+      "import": "./plugin/abortWhen.mjs",
+      "require": "./plugin/abortWhen.js"
     },
     "./plugin/bindAll": {
       "types": "./plugin/bindAll.d.ts",
@@ -56,25 +71,30 @@
       "import": "./plugin/invalidateByPeers.mjs",
       "require": "./plugin/invalidateByPeers.js"
     },
-    "./plugin/retryFocused": {
-      "types": "./plugin/retryFocused.d.ts",
-      "import": "./plugin/retryFocused.mjs",
-      "require": "./plugin/retryFocused.js"
+    "./plugin/resolveWhen": {
+      "types": "./plugin/resolveWhen.d.ts",
+      "import": "./plugin/resolveWhen.mjs",
+      "require": "./plugin/resolveWhen.js"
     },
     "./plugin/retryFulfilled": {
       "types": "./plugin/retryFulfilled.d.ts",
       "import": "./plugin/retryFulfilled.mjs",
       "require": "./plugin/retryFulfilled.js"
     },
+    "./plugin/retryInvalidated": {
+      "types": "./plugin/retryInvalidated.d.ts",
+      "import": "./plugin/retryInvalidated.mjs",
+      "require": "./plugin/retryInvalidated.js"
+    },
     "./plugin/retryRejected": {
       "types": "./plugin/retryRejected.d.ts",
       "import": "./plugin/retryRejected.mjs",
       "require": "./plugin/retryRejected.js"
     },
-    "./plugin/retryInvalidated": {
-      "types": "./plugin/retryInvalidated.d.ts",
-      "import": "./plugin/retryInvalidated.mjs",
-      "require": "./plugin/retryInvalidated.js"
+    "./plugin/retryWhen": {
+      "types": "./plugin/retryWhen.d.ts",
+      "import": "./plugin/retryWhen.mjs",
+      "require": "./plugin/retryWhen.js"
     },
     "./plugin/synchronizeStorage": {
       "types": "./plugin/synchronizeStorage.d.ts",
@@ -121,6 +141,7 @@
     "tslib": "^2.6.2",
     "typedoc": "^0.25.13",
     "typedoc-custom-css": "github:smikhalevski/typedoc-custom-css#master",
+    "typedoc-plugin-mdn-links": "^3.1.27",
     "typescript": "^5.4.5"
   },
   "optionalDependencies": {

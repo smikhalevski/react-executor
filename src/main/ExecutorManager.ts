@@ -1,6 +1,14 @@
 import { AbortablePromise, PubSub } from 'parallel-universe';
 import { ExecutorImpl } from './ExecutorImpl';
-import type { Executor, ExecutorEvent, ExecutorPlugin, ExecutorState, ExecutorTask, NoInfer } from './types';
+import type {
+  Executor,
+  ExecutorEvent,
+  ExecutorPlugin,
+  ExecutorState,
+  ExecutorTask,
+  NoInfer,
+  Observable,
+} from './types';
 
 /**
  * Options provided to the {@link ExecutorManager} constructor.
@@ -15,7 +23,7 @@ export interface ExecutorManagerOptions {
    * Serializes executor keys.
    *
    * The serialized key form can be anything. If you want to use object identities as executor keys, provide an identity
-   * function as a serializer to mute the error.
+   * function as a serializer.
    *
    * @param key The key to serialize.
    * @default JSON.stringify
@@ -33,7 +41,7 @@ export interface ExecutorManagerOptions {
 /**
  * Creates executors and manages their lifecycle.
  */
-export class ExecutorManager implements Iterable<Executor> {
+export class ExecutorManager implements Iterable<Executor>, Observable<ExecutorEvent> {
   /**
    * The map from a key to an executor.
    */

@@ -4,7 +4,7 @@
  * ```ts
  * import abortDeactivated from 'react-executor/plugin/abortDeactivated';
  *
- * const executor = useExecutor('test', 42, [abortDeactivated()]);
+ * const executor = useExecutor('test', heavyTask, [abortDeactivated()]);
  * ```
  *
  * @module plugin/abortDeactivated
@@ -32,6 +32,7 @@ export default function abortDeactivated(ms = 0): ExecutorPlugin {
           break;
 
         case 'activated':
+        case 'detached':
           clearTimeout(timer);
           break;
       }
