@@ -68,7 +68,7 @@ export class SSRExecutorManager extends ExecutorManager {
       const hydratedVersion = this._hydratedVersions.get(executor);
 
       if ((hydratedVersion === undefined || hydratedVersion !== executor.version) && this._executorFilter(executor)) {
-        stateStrs.push(JSON.stringify(this._stateStringifier(executor.toJSON())));
+        stateStrs.push(JSON.stringify(this._stateStringifier(executor.toJSON())).replace(/</g, '\\u003C'));
 
         this._hydratedVersions.set(executor, executor.version);
       }

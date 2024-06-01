@@ -99,14 +99,14 @@ describe('SSRExecutorManager', () => {
       );
     });
 
-    test('respects stateStringifier option', async () => {
+    test('respects stateStringifier option', () => {
       const stateStringifierMock = jest.fn(JSON.stringify);
 
       const manager = new SSRExecutorManager({
         stateStringifier: stateStringifierMock,
       });
 
-      await manager.getOrCreate('xxx', () => 111);
+      manager.getOrCreate('xxx', 111);
 
       manager.nextHydrationChunk();
 
@@ -120,6 +120,18 @@ describe('SSRExecutorManager', () => {
         settledAt: 50,
         value: 111,
       });
+    });
+
+    test('escapes XSS-prone strings', () => {
+      const manager = new SSRExecutorManager();
+
+      manager.getOrCreate('xxx', '<script src="https://xxx.yyy"></script>');
+
+      const chunk = manager.nextHydrationChunk();
+
+      expect(chunk).toBe(
+        '<script>(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("{\\"key\\":\\"xxx\\",\\"isFulfilled\\":true,\\"value\\":\\"\\u003Cscript src=\\\\\\"https://xxx.yyy\\\\\\">\\u003C/script>\\",\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e)</script>'
+      );
     });
   });
 
