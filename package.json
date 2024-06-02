@@ -41,6 +41,11 @@
       "import": "./plugin/abortDeactivated.mjs",
       "require": "./plugin/abortDeactivated.js"
     },
+    "./plugin/abortPending": {
+      "types": "./plugin/abortPending.d.ts",
+      "import": "./plugin/abortPending.mjs",
+      "require": "./plugin/abortPending.js"
+    },
     "./plugin/abortWhen": {
       "types": "./plugin/abortWhen.d.ts",
       "import": "./plugin/abortWhen.mjs",
@@ -61,15 +66,20 @@
       "import": "./plugin/invalidateAfter.mjs",
       "require": "./plugin/invalidateAfter.js"
     },
+    "./plugin/invalidateByPeers": {
+      "types": "./plugin/invalidateByPeers.d.ts",
+      "import": "./plugin/invalidateByPeers.mjs",
+      "require": "./plugin/invalidateByPeers.js"
+    },
     "./plugin/invalidatePeers": {
       "types": "./plugin/invalidatePeers.d.ts",
       "import": "./plugin/invalidatePeers.mjs",
       "require": "./plugin/invalidatePeers.js"
     },
-    "./plugin/invalidateByPeers": {
-      "types": "./plugin/invalidateByPeers.d.ts",
-      "import": "./plugin/invalidateByPeers.mjs",
-      "require": "./plugin/invalidateByPeers.js"
+    "./plugin/rejectPending": {
+      "types": "./plugin/rejectPending.d.ts",
+      "import": "./plugin/rejectPending.mjs",
+      "require": "./plugin/rejectPending.js"
     },
     "./plugin/resolveWhen": {
       "types": "./plugin/resolveWhen.d.ts",

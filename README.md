@@ -41,7 +41,7 @@ npm install --save-prod react-executor
 - [`invalidateAfter`](#invalidateafter)
 - [`invalidateByPeers`](#invalidatebypeers)
 - [`invalidatePeers`](#invalidatepeers)
-- [`resolvePending`](#resolvepending)
+- [`rejectPending`](#rejectpending)
 - [`resolveWhen`](#resolvewhen)
 - [`retryFulfilled`](#retryfulfilled)
 - [`retryInvalidated`](#retryinvalidated)
@@ -968,7 +968,7 @@ const breadExecutor = useExecutor('bread', 'Focaccia');
 cheeseExecutor.resolve('Mozzarella');
 ```
 
-## `resolvePending`
+## `rejectPending`
 
 [Aborts the pending task](#abort-a-task) and [rejects the executor](#settle-an-executor)
 with [`TimeoutError`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#timeouterror) if the task execution
