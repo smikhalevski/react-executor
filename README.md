@@ -34,12 +34,14 @@ npm install --save-prod react-executor
 🔌&ensp;[**Plugins**](#plugins)
 
 - [`abortDeactivated`](#abortdeactivated)
+- [`abortPending`](#abortpending)
 - [`abortWhen`](#abortwhen)
 - [`bindAll`](#bindall)
 - [`detachDeactivated`](#detachdeactivated)
 - [`invalidateAfter`](#invalidateafter)
 - [`invalidateByPeers`](#invalidatebypeers)
 - [`invalidatePeers`](#invalidatepeers)
+- [`resolvePending`](#resolvepending)
 - [`resolveWhen`](#resolvewhen)
 - [`retryFulfilled`](#retryfulfilled)
 - [`retryInvalidated`](#retryinvalidated)
@@ -812,6 +814,20 @@ executor.deactivate();
 `abortDeactivated` has a single argument: the delay after which the task should be aborted. If an executor is
 re-activated during this delay, the task won't be aborted. 
 
+## `abortPending`
+
+[Aborts the pending task](#abort-a-task)
+with [`TimeoutError`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#timeouterror) if the task execution
+took longer then the given timeout.
+
+```ts
+import abortPending from 'react-executor/plugin/abortPending';
+
+const executor = useExecutor('test', heavyTask, [
+  abortPending(10_000)
+]);
+```
+
 ## `abortWhen`
 
 [Aborts the pending task](#abort-a-task) depending on boolean values pushed by an
@@ -950,6 +966,20 @@ const breadExecutor = useExecutor('bread', 'Focaccia');
 
 // breadExecutor is invalidated
 cheeseExecutor.resolve('Mozzarella');
+```
+
+## `resolvePending`
+
+[Aborts the pending task](#abort-a-task) and [rejects the executor](#settle-an-executor)
+with [`TimeoutError`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#timeouterror) if the task execution
+took longer then the given timeout.
+
+```ts
+import rejectPending from 'react-executor/plugin/rejectPending';
+
+const executor = useExecutor('test', heavyTask, [
+  rejectPending(10_000)
+]);
 ```
 
 ## `resolveWhen`
