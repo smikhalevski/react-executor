@@ -54,6 +54,7 @@ export default function abortWhen(observable: Observable<boolean>, ms = 0): Exec
           break;
 
         case 'detached':
+          clearTimeout(timer);
           unsubscribe();
           break;
       }

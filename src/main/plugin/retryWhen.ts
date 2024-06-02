@@ -65,6 +65,7 @@ export default function retryWhen(observable: Observable<boolean>, ms = 0): Exec
           break;
 
         case 'detached':
+          clearTimeout(timer);
           unsubscribe();
           break;
       }
