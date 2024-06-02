@@ -925,7 +925,10 @@ Invalidates the executor result if another executor with a matching key is fulfi
 ```ts
 import invalidateByPeers from 'react-executor/plugin/invalidateByPeers';
 
-const cheeseExecutor = useExecutor('cheese', 'Burrata', [invalidateByPeers(/bread/)]);
+const cheeseExecutor = useExecutor('cheese', 'Burrata', [
+  invalidateByPeers(executor => executor.key === 'bread')
+]);
+
 const breadExecutor = useExecutor('bread');
 
 // cheeseExecutor is invalidated
@@ -939,7 +942,10 @@ Invalidates peer executors with matching keys if the executor is fulfilled or in
 ```ts
 import invalidatePeers from 'react-executor/plugin/invalidatePeers';
 
-const cheeseExecutor = useExecutor('cheese', 'Burrata', [invalidatePeers(/bread/)]);
+const cheeseExecutor = useExecutor('cheese', 'Burrata', [
+  invalidatePeers(executor => executor.key === 'bread')
+]);
+
 const breadExecutor = useExecutor('bread', 'Focaccia');
 
 // breadExecutor is invalidated
@@ -1058,7 +1064,7 @@ const fetchCheese: ExecutorTask = async (signal, executor) => {
 };
 
 const cheeseExecutor = useExecutor('cheese', fetchCheese, [
-  invalidateByPeers('bread'),
+  invalidateByPeers(executor => executor.key === 'bread'),
   retryInvalidated(),
 ]);
 
