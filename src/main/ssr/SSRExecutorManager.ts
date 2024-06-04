@@ -22,6 +22,12 @@ export interface SSRExecutorManagerOptions extends ExecutorManagerOptions {
    * @returns `true` if the executor must be hydrated on the client, or `false` otherwise.
    */
   executorFilter?: (executor: Executor) => boolean;
+
+  /**
+   * A nonce string to allow scripts for
+   * [`script-src` Content-Security-Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src).
+   */
+  nonce?: string;
 }
 
 /**
@@ -44,6 +50,12 @@ export class SSRExecutorManager extends ExecutorManager {
   protected _executorFilter;
 
   /**
+   * A nonce string to allow scripts for
+   * [`script-src` Content-Security-Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src).
+   */
+  protected _nonce;
+
+  /**
    * Creates a new {@link SSRExecutorManager} instance.
    *
    * @param options Additional options.
@@ -55,6 +67,7 @@ export class SSRExecutorManager extends ExecutorManager {
 
     this._stateStringifier = stateStringifier;
     this._executorFilter = executorFilter;
+    this._nonce = options.nonce;
   }
 
   /**
@@ -79,7 +92,8 @@ export class SSRExecutorManager extends ExecutorManager {
     }
 
     return (
-      '<script>(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push(' +
+      (this._nonce === undefined ? '<script>' : '<script nonce="' + this._nonce + '">') +
+      '(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push(' +
       stateStrs.join(',') +
       ');var e=document.currentScript;e&&e.parentNode.removeChild(e)</script>'
     );

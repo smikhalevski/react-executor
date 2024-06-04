@@ -58,6 +58,7 @@ npm install --save-prod react-executor
 - [Render to string](#render-to-string)
 - [Streaming SSR](#streaming-ssr)
 - [State serialization](#state-serialization)
+- [Content-Security-Policy support](#content-security-policy-support)
 
 ⚙️&ensp;[**Devtools**](#devtools)
 
@@ -1631,6 +1632,26 @@ const manager = new SSRExecutorManager({ stateStringifier: stringify });
 > [!TIP]\
 > With additional configuration, [json-marshal](https://github.com/smikhalevski/json-marshal#readme) can stringify and
 > parse any data structure.
+
+## Content-Security-Policy support
+
+By default,
+[`nextHydrationChunk`](https://smikhalevski.github.io/react-executor/classes/ssr.SSRExecutorManager.html#nextHydrationChunk)
+renders an inline `<script>` tag without any attributes. To enable the support of
+the [`script-src`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src)
+directive of the `Content-Security-Policy` header, provide
+the [`nonce`](https://smikhalevski.github.io/react-executor/interfaces/ssr.SSRExecutorManagerOptions.html#nonce) option
+to `SSRExecutorManager` or any of its subclasses:
+
+```ts
+const manager = new PipeableSSRExecutorManager(response, { nonce: '2726c7f26c' });
+```
+
+Send the header with this nonce in the server response:
+
+```
+Content-Security-Policy: script-src 'nonce-2726c7f26c'
+```
 
 # Devtools
 

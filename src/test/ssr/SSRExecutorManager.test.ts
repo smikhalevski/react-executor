@@ -133,6 +133,18 @@ describe('SSRExecutorManager', () => {
         '<script>(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("{\\"key\\":\\"xxx\\",\\"isFulfilled\\":true,\\"value\\":\\"\\u003Cscript src=\\\\\\"https://xxx.yyy\\\\\\">\\u003C/script>\\",\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e)</script>'
       );
     });
+
+    test('respects nonce', () => {
+      const manager = new SSRExecutorManager({ nonce: '111' });
+
+      manager.getOrCreate('xxx', 111);
+
+      const chunk = manager.nextHydrationChunk();
+
+      expect(chunk).toBe(
+        '<script nonce="111">(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("{\\"key\\":\\"xxx\\",\\"isFulfilled\\":true,\\"value\\":111,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e)</script>'
+      );
+    });
   });
 
   describe('hasChanges', () => {
