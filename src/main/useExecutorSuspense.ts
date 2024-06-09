@@ -6,9 +6,9 @@ import { noop } from './utils';
  *
  * @param executors Executors to wait for.
  * @returns Provided executors.
- * @template Executors Executors to wait for.
+ * @template T Executors to wait for.
  */
-export function useExecutorSuspense(executors: Executor | Executor[]): void {
+export function useExecutorSuspense<T extends Executor | Executor[]>(executors: T): T {
   if (Array.isArray(executors)) {
     const promises = executors.reduce(reducePending, null);
 
@@ -18,6 +18,7 @@ export function useExecutorSuspense(executors: Executor | Executor[]): void {
   } else if (executors.isPending) {
     throw executors.getOrAwait().then(noop, noop);
   }
+  return executors;
 }
 
 function reducePending(promises: PromiseLike<unknown>[] | null, executor: Executor): PromiseLike<unknown>[] | null {

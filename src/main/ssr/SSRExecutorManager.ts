@@ -53,7 +53,7 @@ export class SSRExecutorManager extends ExecutorManager {
    * A nonce string to allow scripts for
    * [`script-src` Content-Security-Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src).
    */
-  protected _nonce;
+  nonce;
 
   /**
    * Creates a new {@link SSRExecutorManager} instance.
@@ -67,21 +67,36 @@ export class SSRExecutorManager extends ExecutorManager {
 
     this._stateStringifier = stateStringifier;
     this._executorFilter = executorFilter;
-    this._nonce = options.nonce;
+
+    this.nonce = options.nonce;
   }
 
   /**
-   * Returns a chunk that hydrates the client with the state accumulated during SSR, or an empty string if there are no
-   * state changes since the last time {@link nextHydrationChunk} was called.
+   * Returns an inline `<script>` tag with source that hydrates the client with the state accumulated during SSR,
+   * or an empty string if there are no state changes since the last time {@link nextHydrationScript} was called.
    */
   nextHydrationChunk(): string {
+    const source = this.nextHydrationScript();
+
+    if (source === '') {
+      return source;
+    }
+
+    return (this.nonce === undefined ? '<script>' : '<script nonce="' + this.nonce + '">') + source + '</script>';
+  }
+
+  /**
+   * Returns a script source that hydrates the client with the state accumulated during SSR, or an empty string if there
+   * are no state changes since the last time {@link nextHydrationScript} was called.
+   */
+  nextHydrationScript(): string {
     const stateStrs = [];
 
     for (const executor of this._executors.values()) {
       const hydratedVersion = this._hydratedVersions.get(executor);
 
       if ((hydratedVersion === undefined || hydratedVersion !== executor.version) && this._executorFilter(executor)) {
-        stateStrs.push(JSON.stringify(this._stateStringifier(executor.toJSON())).replace(/</g, '\\u003C'));
+        stateStrs.push(JSON.stringify(this._stateStringifier(executor.toJSON())));
 
         this._hydratedVersions.set(executor, executor.version);
       }
@@ -92,10 +107,9 @@ export class SSRExecutorManager extends ExecutorManager {
     }
 
     return (
-      (this._nonce === undefined ? '<script>' : '<script nonce="' + this._nonce + '">') +
       '(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push(' +
-      stateStrs.join(',') +
-      ');var e=document.currentScript;e&&e.parentNode.removeChild(e)</script>'
+      stateStrs.join(',').replace(/</g, '\\u003C') +
+      ');var e=document.currentScript;e&&e.parentNode.removeChild(e);'
     );
   }
 
