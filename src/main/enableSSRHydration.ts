@@ -18,10 +18,12 @@ export interface SSRHydrationOptions {
  *
  * **Note:** SSR hydration can be enabled for one executor only.
  *
- * @param executorManager The executor manager for which SSR hydration must be enabled.
+ * @param manager The executor manager for which SSR hydration must be enabled.
  * @param options Additional options.
+ * @returns The provided executor manager.
+ * @template T The executor manager.
  */
-export function enableSSRHydration(executorManager: ExecutorManager, options: SSRHydrationOptions = {}): void {
+export function enableSSRHydration<T extends ExecutorManager>(manager: T, options: SSRHydrationOptions = {}): T {
   const { stateParser = JSON.parse } = options;
 
   const ssrState =
@@ -29,7 +31,7 @@ export function enableSSRHydration(executorManager: ExecutorManager, options: SS
 
   if (Array.isArray(ssrState)) {
     for (const stateStr of ssrState) {
-      executorManager.hydrate(stateParser(stateStr));
+      manager.hydrate(stateParser(stateStr));
     }
   } else if (ssrState !== undefined) {
     throw new Error('SSR hydration already enabled');
@@ -38,8 +40,10 @@ export function enableSSRHydration(executorManager: ExecutorManager, options: SS
   window.__REACT_EXECUTOR_SSR_STATE__ = {
     push() {
       for (let i = 0; i < arguments.length; ++i) {
-        executorManager.hydrate(stateParser(arguments[i]));
+        manager.hydrate(stateParser(arguments[i]));
       }
     },
   };
+
+  return manager;
 }
