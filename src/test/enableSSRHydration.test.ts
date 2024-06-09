@@ -5,6 +5,12 @@ describe('enableSSRHydration', () => {
     window.__REACT_EXECUTOR_SSR_STATE__ = undefined;
   });
 
+  test('returns the provided executor', () => {
+    const manager = new ExecutorManager();
+
+    expect(enableSSRHydration(manager)).toBe(manager);
+  });
+
   test('hydrates an executor that is added after', () => {
     const manager = new ExecutorManager();
 

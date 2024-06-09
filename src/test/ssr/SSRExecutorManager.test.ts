@@ -4,55 +4,55 @@ import { noop } from '../../main/utils';
 Date.now = () => 50;
 
 describe('SSRExecutorManager', () => {
-  describe('nextHydrationChunk', () => {
+  describe('nextHydrationScript', () => {
     test('returns undefined if there no changes in state', () => {
       const manager = new SSRExecutorManager();
 
       manager.getOrCreate('xxx');
 
-      expect(manager.nextHydrationChunk()).toBe('');
+      expect(manager.nextHydrationScript()).toBe('');
     });
 
-    test('returns the hydration chunk for a single executor', async () => {
+    test('returns the hydration script for a single executor', async () => {
       const manager = new SSRExecutorManager();
 
       const executor = manager.getOrCreate('xxx');
 
-      expect(manager.nextHydrationChunk()).toBe('');
+      expect(manager.nextHydrationScript()).toBe('');
 
       const promise = executor.execute(() => 111);
 
-      expect(manager.nextHydrationChunk()).toBe('');
+      expect(manager.nextHydrationScript()).toBe('');
 
       await promise;
 
-      expect(manager.nextHydrationChunk()).toBe(
-        '<script>(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("{\\"key\\":\\"xxx\\",\\"isFulfilled\\":true,\\"value\\":111,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);</script>'
+      expect(manager.nextHydrationScript()).toBe(
+        '(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("{\\"key\\":\\"xxx\\",\\"isFulfilled\\":true,\\"value\\":111,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);'
       );
     });
 
-    test('returns the hydration chunk for multiple executors', async () => {
+    test('returns the hydration script for multiple executors', async () => {
       const manager = new SSRExecutorManager();
 
       const executor1 = manager.getOrCreate('xxx');
       const executor2 = manager.getOrCreate('yyy');
 
-      expect(manager.nextHydrationChunk()).toBe('');
+      expect(manager.nextHydrationScript()).toBe('');
 
       const promise1 = executor1.execute(() => 111);
       const promise2 = executor2.execute(() => 222);
 
-      expect(manager.nextHydrationChunk()).toBe('');
+      expect(manager.nextHydrationScript()).toBe('');
 
       await promise1;
       await promise2;
 
-      expect(manager.nextHydrationChunk()).toBe(
-        '<script>(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("{\\"key\\":\\"xxx\\",\\"isFulfilled\\":true,\\"value\\":111,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}","{\\"key\\":\\"yyy\\",\\"isFulfilled\\":true,\\"value\\":222,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);</script>'
+      expect(manager.nextHydrationScript()).toBe(
+        '(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("{\\"key\\":\\"xxx\\",\\"isFulfilled\\":true,\\"value\\":111,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}","{\\"key\\":\\"yyy\\",\\"isFulfilled\\":true,\\"value\\":222,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);'
       );
     });
 
-    test('returns only changed executor states in consequent hydration chunks', async () => {
+    test('returns only changed executor states in consequent hydration scripts', async () => {
       const manager = new SSRExecutorManager();
 
       const executor1 = manager.getOrCreate('xxx');
@@ -60,16 +60,16 @@ describe('SSRExecutorManager', () => {
 
       await executor1.execute(() => 111);
 
-      manager.nextHydrationChunk();
+      manager.nextHydrationScript();
 
       const promise = executor2.execute(() => 222);
 
-      expect(manager.nextHydrationChunk()).toBe('');
+      expect(manager.nextHydrationScript()).toBe('');
 
       await promise;
 
-      expect(manager.nextHydrationChunk()).toBe(
-        '<script>(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("{\\"key\\":\\"yyy\\",\\"isFulfilled\\":true,\\"value\\":222,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);</script>'
+      expect(manager.nextHydrationScript()).toBe(
+        '(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("{\\"key\\":\\"yyy\\",\\"isFulfilled\\":true,\\"value\\":222,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);'
       );
     });
 
@@ -81,7 +81,7 @@ describe('SSRExecutorManager', () => {
         .execute(() => Promise.reject('expected'))
         .catch(noop);
 
-      expect(manager.nextHydrationChunk()).toBe('');
+      expect(manager.nextHydrationScript()).toBe('');
     });
 
     test('respects executorFilter option', async () => {
@@ -94,8 +94,8 @@ describe('SSRExecutorManager', () => {
         .execute(() => Promise.reject('expected'))
         .catch(noop);
 
-      expect(manager.nextHydrationChunk()).toBe(
-        '<script>(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("{\\"key\\":\\"xxx\\",\\"isFulfilled\\":false,\\"reason\\":\\"expected\\",\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);</script>'
+      expect(manager.nextHydrationScript()).toBe(
+        '(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("{\\"key\\":\\"xxx\\",\\"isFulfilled\\":false,\\"reason\\":\\"expected\\",\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);'
       );
     });
 
@@ -108,7 +108,7 @@ describe('SSRExecutorManager', () => {
 
       manager.getOrCreate('xxx', 111);
 
-      manager.nextHydrationChunk();
+      manager.nextHydrationScript();
 
       expect(stateStringifierMock).toHaveBeenCalledTimes(1);
       expect(stateStringifierMock).toHaveBeenNthCalledWith(1, {
@@ -127,10 +127,30 @@ describe('SSRExecutorManager', () => {
 
       manager.getOrCreate('xxx', '<script src="https://xxx.yyy"></script>');
 
-      const chunk = manager.nextHydrationChunk();
+      const source = manager.nextHydrationScript();
 
-      expect(chunk).toBe(
-        '<script>(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("{\\"key\\":\\"xxx\\",\\"isFulfilled\\":true,\\"value\\":\\"\\u003Cscript src=\\\\\\"https://xxx.yyy\\\\\\">\\u003C/script>\\",\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);</script>'
+      expect(source).toBe(
+        '(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("{\\"key\\":\\"xxx\\",\\"isFulfilled\\":true,\\"value\\":\\"\\u003Cscript src=\\\\\\"https://xxx.yyy\\\\\\">\\u003C/script>\\",\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);'
+      );
+    });
+  });
+
+  describe('nextHydrationChunk', () => {
+    test('returns undefined if there no changes in state', () => {
+      const manager = new SSRExecutorManager();
+
+      manager.getOrCreate('xxx');
+
+      expect(manager.nextHydrationChunk()).toBe('');
+    });
+
+    test('returns the hydration chunk for a single executor', async () => {
+      const manager = new SSRExecutorManager();
+
+      await manager.getOrCreate('xxx').execute(() => 111);
+
+      expect(manager.nextHydrationChunk()).toBe(
+        '<script>(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("{\\"key\\":\\"xxx\\",\\"isFulfilled\\":true,\\"value\\":111,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);</script>'
       );
     });
 
