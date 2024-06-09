@@ -13,6 +13,7 @@ npm install --save-prod react-executor
 🔥&ensp;**Live examples**
 - [TODO app](https://codesandbox.io/p/sandbox/react-executor-example-ltflgy)
 - [Streaming SSR](https://codesandbox.io/p/devbox/react-executor-ssr-streaming-example-mwrmrs)
+- [Next.js integration](https://codesandbox.io/p/devbox/react-executor-next-example-whsj4v)
 
 🔰&ensp;[**Introduction**](#introduction)
 
@@ -59,6 +60,7 @@ npm install --save-prod react-executor
 - [Streaming SSR](#streaming-ssr)
 - [State serialization](#state-serialization)
 - [Content-Security-Policy support](#content-security-policy-support)
+- [Next.js integration](#nextjs-integration)
 
 ⚙️&ensp;[**Devtools**](#devtools)
 
@@ -1651,6 +1653,60 @@ Send the header with this nonce in the server response:
 
 ```
 Content-Security-Policy: script-src 'nonce-2726c7f26c'
+```
+
+## Next.js integration
+
+> [!TIP]\
+> Check out the live example
+> of [the Next.js app](https://codesandbox.io/p/devbox/react-executor-next-example-whsj4v) that showcases
+> streaming SSR with React Executor.
+
+To enable client hydration in Next.js, use [`@react-executor/next`](https://github.com/smikhalevski/react-executor-next)
+package.
+
+First, provide
+an [`ExecutorManager`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html): 
+
+```tsx
+// providers.tsx
+'use client';
+
+import { ReactNode } from 'react';
+import { enableSSRHydration, ExecutorManager, ExecutorManagerProvider } from 'react-executor';
+import { SSRExecutorManager } from 'react-executor/ssr';
+import { ExecutorHydrator } from '@react-executor/next';
+
+const manager = typeof window !== 'undefined' ? enableSSRHydration(new ExecutorManager()) : undefined;
+
+export function Providers(props: { children: ReactNode }) {
+  return (
+    <ExecutorManagerProvider value={manager || new SSRExecutorManager()}>
+      <ExecutorHydrator>{props.children}</ExecutorHydrator>
+    </ExecutorManagerProvider>
+  );
+}
+```
+
+`ExecutorHydrator` propagates server-rendered executor state to the client. You can configure how dehydrated state is
+[serialized on the server and deserialized on the client](#state-serialization), by default `JSON` is used.
+
+Enable providers in the root layout:
+
+```tsx
+// layout.tsx
+import { ReactNode } from 'react';
+import { Providers } from './providers';
+
+export default function (props: { children: ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <Providers>{props.children}</Providers>
+      </body>
+    </html>
+  );
+}
 ```
 
 # Devtools
