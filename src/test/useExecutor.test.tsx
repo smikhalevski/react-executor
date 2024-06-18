@@ -1,5 +1,5 @@
 import { act, renderHook } from '@testing-library/react';
-import { createElement, StrictMode } from 'react';
+import React, { StrictMode } from 'react';
 import { ExecutorManager, ExecutorManagerProvider, useExecutor } from '../main';
 
 describe('useExecutor', () => {
@@ -27,8 +27,11 @@ describe('useExecutor', () => {
     });
 
     const hook = renderHook(() => useExecutor({ aaa: 111 }), {
-      wrapper: props =>
-        createElement(StrictMode, null, createElement(ExecutorManagerProvider, { value: manager }, props.children)),
+      wrapper: props => (
+        <StrictMode>
+          <ExecutorManagerProvider value={manager}>{props.children}</ExecutorManagerProvider>
+        </StrictMode>
+      ),
     });
 
     const executor1 = hook.result.current;
@@ -46,8 +49,11 @@ describe('useExecutor', () => {
     });
 
     const hook = renderHook(() => useExecutor(['xxx', 111]), {
-      wrapper: props =>
-        createElement(StrictMode, null, createElement(ExecutorManagerProvider, { value: manager }, props.children)),
+      wrapper: props => (
+        <StrictMode>
+          <ExecutorManagerProvider value={manager}>{props.children}</ExecutorManagerProvider>
+        </StrictMode>
+      ),
     });
 
     const executor1 = hook.result.current;

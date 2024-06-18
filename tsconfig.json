@@ -6,6 +6,7 @@
     "isolatedModules": true,
     "noUnusedLocals": true,
     "downlevelIteration": true,
+    "jsx": "react",
     "strict": true,
     "target": "ES6",
     "module": "ES6",
