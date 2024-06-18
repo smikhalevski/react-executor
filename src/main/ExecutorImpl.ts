@@ -1,7 +1,7 @@
 import { AbortablePromise, PubSub } from 'parallel-universe';
 import type { ExecutorManager } from './ExecutorManager';
 import type { Executor, ExecutorAnnotations, ExecutorEvent, ExecutorState, ExecutorTask } from './types';
-import { AbortError } from './utils';
+import { AbortError, noop } from './utils';
 
 /**
  * The {@link Executor} implementation returned by the {@link ExecutorManager}.
@@ -135,6 +135,8 @@ export class ExecutorImpl<Value = any> implements Executor {
         }
       );
     });
+
+    taskPromise.catch(noop);
 
     const prevTaskPromise = this._taskPromise;
     this._taskPromise = taskPromise;
