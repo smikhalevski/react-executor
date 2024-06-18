@@ -100,7 +100,7 @@ export default function synchronizeStorage<Value = any>(
         executor.resolve(state.value!, state.settledAt);
       } else if (state.settledAt !== 0) {
         executor.reject(state.reason, state.settledAt);
-      } else {
+      } else if (executor.isSettled) {
         executor.clear();
       }
       if (state.invalidatedAt !== 0) {
@@ -114,24 +114,18 @@ export default function synchronizeStorage<Value = any>(
       }
     };
 
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', handleStorage);
+    }
+
     receiveState(storage.getItem(executorStorageKey));
 
     executor.subscribe(event => {
       switch (event.type) {
-        case 'activated':
-          if (typeof window !== 'undefined') {
-            window.addEventListener('storage', handleStorage);
-          }
-          receiveState(storage.getItem(executorStorageKey));
-          break;
-
         case 'cleared':
         case 'fulfilled':
         case 'rejected':
         case 'invalidated':
-          if (!executor.isActive) {
-            break;
-          }
           const stateStr = serializer.stringify(executor.toJSON());
 
           if (latestStateStr !== stateStr) {
@@ -139,14 +133,12 @@ export default function synchronizeStorage<Value = any>(
           }
           break;
 
-        case 'deactivated':
+        case 'detached':
+          storage.removeItem(executorStorageKey);
+
           if (typeof window !== 'undefined') {
             window.removeEventListener('storage', handleStorage);
           }
-          break;
-
-        case 'detached':
-          storage.removeItem(executorStorageKey);
           break;
       }
     });

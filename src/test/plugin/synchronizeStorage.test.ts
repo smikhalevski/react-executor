@@ -79,7 +79,7 @@ describe('synchronizeStorage', () => {
     expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'attached', target: executor, version: 1 });
   });
 
-  test('preserves the initial state if it is newer', () => {
+  test('preserves the initial state if it is newer and sets storage item', () => {
     manager.hydrate({
       key: 'xxx',
       isFulfilled: true,
@@ -93,6 +93,10 @@ describe('synchronizeStorage', () => {
     localStorage.setItem('"xxx"', '{"key":"xxx","isFulfilled":true,"value":"bbb","settledAt":30,"invalidatedAt":0}');
 
     const executor = manager.getOrCreate('xxx', undefined, [synchronizeStorage(localStorage)]);
+
+    expect(localStorage.getItem('"xxx"')).toBe(
+      '{"key":"xxx","isFulfilled":true,"value":"aaa","annotations":{},"settledAt":100,"invalidatedAt":0}'
+    );
 
     expect(executor.isFulfilled).toBe(true);
     expect(executor.isRejected).toBe(false);
@@ -110,19 +114,36 @@ describe('synchronizeStorage', () => {
     expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
   });
 
-  test('sets storage item if it is invalidated when executor is created', () => {
-    localStorage.setItem('"xxx"', '{"value":"aaa","settledAt":0}');
+  test('resolves an executor with an invalidated storage item', () => {
+    localStorage.setItem('"xxx"', '{"value":"aaa","isFulfilled":true,"settledAt":20,"invalidatedAt":30}');
 
     const executor = manager.getOrCreate('xxx', 'bbb', [synchronizeStorage(localStorage)]);
 
-    executor.activate();
-
-    expect(executor.value).toBe('bbb');
-    expect(localStorage.getItem('"xxx"')).toBe(
-      '{"key":"xxx","isFulfilled":true,"value":"bbb","annotations":{},"settledAt":50,"invalidatedAt":0}'
-    );
+    expect(executor.value).toBe('aaa');
+    expect(localStorage.getItem('"xxx"')).toBe('{"value":"aaa","isFulfilled":true,"settledAt":20,"invalidatedAt":30}');
 
     expect(listenerMock).toHaveBeenCalledTimes(4);
+    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'fulfilled', target: executor, version: 1 });
+    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'invalidated', target: executor, version: 2 });
+    expect(listenerMock).toHaveBeenNthCalledWith(3, {
+      type: 'plugin_configured',
+      target: executor,
+      version: 2,
+      payload: { type: 'synchronizeStorage', options: { storageKey: '"xxx"' } },
+    });
+    expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'attached', target: executor, version: 2 });
+  });
+
+  test('sets storage item to the initial value', () => {
+    const executor = manager.getOrCreate('xxx', 'aaa', [synchronizeStorage(localStorage)]);
+
+    expect(executor.value).toBe('aaa');
+
+    expect(localStorage.getItem('"xxx"')).toBe(
+      '{"key":"xxx","isFulfilled":true,"value":"aaa","annotations":{},"settledAt":50,"invalidatedAt":0}'
+    );
+
+    expect(listenerMock).toHaveBeenCalledTimes(3);
     expect(listenerMock).toHaveBeenNthCalledWith(1, {
       type: 'plugin_configured',
       target: executor,
@@ -131,10 +152,9 @@ describe('synchronizeStorage', () => {
     });
     expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
     expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor, version: 1 });
-    expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'activated', target: executor, version: 1 });
   });
 
-  test('sets storage item if executor was resolved from plugin', () => {
+  test('sets storage item if executor was resolved from a preceding plugin', () => {
     const executor = manager.getOrCreate('xxx', undefined, [
       executor => {
         executor.resolve('aaa');
@@ -148,6 +168,17 @@ describe('synchronizeStorage', () => {
     );
   });
 
+  test('initial task is not called if storage item exists', async () => {
+    const taskMock = jest.fn(() => 'bbb');
+
+    localStorage.setItem('"xxx"', '{"value":"aaa","isFulfilled":true,"settledAt":20,"invalidatedAt":30}');
+
+    const executor = manager.getOrCreate('xxx', taskMock, [synchronizeStorage(localStorage)]);
+
+    expect(executor.value).toBe('aaa');
+    expect(taskMock).not.toHaveBeenCalled();
+  });
+
   test('does not set storage item or resolve an executor if an executor is pending', async () => {
     const executor = manager.getOrCreate('xxx', undefined, [
       executor => {
@@ -155,8 +186,6 @@ describe('synchronizeStorage', () => {
       },
       synchronizeStorage(localStorage),
     ]);
-
-    executor.activate();
 
     expect(executor.isPending).toBe(true);
     expect(executor.value).toBeUndefined();
@@ -174,8 +203,6 @@ describe('synchronizeStorage', () => {
   test('resolves an executor when a storage item is set', () => {
     const executor = manager.getOrCreate('xxx', undefined, [synchronizeStorage(localStorage)]);
 
-    executor.activate();
-
     fireEvent(
       window,
       new StorageEvent('storage', {
@@ -188,29 +215,9 @@ describe('synchronizeStorage', () => {
     expect(executor.value).toBe('aaa');
   });
 
-  test('ignores a storage item being set when an executor is deactivated', () => {
-    const executor = manager.getOrCreate('xxx', undefined, [synchronizeStorage(localStorage)]);
-
-    const deactivate = executor.activate();
-    deactivate();
-
-    fireEvent(
-      window,
-      new StorageEvent('storage', {
-        key: '"xxx"',
-        storageArea: localStorage,
-        newValue: '{"value":"aaa","settledAt":50}',
-      })
-    );
-
-    expect(executor.isSettled).toBe(false);
-    expect(executor.value).toBeUndefined();
-  });
-
   test('sets storage item if it was removed', () => {
     const executor = manager.getOrCreate('xxx', 'aaa', [synchronizeStorage(localStorage)]);
 
-    executor.activate();
     localStorage.removeItem('"xxx"');
 
     fireEvent(
@@ -228,7 +235,7 @@ describe('synchronizeStorage', () => {
     );
   });
 
-  test('removes a storage item if an executor was detach', () => {
+  test('removes a storage item if an executor was detached', () => {
     manager.getOrCreate('xxx', 'aaa', [synchronizeStorage(localStorage)]);
 
     manager.detach('xxx');
