@@ -801,7 +801,7 @@ execute(heavyTask)
 
 ## `abortDeactivated`
 
-Aborts the pending task after the timeout if the executor is deactivated.
+[Aborts the pending task](#abort-a-task) after the timeout if the executor is deactivated.
 
 ```ts
 import abortDeactivated from 'react-executor/plugin/abortDeactivated';
@@ -887,7 +887,7 @@ Provide the manager so the `useExecutor` hook would employ it to create new exec
 
 ## `detachDeactivated`
 
-Aborts the pending task after the timeout if the executor is deactivated.
+[Detaches the executor](#detach-an-executor) after the timeout if the executor is deactivated.
 
 ```ts
 import detachDeactivated from 'react-executor/plugin/detachDeactivated';
