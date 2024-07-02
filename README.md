@@ -1321,7 +1321,7 @@ hook:
 const accountExecutor = useExecutorManager().getOrCreate('account');
 ```
 
-You can execute a task in response a user action, for example when user clicks a button:
+You can execute a task in response to a user action, for example when user clicks a button:
 
 ```tsx
 const executor = useExecutor('test');

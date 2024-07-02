@@ -178,6 +178,23 @@ export interface ExecutorState<Value = any> {
  */
 export interface Executor<Value = any> extends ExecutorState<Value>, Observable<ExecutorEvent<Value>> {
   /**
+   * The value of the latest fulfillment.
+   *
+   * **Note:** An executor may still have value even if it was {@link isRejected rejected}. Use {@link get},
+   * {@link getOrDefault}, or {@link getOrAwait} to retrieve a value of the {@link Executor.isFulfilled fulfilled}
+   * executor.
+   */
+  readonly value: Value | undefined;
+
+  /**
+   * The reason of the latest failure.
+   *
+   * **Note:** An executor may still have a rejection reason even if it was {@link Executor.isFulfilled fulfilled}.
+   * Check {@link isRejected} to ensure that an executor is actually rejected.
+   */
+  readonly reason: any;
+
+  /**
    * The integer version of {@link ExecutorState the state of this executor} that is incremented every time the executor
    * is mutated.
    */
@@ -220,10 +237,24 @@ export interface Executor<Value = any> extends ExecutorState<Value>, Observable<
   readonly task: ExecutorTask<Value> | null;
 
   /**
+   * The promise of the pending {@link task} execution, or `null` if there's no pending task execution.
+   *
+   * **Note:** This promise is aborted if
+   * [the task is replaced](https://github.com/smikhalevski/react-executor?tab=readme-ov-file#replace-a-task).
+   * Use {@link getOrAwait} to wait until the executor becomes {@link isSettled settled}.
+   */
+  readonly pendingPromise: AbortablePromise<Value> | null;
+
+  /**
    * Returns a {@link value} if the executor is {@link isFulfilled fulfilled}. Throws a {@link reason} if the executor
    * is {@link isRejected rejected}. Otherwise, throws an {@link !Error}.
    */
   get(): Value;
+
+  /**
+   * Returns a {@link value} if the executor is {@link isFulfilled fulfilled}. Otherwise, returns `undefined`.
+   */
+  getOrDefault(): Value | undefined;
 
   /**
    * Returns a {@link value} if the executor is {@link isFulfilled fulfilled}. Otherwise, returns the default value.
