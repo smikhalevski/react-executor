@@ -157,6 +157,6 @@
     "react": ">=16.8.0"
   },
   "dependencies": {
-    "parallel-universe": "^6.0.0"
+    "parallel-universe": "^6.1.1"
   }
 }
