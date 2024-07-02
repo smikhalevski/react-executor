@@ -1,5 +1,4 @@
 import { ExecutorManager } from '../../main';
-import type { ExecutorImpl } from '../../main/ExecutorImpl';
 import retryFulfilled from '../../main/plugin/retryFulfilled';
 import { noop } from '../../main/utils';
 
@@ -57,7 +56,7 @@ describe('retryFulfilled', () => {
     jest.runAllTimers();
     expect(executor.isPending).toBe(true);
 
-    (executor as ExecutorImpl)._taskPromise!.catch(noop);
+    executor.pendingPromise!.catch(noop);
     executor.abort();
 
     // Retry 2
@@ -80,7 +79,7 @@ describe('retryFulfilled', () => {
     jest.runAllTimers();
     expect(executor.isPending).toBe(true);
 
-    (executor as ExecutorImpl)._taskPromise!.catch(noop);
+    executor.pendingPromise!.catch(noop);
     executor.reject(undefined);
 
     // Retry 2

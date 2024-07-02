@@ -134,7 +134,7 @@ export class SSRExecutorManager extends ExecutorManager {
     const initialVersion = getVersion();
 
     const hasChanges = (): Promise<boolean> =>
-      Promise.allSettled(Array.from(this._executors.values()).map(executor => executor._taskPromise)).then(() =>
+      Promise.allSettled(Array.from(this).map(executor => executor.pendingPromise)).then(() =>
         Array.from(this).some(executor => executor.isPending) ? hasChanges() : getVersion() !== initialVersion
       );
 

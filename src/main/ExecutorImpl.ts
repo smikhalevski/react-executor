@@ -17,11 +17,7 @@ export class ExecutorImpl<Value = any> implements Executor {
   isFulfilled = false;
   annotations: ExecutorAnnotations = Object.create(null);
   version = 0;
-
-  /**
-   * The promise of the pending task execution, or `null` if there's no pending task execution.
-   */
-  _taskPromise: AbortablePromise<Value> | null = null;
+  pendingPromise: AbortablePromise<Value> | null = null;
 
   /**
    * The number of consumers that activated the executor.
@@ -46,7 +42,7 @@ export class ExecutorImpl<Value = any> implements Executor {
   }
 
   get isPending(): boolean {
-    return this._taskPromise !== null;
+    return this.pendingPromise !== null;
   }
 
   get isInvalidated(): boolean {
@@ -65,8 +61,8 @@ export class ExecutorImpl<Value = any> implements Executor {
     throw this.isSettled ? this.reason : new Error('The executor is not settled');
   }
 
-  getOrDefault<DefaultValue>(defaultValue: DefaultValue): Value | DefaultValue {
-    return this.isFulfilled ? this.value! : defaultValue;
+  getOrDefault<DefaultValue>(defaultValue?: DefaultValue): Value | DefaultValue | undefined {
+    return this.isFulfilled ? this.value : defaultValue;
   }
 
   getOrAwait(): AbortablePromise<Value> {
@@ -103,10 +99,10 @@ export class ExecutorImpl<Value = any> implements Executor {
   }
 
   execute(task: ExecutorTask<Value>): AbortablePromise<Value> {
-    const taskPromise = new AbortablePromise<Value>((resolve, reject, signal) => {
+    const promise = new AbortablePromise<Value>((resolve, reject, signal) => {
       signal.addEventListener('abort', () => {
-        if (this._taskPromise === taskPromise) {
-          this._taskPromise = null;
+        if (this.pendingPromise === promise) {
+          this.pendingPromise = null;
           this.version++;
         }
         this.publish('aborted');
@@ -120,7 +116,7 @@ export class ExecutorImpl<Value = any> implements Executor {
           if (signal.aborted) {
             return;
           }
-          this._taskPromise = null;
+          this.pendingPromise = null;
           this.resolve(value);
           resolve(value);
         },
@@ -129,30 +125,30 @@ export class ExecutorImpl<Value = any> implements Executor {
           if (signal.aborted) {
             return;
           }
-          this._taskPromise = null;
+          this.pendingPromise = null;
           this.reject(reason);
           reject(reason);
         }
       );
     });
 
-    taskPromise.catch(noop);
+    promise.catch(noop);
 
-    const prevTaskPromise = this._taskPromise;
-    this._taskPromise = taskPromise;
+    const { pendingPromise } = this;
+    this.pendingPromise = promise;
 
-    if (prevTaskPromise !== null) {
-      prevTaskPromise.abort(AbortError('The task was replaced'));
+    if (pendingPromise !== null) {
+      pendingPromise.abort(AbortError('The task was replaced'));
     } else {
       this.version++;
     }
 
-    if (this._taskPromise === taskPromise) {
+    if (this.pendingPromise === promise) {
       this.task = task;
       this.publish('pending');
     }
 
-    return taskPromise;
+    return promise;
   }
 
   retry(): void {
@@ -172,9 +168,7 @@ export class ExecutorImpl<Value = any> implements Executor {
   }
 
   abort(reason: unknown = AbortError('The executor was aborted')): void {
-    if (this._taskPromise !== null) {
-      this._taskPromise.abort(reason);
-    }
+    this.pendingPromise?.abort(reason);
   }
 
   invalidate(invalidatedAt = Date.now()): void {
@@ -191,12 +185,10 @@ export class ExecutorImpl<Value = any> implements Executor {
       return;
     }
 
-    const taskPromise = this._taskPromise;
-    this._taskPromise = null;
+    const { pendingPromise } = this;
+    this.pendingPromise = null;
 
-    if (taskPromise !== null) {
-      taskPromise.abort();
-    }
+    pendingPromise?.abort();
 
     this.isFulfilled = true;
     this.value = value;
@@ -208,12 +200,10 @@ export class ExecutorImpl<Value = any> implements Executor {
   }
 
   reject(reason: any, settledAt = Date.now()): void {
-    const taskPromise = this._taskPromise;
-    this._taskPromise = null;
+    const { pendingPromise } = this;
+    this.pendingPromise = null;
 
-    if (taskPromise !== null) {
-      taskPromise.abort();
-    }
+    pendingPromise?.abort();
 
     this.isFulfilled = false;
     this.reason = reason;

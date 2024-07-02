@@ -24,7 +24,7 @@ describe('ExecutorImpl', () => {
       expect(executor.isInvalidated).toBe(false);
       expect(executor.value).toBeUndefined();
       expect(executor.reason).toBeUndefined();
-      expect(executor._taskPromise).toBeNull();
+      expect(executor.pendingPromise).toBeNull();
     });
   });
 
@@ -78,7 +78,7 @@ describe('ExecutorImpl', () => {
       expect(listenerMock).toHaveBeenCalledTimes(1);
       expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'pending', target: executor, version: 1 });
 
-      expect(executor._taskPromise).toBe(promise);
+      expect(executor.pendingPromise).toBe(promise);
 
       await expect(promise).resolves.toEqual('aaa');
 
@@ -88,7 +88,7 @@ describe('ExecutorImpl', () => {
       expect(executor.isFulfilled).toBe(true);
       expect(executor.isRejected).toBe(false);
       expect(executor.value).toBe('aaa');
-      expect(executor._taskPromise).toBeNull();
+      expect(executor.pendingPromise).toBeNull();
     });
 
     test('aborts the pending task if a new task is submitted', async () => {
@@ -111,7 +111,7 @@ describe('ExecutorImpl', () => {
       expect(executor.isFulfilled).toBe(false);
       expect(executor.isRejected).toBe(false);
       expect(executor.value).toBeUndefined();
-      expect(executor._taskPromise).toBe(promise2);
+      expect(executor.pendingPromise).toBe(promise2);
 
       await expect(promise2).resolves.toEqual('bbb');
 
@@ -123,7 +123,7 @@ describe('ExecutorImpl', () => {
       expect(executor.isFulfilled).toBe(true);
       expect(executor.isRejected).toBe(false);
       expect(executor.value).toBe('bbb');
-      expect(executor._taskPromise).toBeNull();
+      expect(executor.pendingPromise).toBeNull();
     });
 
     test('rejects if a task throws an error', async () => {
@@ -135,7 +135,7 @@ describe('ExecutorImpl', () => {
       expect(listenerMock).toHaveBeenCalledTimes(1);
       expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'pending', target: executor, version: 1 });
 
-      expect(executor._taskPromise).toBe(promise);
+      expect(executor.pendingPromise).toBe(promise);
 
       await expect(promise).rejects.toBe(expectedReason);
 
@@ -146,7 +146,7 @@ describe('ExecutorImpl', () => {
       expect(executor.isRejected).toBe(true);
       expect(executor.value).toBeUndefined();
       expect(executor.reason).toBe(expectedReason);
-      expect(executor._taskPromise).toBeNull();
+      expect(executor.pendingPromise).toBeNull();
     });
 
     test('task promise can be aborted', () => {
@@ -171,7 +171,7 @@ describe('ExecutorImpl', () => {
       expect(executor.isRejected).toBe(false);
       expect(executor.value).toBeUndefined();
       expect(executor.reason).toBeUndefined();
-      expect(executor._taskPromise).toBeNull();
+      expect(executor.pendingPromise).toBeNull();
     });
 
     test('a new task can be executed from abort event handler if previous task is aborted manually', async () => {
@@ -190,8 +190,8 @@ describe('ExecutorImpl', () => {
       promise.abort();
 
       expect(executor.task).toBe(taskMock2);
-      expect(executor._taskPromise).not.toBeNull();
-      expect(executor._taskPromise).not.toBe(promise);
+      expect(executor.pendingPromise).not.toBeNull();
+      expect(executor.pendingPromise).not.toBe(promise);
 
       expect(taskMock1).toHaveBeenCalledTimes(1);
       expect(taskMock1.mock.calls[0][0].aborted).toBe(true);
@@ -201,7 +201,7 @@ describe('ExecutorImpl', () => {
       expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'aborted', target: executor, version: 2 });
       expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'pending', target: executor, version: 3 });
 
-      await expect(executor._taskPromise).resolves.toBe('bbb');
+      await expect(executor.pendingPromise).resolves.toBe('bbb');
 
       expect(executor.isFulfilled).toBe(true);
       expect(executor.isRejected).toBe(false);
@@ -227,9 +227,9 @@ describe('ExecutorImpl', () => {
       promise2.catch(noop);
 
       expect(executor.task).toBe(taskMock3);
-      expect(executor._taskPromise).not.toBeNull();
-      expect(executor._taskPromise).not.toBe(promise1);
-      expect(executor._taskPromise).not.toBe(promise2);
+      expect(executor.pendingPromise).not.toBeNull();
+      expect(executor.pendingPromise).not.toBe(promise1);
+      expect(executor.pendingPromise).not.toBe(promise2);
 
       expect(taskMock1).toHaveBeenCalledTimes(1);
       expect(taskMock2).toHaveBeenCalledTimes(1);
@@ -242,7 +242,7 @@ describe('ExecutorImpl', () => {
       expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'aborted', target: executor, version: 1 });
       expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'pending', target: executor, version: 1 });
 
-      await expect(executor._taskPromise).resolves.toBe('ccc');
+      await expect(executor.pendingPromise).resolves.toBe('ccc');
 
       expect(executor.isFulfilled).toBe(true);
       expect(executor.isRejected).toBe(false);
@@ -274,7 +274,7 @@ describe('ExecutorImpl', () => {
       expect(executor.isRejected).toBe(false);
       expect(executor.value).toBe('bbb');
       expect(executor.reason).toBeUndefined();
-      expect(executor._taskPromise).toBeNull();
+      expect(executor.pendingPromise).toBeNull();
     });
 
     test('preserves the previous value when a new task is executed', async () => {
@@ -285,12 +285,12 @@ describe('ExecutorImpl', () => {
       expect(executor.isRejected).toBe(false);
       expect(executor.value).toBe('aaa');
       expect(executor.reason).toBeUndefined();
-      expect(executor._taskPromise).toBe(promise);
+      expect(executor.pendingPromise).toBe(promise);
 
       await promise;
 
       expect(executor.value).toBe('bbb');
-      expect(executor._taskPromise).toBeNull();
+      expect(executor.pendingPromise).toBeNull();
     });
 
     test('preserves the previous reason when a new task is executed', async () => {
@@ -306,12 +306,12 @@ describe('ExecutorImpl', () => {
       expect(executor.isRejected).toBe(true);
       expect(executor.value).toBeUndefined();
       expect(executor.reason).toBe(expectedReason);
-      expect(executor._taskPromise).toBe(promise);
+      expect(executor.pendingPromise).toBe(promise);
 
       await promise;
 
       expect(executor.value).toBe('bbb');
-      expect(executor._taskPromise).toBeNull();
+      expect(executor.pendingPromise).toBeNull();
     });
   });
 
@@ -324,7 +324,7 @@ describe('ExecutorImpl', () => {
       expect(executor.isInvalidated).toBe(false);
       expect(executor.value).toBe('aaa');
       expect(executor.reason).toBeUndefined();
-      expect(executor._taskPromise).toBeNull();
+      expect(executor.pendingPromise).toBeNull();
 
       expect(listenerMock).toHaveBeenCalledTimes(1);
       expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'fulfilled', target: executor, version: 1 });
@@ -346,7 +346,7 @@ describe('ExecutorImpl', () => {
       expect(executor.value).toBe('bbb');
       expect(executor.reason).toBeUndefined();
       expect(executor.task).toBe(taskMock);
-      expect(executor._taskPromise).toBeNull();
+      expect(executor.pendingPromise).toBeNull();
 
       expect(listenerMock).toHaveBeenCalledTimes(3);
       expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'pending', target: executor, version: 1 });
@@ -377,9 +377,9 @@ describe('ExecutorImpl', () => {
       expect(executor.value).toBeUndefined();
       expect(executor.reason).toBeUndefined();
       expect(executor.task).not.toBeNull();
-      expect(executor._taskPromise).not.toBeNull();
+      expect(executor.pendingPromise).not.toBeNull();
 
-      await executor._taskPromise;
+      await executor.pendingPromise;
 
       expect(listenerMock).toHaveBeenCalledTimes(2);
       expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'fulfilled', target: executor, version: 2 });
@@ -387,7 +387,7 @@ describe('ExecutorImpl', () => {
       expect(executor.value).toBe('aaa');
       expect(executor.reason).toBeUndefined();
       expect(executor.task).not.toBeNull();
-      expect(executor._taskPromise).toBeNull();
+      expect(executor.pendingPromise).toBeNull();
     });
   });
 
@@ -400,7 +400,7 @@ describe('ExecutorImpl', () => {
       expect(executor.isInvalidated).toBe(false);
       expect(executor.value).toBeUndefined();
       expect(executor.reason).toBe('aaa');
-      expect(executor._taskPromise).toBeNull();
+      expect(executor.pendingPromise).toBeNull();
 
       expect(listenerMock).toHaveBeenCalledTimes(1);
       expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'rejected', target: executor, version: 1 });
@@ -422,7 +422,7 @@ describe('ExecutorImpl', () => {
       expect(executor.value).toBeUndefined();
       expect(executor.reason).toBe('bbb');
       expect(executor.task).toBe(taskMock);
-      expect(executor._taskPromise).toBeNull();
+      expect(executor.pendingPromise).toBeNull();
 
       expect(listenerMock).toHaveBeenCalledTimes(3);
       expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'pending', target: executor, version: 1 });
@@ -446,7 +446,7 @@ describe('ExecutorImpl', () => {
     test('no-op if there is no task', () => {
       executor.retry();
 
-      expect(executor._taskPromise).toBeNull();
+      expect(executor.pendingPromise).toBeNull();
     });
 
     test('no-op if there is a pending task', () => {
@@ -456,7 +456,7 @@ describe('ExecutorImpl', () => {
       executor.retry();
 
       expect(executor.task).toBe(task);
-      expect(executor._taskPromise).toBe(promise);
+      expect(executor.pendingPromise).toBe(promise);
     });
 
     test('executes the latest task', async () => {
@@ -489,7 +489,7 @@ describe('ExecutorImpl', () => {
       expect(executor.isInvalidated).toBe(false);
       expect(executor.value).toBeUndefined();
       expect(executor.reason).toBeUndefined();
-      expect(executor._taskPromise).toBeNull();
+      expect(executor.pendingPromise).toBeNull();
 
       expect(listenerMock).toHaveBeenCalledTimes(3);
       expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'fulfilled', target: executor, version: 1 });
@@ -509,7 +509,7 @@ describe('ExecutorImpl', () => {
       expect(executor.isInvalidated).toBe(false);
       expect(executor.value).toBeUndefined();
       expect(executor.reason).toBeUndefined();
-      expect(executor._taskPromise).toBe(promise);
+      expect(executor.pendingPromise).toBe(promise);
     });
   });
 
@@ -531,7 +531,7 @@ describe('ExecutorImpl', () => {
       expect(executor.isInvalidated).toBe(true);
       expect(executor.value).toBe('aaa');
       expect(executor.reason).toBeUndefined();
-      expect(executor._taskPromise).toBeNull();
+      expect(executor.pendingPromise).toBeNull();
 
       expect(listenerMock).toHaveBeenCalledTimes(2);
       expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'fulfilled', target: executor, version: 1 });
@@ -561,7 +561,7 @@ describe('ExecutorImpl', () => {
       expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'pending', target: executor, version: 1 });
       expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'aborted', target: executor, version: 2 });
 
-      expect(executor._taskPromise).toBeNull();
+      expect(executor.pendingPromise).toBeNull();
     });
 
     test('abort preserves the value intact', () => {
@@ -573,7 +573,7 @@ describe('ExecutorImpl', () => {
       expect(executor.isRejected).toBe(false);
       expect(executor.value).toBe('aaa');
       expect(executor.reason).toBeUndefined();
-      expect(executor._taskPromise).toBeNull();
+      expect(executor.pendingPromise).toBeNull();
     });
 
     test('abort preserves reason intact', () => {
@@ -587,7 +587,7 @@ describe('ExecutorImpl', () => {
       expect(executor.isRejected).toBe(true);
       expect(executor.value).toBeUndefined();
       expect(executor.reason).toBe(expectedReason);
-      expect(executor._taskPromise).toBeNull();
+      expect(executor.pendingPromise).toBeNull();
     });
   });
 
