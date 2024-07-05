@@ -20,9 +20,9 @@ export class ExecutorImpl<Value = any> implements Executor {
   pendingPromise: AbortablePromise<Value> | null = null;
 
   /**
-   * The number of consumers that activated the executor.
+   * The number of times the executor was activated.
    */
-  _consumerCount = 0;
+  _activationCount = 0;
 
   /**
    * The pubsub that handles the executor subscriptions.
@@ -38,7 +38,7 @@ export class ExecutorImpl<Value = any> implements Executor {
   }
 
   get isActive(): boolean {
-    return this._consumerCount !== 0;
+    return this._activationCount !== 0;
   }
 
   get isPending(): boolean {
@@ -217,12 +217,12 @@ export class ExecutorImpl<Value = any> implements Executor {
   activate(): () => void {
     let isApplicable = true;
 
-    if (this._consumerCount++ === 0) {
+    if (this._activationCount++ === 0) {
       this.publish('activated');
     }
 
     return () => {
-      if (isApplicable && ((isApplicable = false), --this._consumerCount === 0)) {
+      if (isApplicable && ((isApplicable = false), --this._activationCount === 0)) {
         this.publish('deactivated');
       }
     };

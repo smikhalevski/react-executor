@@ -597,7 +597,7 @@ describe('ExecutorImpl', () => {
       executor.activate();
       executor.activate();
 
-      expect(executor._consumerCount).toBe(3);
+      expect(executor._activationCount).toBe(3);
 
       expect(listenerMock).toHaveBeenCalledTimes(1);
       expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'activated', target: executor, version: 0 });
@@ -610,7 +610,7 @@ describe('ExecutorImpl', () => {
       deactivate();
       deactivate();
 
-      expect(executor._consumerCount).toBe(0);
+      expect(executor._activationCount).toBe(0);
 
       expect(listenerMock).toHaveBeenCalledTimes(2);
       expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'activated', target: executor, version: 0 });
