@@ -10,6 +10,7 @@
 
 export * from './core';
 
+export { ExecutorSuspense } from './ExecutorSuspense';
 export { useExecutor } from './useExecutor';
 export { useExecutorManager, ExecutorManagerProvider } from './useExecutorManager';
 export { useExecutorSubscription } from './useExecutorSubscription';
