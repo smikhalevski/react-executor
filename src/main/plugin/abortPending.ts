@@ -31,9 +31,7 @@ export default function abortPending(ms: number): ExecutorPlugin {
         case 'pending':
           clearTimeout(timer);
 
-          timer = setTimeout(() => {
-            executor.abort(TimeoutError('The task execution took too long'));
-          }, ms);
+          timer = setTimeout(() => executor.abort(TimeoutError('The task execution took too long')), ms);
           break;
 
         case 'fulfilled':

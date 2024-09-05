@@ -1,5 +1,6 @@
 /**
- * The plugin that detaches a deactivated executor after the timeout.
+ * The plugin that detaches a deactivated executor after a timeout elapses. The executor must be activated at least once
+ * for this plugin to have an effect.
  *
  * ```ts
  * import detachDeactivated from 'react-executor/plugin/detachDeactivated';
@@ -13,7 +14,8 @@
 import type { ExecutorPlugin, PluginConfiguredPayload } from '../types';
 
 /**
- * Detaches a deactivated executor after the timeout.
+ * Detaches a deactivated executor after a timeout elapses. The executor must be activated at least once for this plugin
+ * to have an effect.
  *
  * @param ms The timeout in milliseconds after which the executor is detached.
  */
@@ -26,12 +28,11 @@ export default function detachDeactivated(ms = 5_000): ExecutorPlugin {
         case 'deactivated':
           clearTimeout(timer);
 
-          timer = setTimeout(() => {
-            executor.manager.detach(executor.key);
-          }, ms);
+          timer = setTimeout(() => executor.manager.detach(executor.key), ms);
           break;
 
         case 'activated':
+        case 'detached':
           clearTimeout(timer);
           break;
       }
