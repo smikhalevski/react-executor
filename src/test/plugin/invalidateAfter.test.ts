@@ -44,7 +44,7 @@ describe('invalidateAfter', () => {
       type: 'plugin_configured',
       target: executor,
       version: 0,
-      payload: { type: 'invalidateAfter', options: { ms: 100 } },
+      payload: { type: 'invalidateAfter', options: { delay: 100 } },
     });
     expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
     expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'activated', target: executor, version: 0 });
@@ -68,7 +68,7 @@ describe('invalidateAfter', () => {
       type: 'plugin_configured',
       target: executor,
       version: 0,
-      payload: { type: 'invalidateAfter', options: { ms: 100 } },
+      payload: { type: 'invalidateAfter', options: { delay: 100 } },
     });
     expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
     expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'activated', target: executor, version: 0 });

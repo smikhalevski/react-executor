@@ -17,9 +17,9 @@ import type { ExecutorPlugin, PluginConfiguredPayload } from '../types';
  * Aborts the pending task after the timeout if the executor is deactivated. The executor must be activated at least
  * once for this plugin to have an effect.
  *
- * @param ms The timeout in milliseconds after which the task is aborted.
+ * @param delay The timeout in milliseconds after which the task is aborted.
  */
-export default function abortDeactivated(ms = 0): ExecutorPlugin {
+export default function abortDeactivated(delay = 0): ExecutorPlugin {
   return executor => {
     let timer: NodeJS.Timeout;
 
@@ -28,7 +28,7 @@ export default function abortDeactivated(ms = 0): ExecutorPlugin {
         case 'deactivated':
           clearTimeout(timer);
 
-          timer = setTimeout(() => executor.abort(), ms);
+          timer = setTimeout(() => executor.abort(), delay);
           break;
 
         case 'activated':
@@ -40,7 +40,7 @@ export default function abortDeactivated(ms = 0): ExecutorPlugin {
 
     executor.publish<PluginConfiguredPayload>('plugin_configured', {
       type: 'abortDeactivated',
-      options: { ms },
+      options: { delay },
     });
   };
 }

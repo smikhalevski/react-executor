@@ -11,36 +11,15 @@
  * @module plugin/detachDeactivated
  */
 
-import type { ExecutorPlugin, PluginConfiguredPayload } from '../types';
+import type { ExecutorPlugin } from '../types';
+import detachInactive from './detachInactive';
 
 /**
  * Detaches a deactivated executor after a timeout elapses. The executor must be activated at least once for this plugin
  * to have an effect.
  *
- * @param ms The timeout in milliseconds after which the executor is detached.
+ * @param delay The timeout in milliseconds after which the executor is detached.
  */
-export default function detachDeactivated(ms = 5_000): ExecutorPlugin {
-  return executor => {
-    let timer: NodeJS.Timeout;
-
-    executor.subscribe(event => {
-      switch (event.type) {
-        case 'deactivated':
-          clearTimeout(timer);
-
-          timer = setTimeout(() => executor.manager.detach(executor.key), ms);
-          break;
-
-        case 'activated':
-        case 'detached':
-          clearTimeout(timer);
-          break;
-      }
-    });
-
-    executor.publish<PluginConfiguredPayload>('plugin_configured', {
-      type: 'detachDeactivated',
-      options: { ms },
-    });
-  };
+export default function detachDeactivated(delay = 5_000): ExecutorPlugin {
+  return detachInactive({ delayBeforeActivation: -1, delayAfterDeactivation: delay });
 }
