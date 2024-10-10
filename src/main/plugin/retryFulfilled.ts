@@ -16,12 +16,12 @@ import type { Executor, ExecutorPlugin, PluginConfiguredPayload } from '../types
  * Repeats the last task after the execution was fulfilled.
  *
  * @param count The number of repetitions.
- * @param ms The delay in milliseconds after which the repetition is scheduled.
+ * @param delay The delay in milliseconds after which the repetition is scheduled.
  * @template Value The value stored by the executor.
  */
 export default function retryFulfilled<Value = any>(
   count = Infinity,
-  ms: number | ((index: number, executor: Executor<Value>) => number) = 5_000
+  delay: number | ((index: number, executor: Executor<Value>) => number) = 5_000
 ): ExecutorPlugin<Value> {
   return executor => {
     let timer: NodeJS.Timeout;
@@ -39,7 +39,7 @@ export default function retryFulfilled<Value = any>(
                 index++;
                 executor.retry();
               },
-              (typeof ms === 'function' ? ms(index, executor) : ms) - Date.now() + executor.settledAt
+              (typeof delay === 'function' ? delay(index, executor) : delay) - Date.now() + executor.settledAt
             );
           }
           break;
@@ -56,7 +56,7 @@ export default function retryFulfilled<Value = any>(
 
     executor.publish<PluginConfiguredPayload>('plugin_configured', {
       type: 'retryFulfilled',
-      options: { count, ms },
+      options: { count, delay },
     });
   };
 }

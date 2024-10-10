@@ -923,7 +923,7 @@ executor.deactivate();
 
 ## `invalidateAfter`
 
-Invalidates the executor result after the timeout.
+Invalidates the executor result after a timeout elapses.
 
 ```ts
 import invalidateAfter from 'react-executor/plugin/invalidateAfter';

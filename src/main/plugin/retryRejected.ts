@@ -16,12 +16,12 @@ import type { Executor, ExecutorPlugin, PluginConfiguredPayload } from '../types
  * Retries the last task after the execution has failed.
  *
  * @param count The number of times the task must be repeated if rejected.
- * @param ms The delay in milliseconds after which the retry is scheduled.
+ * @param delay The delay in milliseconds after which the retry is scheduled.
  * @template Value The value stored by the executor.
  */
 export default function retryRejected<Value = any>(
   count = 3,
-  ms: number | ((index: number, executor: Executor<Value>) => number) = exponentialDelay
+  delay: number | ((index: number, executor: Executor<Value>) => number) = exponentialDelay
 ): ExecutorPlugin<Value> {
   return executor => {
     let timer: NodeJS.Timeout;
@@ -39,7 +39,7 @@ export default function retryRejected<Value = any>(
                 index++;
                 executor.retry();
               },
-              (typeof ms === 'function' ? ms(index, executor) : ms) - Date.now() + executor.settledAt
+              (typeof delay === 'function' ? delay(index, executor) : delay) - Date.now() + executor.settledAt
             );
           }
           break;
@@ -56,7 +56,7 @@ export default function retryRejected<Value = any>(
 
     executor.publish<PluginConfiguredPayload>('plugin_configured', {
       type: 'retryRejected',
-      options: { count, ms },
+      options: { count, delay },
     });
   };
 }

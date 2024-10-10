@@ -31,7 +31,7 @@ describe('abortDeactivated', () => {
       type: 'plugin_configured',
       target: executor,
       version: 0,
-      payload: { type: 'abortDeactivated', options: { ms: 0 } },
+      payload: { type: 'abortDeactivated', options: { delay: 0 } },
     });
     expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
     expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'activated', target: executor, version: 0 });
@@ -58,7 +58,7 @@ describe('abortDeactivated', () => {
       type: 'plugin_configured',
       target: executor,
       version: 0,
-      payload: { type: 'abortDeactivated', options: { ms: 0 } },
+      payload: { type: 'abortDeactivated', options: { delay: 0 } },
     });
     expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
     expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'activated', target: executor, version: 0 });
