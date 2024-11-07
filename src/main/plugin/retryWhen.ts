@@ -19,10 +19,10 @@ import type { ExecutorPlugin, Observable, PluginConfiguredPayload } from '../typ
  * Retries the latest task if the observable pushes `false` and then `true`.
  *
  * @param observable The observable that triggers the retry of the latest task.
- * @param ms The timeout in milliseconds that should pass after `false` was pushed to retry the executor when `true` is
+ * @param delay The timeout in milliseconds that should pass after `false` was pushed to retry the executor when `true` is
  * pushed.
  */
-export default function retryWhen(observable: Observable<boolean>, ms = 0): ExecutorPlugin {
+export default function retryWhen(observable: Observable<boolean>, delay = 0): ExecutorPlugin {
   return executor => {
     let timer: NodeJS.Timeout | undefined;
     let shouldRetry = false;
@@ -46,7 +46,7 @@ export default function retryWhen(observable: Observable<boolean>, ms = 0): Exec
       timer = setTimeout(() => {
         timer = undefined;
         shouldRetry = true;
-      }, ms);
+      }, delay);
     });
 
     executor.subscribe(event => {
@@ -73,7 +73,7 @@ export default function retryWhen(observable: Observable<boolean>, ms = 0): Exec
 
     executor.publish<PluginConfiguredPayload>('plugin_configured', {
       type: 'retryWhen',
-      options: { observable, ms },
+      options: { observable, delay },
     });
   };
 }

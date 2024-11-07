@@ -20,9 +20,9 @@ import { TimeoutError } from '../utils';
  * Aborts the pending task with {@link !DOMException TimeoutError} if the task execution took longer then the given
  * timeout.
  *
- * @param ms The timeout in milliseconds after which the task is aborted.
+ * @param delay The timeout in milliseconds after which the task is aborted.
  */
-export default function abortPending(ms: number): ExecutorPlugin {
+export default function abortPending(delay: number): ExecutorPlugin {
   return executor => {
     let timer: NodeJS.Timeout;
 
@@ -31,9 +31,7 @@ export default function abortPending(ms: number): ExecutorPlugin {
         case 'pending':
           clearTimeout(timer);
 
-          timer = setTimeout(() => {
-            executor.abort(TimeoutError('The task execution took too long'));
-          }, ms);
+          timer = setTimeout(() => executor.abort(TimeoutError('The task execution took too long')), delay);
           break;
 
         case 'fulfilled':
@@ -47,7 +45,7 @@ export default function abortPending(ms: number): ExecutorPlugin {
 
     executor.publish<PluginConfiguredPayload>('plugin_configured', {
       type: 'abortPending',
-      options: { ms },
+      options: { delay },
     });
   };
 }

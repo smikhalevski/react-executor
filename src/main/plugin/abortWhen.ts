@@ -19,9 +19,9 @@ import type { ExecutorPlugin, Observable, PluginConfiguredPayload } from '../typ
  * Aborts the pending task if the observable pushes `false`.
  *
  * @param observable The observable that trigger the abort of the executor.
- * @param ms The timeout in milliseconds after `false` is pushed by observer before the executor is aborted.
+ * @param delay The timeout in milliseconds after `false` is pushed by observer before the executor is aborted.
  */
-export default function abortWhen(observable: Observable<boolean>, ms = 0): ExecutorPlugin {
+export default function abortWhen(observable: Observable<boolean>, delay = 0): ExecutorPlugin {
   return executor => {
     let timer: NodeJS.Timeout | undefined;
     let shouldAbort = false;
@@ -42,7 +42,7 @@ export default function abortWhen(observable: Observable<boolean>, ms = 0): Exec
         timer = undefined;
         shouldAbort = true;
         executor.abort();
-      }, ms);
+      }, delay);
     });
 
     executor.subscribe(event => {
@@ -62,7 +62,7 @@ export default function abortWhen(observable: Observable<boolean>, ms = 0): Exec
 
     executor.publish<PluginConfiguredPayload>('plugin_configured', {
       type: 'abortWhen',
-      options: { observable, ms },
+      options: { observable, delay },
     });
   };
 }
