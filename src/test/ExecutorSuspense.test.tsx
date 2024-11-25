@@ -1,30 +1,31 @@
 import '@testing-library/jest-dom';
 import { render } from '@testing-library/react';
-import React, { Suspense, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import {
   ExecutorManager,
   ExecutorManagerProvider,
+  ExecutorSuspense,
   useExecutor,
   useExecutorSubscription,
-  useExecutorSuspense,
 } from '../main';
 
-describe('useExecutorSuspense', () => {
+describe('ExecutorSuspense', () => {
   test('suspends component rendering until executors are settled', async () => {
     const Component = () => {
       const executor1 = useExecutor('xxx', () => 'aaa');
       const executor2 = useExecutor('yyy', () => 'bbb');
 
-      useExecutorSuspense([executor1, executor2]);
-
-      return executor1.get() + executor2.get();
+      return (
+        <ExecutorSuspense
+          fallback={'ccc'}
+          executors={[executor1, executor2]}
+        >
+          {executors => executors[0].get() + executors[1].get()}
+        </ExecutorSuspense>
+      );
     };
 
-    const result = render(
-      <Suspense fallback={'ccc'}>
-        <Component />
-      </Suspense>
-    );
+    const result = render(<Component />);
 
     expect(result.getByText('ccc')).toBeInTheDocument();
 
@@ -44,18 +45,19 @@ describe('useExecutorSuspense', () => {
         executor.execute(async () => 'bbb');
       }, []);
 
-      useExecutorSuspense(executor);
-
-      capture(executor.value);
-
-      return executor.value;
+      return (
+        <ExecutorSuspense executors={executor}>
+          {executor => {
+            capture(executor.value);
+            return executor.value;
+          }}
+        </ExecutorSuspense>
+      );
     };
 
     const result = render(
       <ExecutorManagerProvider value={manager}>
-        <Suspense>
-          <Component />
-        </Suspense>
+        <Component />
       </ExecutorManagerProvider>
     );
 
@@ -81,18 +83,22 @@ describe('useExecutorSuspense', () => {
         executor.execute(async () => 'bbb');
       }, []);
 
-      useExecutorSuspense(executor, predicateMock);
-
-      capture(executor.value);
-
-      return executor.value;
+      return (
+        <ExecutorSuspense
+          executors={executor}
+          predicate={predicateMock}
+        >
+          {executor => {
+            capture(executor.value);
+            return executor.value;
+          }}
+        </ExecutorSuspense>
+      );
     };
 
     const result = render(
       <ExecutorManagerProvider value={manager}>
-        <Suspense>
-          <Component />
-        </Suspense>
+        <Component />
       </ExecutorManagerProvider>
     );
 
