@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import type { Executor, ExecutorPlugin, ExecutorTask, NoInfer } from './types';
 import { useExecutorManager } from './useExecutorManager';
 import { useExecutorSubscription } from './useExecutorSubscription';
@@ -48,9 +47,7 @@ export function useExecutor(
   initialValue?: unknown,
   plugins?: Array<ExecutorPlugin | null | undefined>
 ): Executor {
-  const manager = useExecutorManager();
-
-  const executor = useMemo(() => manager.getOrCreate(key, initialValue, plugins), Array.isArray(key) ? key : [key]);
+  const executor = useExecutorManager().getOrCreate(key, initialValue, plugins);
 
   useExecutorSubscription(executor);
 

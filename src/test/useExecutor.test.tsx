@@ -44,9 +44,7 @@ describe('useExecutor', () => {
   });
 
   test('returns the same executor for an array-of-primitives key', () => {
-    const manager = new ExecutorManager({
-      keySerializer: key => key,
-    });
+    const manager = new ExecutorManager();
 
     const hook = renderHook(() => useExecutor(['xxx', 111]), {
       wrapper: props => (
