@@ -1505,7 +1505,7 @@ useExecutorSuspense([accountExecutor, shoppingCartExecutor]);
 > Check out the live example
 > of [streaming SSR](https://codesandbox.io/p/devbox/react-executor-ssr-streaming-example-mwrmrs) with React Executor.
 
-Executors can be hydrated on the client after being rendered on the server.
+Executors can be hydrated on the client after being settled on the server.
 
 To enable hydration on the client, create the executor manager and provide it through a context:
 
