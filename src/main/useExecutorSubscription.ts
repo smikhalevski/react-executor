@@ -8,7 +8,7 @@ import type { Executor } from './types';
  *
  * @param executor The executor to subscribe to.
  */
-export function useExecutorSubscription(executor: Executor): void {
+export function useExecutorSubscription<Value>(executor: Executor<Value>): Executor<Value> {
   React.useDebugValue(executor, toJSON);
 
   if (typeof React.useSyncExternalStore === 'function') {
@@ -20,7 +20,7 @@ export function useExecutorSubscription(executor: Executor): void {
 
     React.useEffect(executor.activate.bind(executor), [executor]);
 
-    return;
+    return executor;
   }
 
   const [, setVersion] = React.useState(executor.version);
@@ -42,6 +42,8 @@ export function useExecutorSubscription(executor: Executor): void {
       deactivate();
     };
   }, [executor]);
+
+  return executor;
 }
 
 function toJSON(executor: Executor) {
