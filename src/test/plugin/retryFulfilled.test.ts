@@ -17,7 +17,7 @@ describe('retryFulfilled', () => {
 
   test('retries a fulfilled executor', async () => {
     const taskMock = jest.fn();
-    const executor = manager.getOrCreate('xxx', taskMock, [retryFulfilled(2, 0)]);
+    const executor = manager.getOrCreate('xxx', taskMock, [retryFulfilled({ count: 2, delay: 0 })]);
 
     executor.activate();
     expect(executor.isPending).toBe(true);
@@ -45,7 +45,7 @@ describe('retryFulfilled', () => {
 
   test('stops retrying if an executor is aborted', async () => {
     const taskMock = jest.fn();
-    const executor = manager.getOrCreate('xxx', taskMock, [retryFulfilled(2, 0)]);
+    const executor = manager.getOrCreate('xxx', taskMock, [retryFulfilled({ count: 2, delay: 0 })]);
 
     executor.activate();
     expect(executor.isPending).toBe(true);
@@ -68,7 +68,7 @@ describe('retryFulfilled', () => {
 
   test('stops retrying if an executor is rejected', async () => {
     const taskMock = jest.fn();
-    const executor = manager.getOrCreate('xxx', taskMock, [retryFulfilled(2, 0)]);
+    const executor = manager.getOrCreate('xxx', taskMock, [retryFulfilled({ count: 2, delay: 0 })]);
 
     executor.activate();
     expect(executor.isPending).toBe(true);
@@ -91,7 +91,7 @@ describe('retryFulfilled', () => {
 
   test('stops retrying if an executor is deactivated', async () => {
     const taskMock = jest.fn();
-    const executor = manager.getOrCreate('xxx', taskMock, [retryFulfilled(2, 0)]);
+    const executor = manager.getOrCreate('xxx', taskMock, [retryFulfilled({ count: 2, delay: 0 })]);
 
     const deactivate = executor.activate();
     expect(executor.isPending).toBe(true);

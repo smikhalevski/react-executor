@@ -39,11 +39,13 @@ npm install --save-prod react-executor
 - [`abortWhen`](#abortwhen)
 - [`bindAll`](#bindall)
 - [`detachDeactivated`](#detachdeactivated)
+- [`detachInactive`](#detachinactive)
 - [`invalidateAfter`](#invalidateafter)
 - [`invalidateByPeers`](#invalidatebypeers)
 - [`invalidatePeers`](#invalidatepeers)
 - [`rejectPending`](#rejectpending)
 - [`resolveWhen`](#resolvewhen)
+- [`retryActivated`](#retryactivated)
 - [`retryFulfilled`](#retryfulfilled)
 - [`retryInvalidated`](#retryinvalidated)
 - [`retryRejected`](#retryrejected)
@@ -1050,19 +1052,22 @@ executor.
 Specify the number of times the task should be re-executed if it succeeds:
 
 ```ts
-retryFulfilled(3)
+retryFulfilled({ count: 3 })
 ```
 
 Specify the delay in milliseconds between retries:
 
 ```ts
-retryFulfilled(3, 5_000);
+retryFulfilled({ count: 3, delay: 5_000 });
 ```
 
 Provide a function that returns the delay depending on the number of retries:
 
 ```ts
-retryFulfilled(5, (index, executor) => 1000 * index);
+retryFulfilled({
+  count: 5,
+  delay: (index, executor) => 1000 * index
+});
 ```
 
 ## `retryInvalidated`
@@ -1128,19 +1133,22 @@ With the default configuration, the plugin would retry the task 3 times with an 
 Specify the number of times the task should be re-executed if it fails:
 
 ```ts
-retryRejected(3)
+retryRejected({ count: 3 })
 ```
 
 Specify the delay in milliseconds between retries:
 
 ```ts
-retryRejected(3, 5_000);
+retryRejected({ count: 3, delay: 5_000 });
 ```
 
 Provide a function that returns the delay depending on the number of retries:
 
 ```ts
-retryRejected(5, (index, executor) => 1000 * 1.8 ** index);
+retryRejected({
+  count: 5,
+  delay: (index, executor) => 1000 * 1.8 ** index
+});
 ```
 
 ## `retryWhen`
@@ -1156,7 +1164,7 @@ import retryWhen from 'react-executor/plugin/retryWhen';
 import windowOnline from 'react-executor/observable/windowOnline';
 
 const executor = useExecutor('test', heavyTask, [
-  retryWhen(windowOnline, 5_000)
+  retryWhen(windowOnline, { delay: 5_000 })
 ]);
 ```
 
@@ -1179,15 +1187,15 @@ import windowOnline from 'react-executor/observable/windowOnline';
 useExecutor('test', heavyTask, [
 
   // Execute the task every 5 seconds
-  retryFulfilled(Infinity, 5_000),
+  retryFulfilled({ delay: 5_000 }),
   
   // Abort the task and prevent future executions
   // if the window looses focus for at least 10 seconds
-  abortWhen(windowFocused, 10_000),
+  abortWhen(windowFocused, { delay: 10_000 }),
 
   // Retry the latest task if the window gains focus
   // after being out of focus for at least 10 seconds
-  retryWhen(windowFocused, 10_000),
+  retryWhen(windowFocused, { delay: 10_000 }),
   
   // Instantly abort the pending task if the window goes offline
   abortWhen(windowOnline),
