@@ -1,42 +1,45 @@
-import React, { ReactNode, Suspense } from 'react';
+import React, { ReactElement, ReactNode, Suspense } from 'react';
 import { Executor } from './types';
+import { useExecutorSubscription } from './useExecutorSubscription';
 import { useExecutorSuspense } from './useExecutorSuspense';
 
 /**
  * Props of {@link ExecutorSuspense}.
  *
- * @template T Executors to wait for.
+ * @template Value The value stored by the executor.
  */
-export interface ExecutorSuspenseProps<T extends Executor | Executor[]> {
+export interface ExecutorSuspenseProps<Value> {
   /**
    * Executors to wait for.
    */
-  executors: T;
+  executor: Executor<Value>;
 
   /**
-   * Renders contents of {@link executors}.
+   * Renders contents of {@link executor}.
    */
-  children: ((executors: T) => ReactNode) | ReactNode;
+  children: ((executor: Executor<Value>) => ReactNode) | ReactNode;
 
   /**
-   * The fallback that is rendered when executors are pending.
+   * The fallback that is rendered when executor are pending.
    */
   fallback?: ReactNode;
 
   /**
    * The predicate which a pending executor must conform to suspend the rendering process. By default,
-   * only non-fulfilled executors are awaited.
+   * only non-fulfilled executor are awaited.
    */
-  predicate?: (executor: Executor) => boolean;
+  predicate?: (executor: Executor<Value>) => boolean;
 }
 
 /**
- * Renders a {@link ExecutorSuspenseProps.fallback fallback} if any of provided
- * {@link ExecutorSuspenseProps.executors executors} aren't settled.
+ * Renders a {@link ExecutorSuspenseProps.fallback fallback} if a provided
+ * {@link ExecutorSuspenseProps.executor executor} isn't settled.
  *
- * @template T Executors to wait for.
+ * @template Value The value stored by the executor.
  */
-export function ExecutorSuspense<T extends Executor | Executor[]>(props: ExecutorSuspenseProps<T>) {
+export function ExecutorSuspense<Value>(props: ExecutorSuspenseProps<Value>): ReactElement {
+  useExecutorSubscription(props.executor);
+
   return (
     <Suspense fallback={props.fallback}>
       <ExecutorSuspenseContent {...props} />
@@ -46,12 +49,12 @@ export function ExecutorSuspense<T extends Executor | Executor[]>(props: Executo
 
 ExecutorSuspense.displayName = 'ExecutorSuspense';
 
-function ExecutorSuspenseContent(props: ExecutorSuspenseProps<any>): ReactNode {
-  const { children, executors } = props;
+function ExecutorSuspenseContent<Value>(props: ExecutorSuspenseProps<Value>): ReactNode {
+  const { children, executor } = props;
 
-  useExecutorSuspense(executors, props.predicate);
+  useExecutorSuspense(executor, props.predicate);
 
-  return typeof children === 'function' ? children(executors) : children;
+  return typeof children === 'function' ? children(executor) : children;
 }
 
 ExecutorSuspenseContent.displayName = 'ExecutorSuspenseContent';

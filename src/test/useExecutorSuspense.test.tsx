@@ -1,36 +1,9 @@
 import '@testing-library/jest-dom';
 import { render } from '@testing-library/react';
 import React, { Suspense, useEffect } from 'react';
-import {
-  ExecutorManager,
-  ExecutorManagerProvider,
-  useExecutor,
-  useExecutorSubscription,
-  useExecutorSuspense,
-} from '../main';
+import { ExecutorManager, ExecutorManagerProvider, useExecutorSubscription, useExecutorSuspense } from '../main';
 
 describe('useExecutorSuspense', () => {
-  test('suspends component rendering until executors are settled', async () => {
-    const Component = () => {
-      const executor1 = useExecutor('xxx', () => 'aaa');
-      const executor2 = useExecutor('yyy', () => 'bbb');
-
-      useExecutorSuspense([executor1, executor2]);
-
-      return executor1.get() + executor2.get();
-    };
-
-    const result = render(
-      <Suspense fallback={'ccc'}>
-        <Component />
-      </Suspense>
-    );
-
-    expect(result.getByText('ccc')).toBeInTheDocument();
-
-    expect(await result.findByText('aaabbb')).toBeInTheDocument();
-  });
-
   test('does not suspend rendering if the pending executor is settled', async () => {
     const manager = new ExecutorManager();
     const capture = jest.fn();

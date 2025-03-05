@@ -1357,14 +1357,14 @@ import { useExecutor, useExecutorSuspense } from 'react-executor';
 
 const Account = () => {
   const accountExecutor = useExecutor('account', signal => {
-    // Fetch the account from the server
+    // Fetch an account from a server
   });
   
-  // Suspend rendering
+  // Suspend rendering if accountExecutor is pending and isn't fulfilled
   useExecutorSuspense(accountExecutor);
 
   // accountExecutor is settled during render
-  accountExecutor.get();
+  const account = accountExecutor.get();
 };
 ```
 
@@ -1380,13 +1380,29 @@ const App = () => (
 );
 ```
 
-You can provide multiple executors to `useExecutorSuspense` to wait for them in parallel:
+## Suspending on external executors
+
+You can use executors created outside the rendering process in your components, rerender and suspend your components
+when such executors get updated:
 
 ```ts
-const accountExecutor = useExecutor('account');
-const shoppingCartExecutor = useExecutor('shoppingCart');
+const manager = new ExecutorManager();
 
-useExecutorSuspense([accountExecutor, shoppingCartExecutor]);
+// 1️⃣ Create an executor
+const accountExecutor = useExecutor('account', signal => {
+  // Fetch an account from a server
+});
+
+function Account() {
+  // 2️⃣ Re-render a component when accountExecutor is updated
+  useExecutorSubscription(accountExecutor);
+
+  // 3️⃣ Suspend rendering if accountExecutor is pending and isn't fulfilled
+  useExecutorSuspense(accountExecutor);
+  
+  // 4️⃣ Use a value stored in an executor
+  const account = accountExecutor.get();
+}
 ```
 
 # Server-side rendering

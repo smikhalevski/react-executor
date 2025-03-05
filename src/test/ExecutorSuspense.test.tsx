@@ -1,37 +1,9 @@
 import '@testing-library/jest-dom';
 import { render } from '@testing-library/react';
 import React, { useEffect } from 'react';
-import {
-  ExecutorManager,
-  ExecutorManagerProvider,
-  ExecutorSuspense,
-  useExecutor,
-  useExecutorSubscription,
-} from '../main';
+import { ExecutorManager, ExecutorManagerProvider, ExecutorSuspense, useExecutorSubscription } from '../main';
 
 describe('ExecutorSuspense', () => {
-  test('suspends component rendering until executors are settled', async () => {
-    const Component = () => {
-      const executor1 = useExecutor('xxx', () => 'aaa');
-      const executor2 = useExecutor('yyy', () => 'bbb');
-
-      return (
-        <ExecutorSuspense
-          fallback={'ccc'}
-          executors={[executor1, executor2]}
-        >
-          {executors => executors[0].get() + executors[1].get()}
-        </ExecutorSuspense>
-      );
-    };
-
-    const result = render(<Component />);
-
-    expect(result.getByText('ccc')).toBeInTheDocument();
-
-    expect(await result.findByText('aaabbb')).toBeInTheDocument();
-  });
-
   test('does not suspend rendering if the pending executor is settled', async () => {
     const manager = new ExecutorManager();
     const capture = jest.fn();
@@ -46,7 +18,7 @@ describe('ExecutorSuspense', () => {
       }, []);
 
       return (
-        <ExecutorSuspense executors={executor}>
+        <ExecutorSuspense executor={executor}>
           {executor => {
             capture(executor.value);
             return executor.value;
@@ -85,7 +57,7 @@ describe('ExecutorSuspense', () => {
 
       return (
         <ExecutorSuspense
-          executors={executor}
+          executor={executor}
           predicate={predicateMock}
         >
           {executor => {
