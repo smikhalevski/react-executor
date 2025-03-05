@@ -65,7 +65,7 @@ describe('retryWhen', () => {
 
     const taskMock = jest.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
 
-    const executor = manager.getOrCreate('xxx', taskMock, [retryWhen(pubSub, 10_000)]);
+    const executor = manager.getOrCreate('xxx', taskMock, [retryWhen(pubSub, { delay: 10_000 })]);
 
     executor.activate();
 
@@ -93,7 +93,7 @@ describe('retryWhen', () => {
 
     const taskMock = jest.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
 
-    const executor = manager.getOrCreate('xxx', taskMock, [retryWhen(pubSub, 5_000)]);
+    const executor = manager.getOrCreate('xxx', taskMock, [retryWhen(pubSub, { delay: 5_000 })]);
 
     executor.activate();
 

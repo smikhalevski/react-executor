@@ -1,5 +1,5 @@
 /**
- * The plugin that repeats the last task after the execution was fulfilled.
+ * The plugin that retries the last task if the executor is fulfilled.
  *
  * ```ts
  * import retryFulfilled from 'react-executor/plugin/retryFulfilled';
@@ -11,18 +11,47 @@
  */
 
 import type { Executor, ExecutorPlugin, PluginConfiguredPayload } from '../types';
+import { emptyObject } from '../utils';
 
 /**
- * Repeats the last task after the execution was fulfilled.
+ * Options of the {@link retryFulfilled} plugin.
  *
- * @param count The number of repetitions.
- * @param delay The delay in milliseconds after which the repetition is scheduled.
+ * @template Value The value stored by the executor.
+ */
+export interface RetryFulfilledOptions<Value> {
+  /**
+   * The number of repetitions.
+   *
+   * @default Infinity
+   */
+  count?: number;
+
+  /**
+   * The delay in milliseconds after which the repetition is scheduled.
+   *
+   * @default 5000
+   */
+  delay?: number | ((index: number, executor: Executor<Value>) => number);
+
+  /**
+   * If `true` then executor is retried even if it isn't {@link Executor.isActive active}.
+   *
+   * @default false
+   */
+  isEager?: boolean;
+}
+
+/**
+ * Retries the last task if the executor is fulfilled.
+ *
+ * @param options Retry options.
  * @template Value The value stored by the executor.
  */
 export default function retryFulfilled<Value = any>(
-  count = Infinity,
-  delay: number | ((index: number, executor: Executor<Value>) => number) = 5_000
+  options: RetryFulfilledOptions<Value> = emptyObject
 ): ExecutorPlugin<Value> {
+  const { count = Infinity, delay = 5000, isEager = false } = options;
+
   return executor => {
     let timer: NodeJS.Timeout;
     let index = 0;
@@ -33,7 +62,7 @@ export default function retryFulfilled<Value = any>(
         case 'fulfilled':
           clearTimeout(timer);
 
-          if (!executor.isPending && executor.isActive && executor.isFulfilled && index < count) {
+          if (!executor.isPending && (isEager || executor.isActive) && executor.isFulfilled && index < count) {
             timer = setTimeout(
               () => {
                 index++;
@@ -56,7 +85,7 @@ export default function retryFulfilled<Value = any>(
 
     executor.publish<PluginConfiguredPayload>('plugin_configured', {
       type: 'retryFulfilled',
-      options: { count, delay },
+      options: { count, delay, isEager },
     });
   };
 }

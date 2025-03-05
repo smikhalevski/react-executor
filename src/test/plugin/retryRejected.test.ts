@@ -22,7 +22,7 @@ describe('retryRejected', () => {
       throw expectedReason;
     });
 
-    const executor = manager.getOrCreate<any>('xxx', taskMock, [retryRejected(2, 0)]);
+    const executor = manager.getOrCreate<any>('xxx', taskMock, [retryRejected({ count: 2, delay: 0 })]);
 
     executor.activate();
     expect(executor.isPending).toBe(true);
@@ -56,7 +56,7 @@ describe('retryRejected', () => {
       throw expectedReason;
     });
 
-    const executor = manager.getOrCreate<any>('xxx', taskMock, [retryRejected(2, 0)]);
+    const executor = manager.getOrCreate<any>('xxx', taskMock, [retryRejected({ count: 2, delay: 0 })]);
 
     executor.activate();
     expect(executor.isPending).toBe(true);
@@ -83,7 +83,7 @@ describe('retryRejected', () => {
       throw expectedReason;
     });
 
-    const executor = manager.getOrCreate<any>('xxx', taskMock, [retryRejected(2, 0)]);
+    const executor = manager.getOrCreate<any>('xxx', taskMock, [retryRejected({ count: 2, delay: 0 })]);
 
     executor.activate();
     expect(executor.isPending).toBe(true);
@@ -110,7 +110,7 @@ describe('retryRejected', () => {
       throw expectedReason;
     });
 
-    const executor = manager.getOrCreate<any>('xxx', taskMock, [retryRejected(2, 0)]);
+    const executor = manager.getOrCreate<any>('xxx', taskMock, [retryRejected({ count: 2, delay: 0 })]);
 
     const deactivate = executor.activate();
     expect(executor.isPending).toBe(true);

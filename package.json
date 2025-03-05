@@ -86,6 +86,11 @@
       "import": "./plugin/resolveWhen.mjs",
       "require": "./plugin/resolveWhen.js"
     },
+    "./plugin/retryActivated": {
+      "types": "./plugin/retryActivated.d.ts",
+      "import": "./plugin/retryActivated.mjs",
+      "require": "./plugin/retryActivated.js"
+    },
     "./plugin/retryFulfilled": {
       "types": "./plugin/retryFulfilled.d.ts",
       "import": "./plugin/retryFulfilled.mjs",

@@ -14,6 +14,7 @@
 
 import { ExecutorImpl } from '../ExecutorImpl';
 import type { Executor, ExecutorPlugin, ExecutorState, PluginConfiguredPayload } from '../types';
+import { emptyObject } from '../utils';
 
 /**
  * Serializes and deserializes values.
@@ -36,6 +37,9 @@ export interface Serializer<Value> {
   parse(valueStr: string): Value;
 }
 
+/**
+ * Options of the {@link synchronizeStorage} plugin.
+ */
 export interface SynchronizeStorageOptions<Value> {
   /**
    * The storage record serializer.
@@ -60,7 +64,7 @@ export interface SynchronizeStorageOptions<Value> {
  */
 export default function synchronizeStorage<Value = any>(
   storage: Pick<Storage, 'setItem' | 'getItem' | 'removeItem'>,
-  options: SynchronizeStorageOptions<Value> = {}
+  options: SynchronizeStorageOptions<Value> = emptyObject
 ): ExecutorPlugin<Value> {
   const { serializer = JSON, storageKey } = options;
 

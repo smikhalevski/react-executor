@@ -14,15 +14,40 @@
  */
 
 import type { ExecutorPlugin, Observable, PluginConfiguredPayload } from '../types';
+import { emptyObject } from '../utils';
+
+/**
+ * Options of the {@link retryWhen} plugin.
+ */
+export interface RetryWhenOptions {
+  /**
+   * The timeout in milliseconds that should pass after `false` was pushed by the observable to retry the executor
+   * when the next `true` is pushed.
+   *
+   * @default 0
+   */
+  delay?: number;
+
+  /**
+   * If `true` then executor is retried even if it isn't {@link Executor.isActive active}.
+   *
+   * @default false
+   */
+  isEager?: boolean;
+}
 
 /**
  * Retries the latest task if the observable pushes `false` and then `true`.
  *
  * @param observable The observable that triggers the retry of the latest task.
- * @param delay The timeout in milliseconds that should pass after `false` was pushed to retry the executor when `true` is
- * pushed.
+ * @param options Retry options.
  */
-export default function retryWhen(observable: Observable<boolean>, delay = 0): ExecutorPlugin {
+export default function retryWhen(
+  observable: Observable<boolean>,
+  options: RetryWhenOptions = emptyObject
+): ExecutorPlugin {
+  const { delay = 0, isEager = false } = options;
+
   return executor => {
     let timer: NodeJS.Timeout | undefined;
     let shouldRetry = false;
@@ -32,7 +57,7 @@ export default function retryWhen(observable: Observable<boolean>, delay = 0): E
         clearTimeout(timer);
         timer = undefined;
 
-        if (shouldRetry && executor.isActive) {
+        if (shouldRetry && (isEager || executor.isActive)) {
           shouldRetry = false;
           executor.retry();
         }
@@ -73,7 +98,7 @@ export default function retryWhen(observable: Observable<boolean>, delay = 0): E
 
     executor.publish<PluginConfiguredPayload>('plugin_configured', {
       type: 'retryWhen',
-      options: { observable, delay },
+      options: { observable, delay, isEager },
     });
   };
 }
