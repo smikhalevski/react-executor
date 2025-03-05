@@ -1,9 +1,9 @@
 import '@testing-library/jest-dom';
 import { render } from '@testing-library/react';
-import React, { Suspense, useEffect } from 'react';
-import { ExecutorManager, ExecutorManagerProvider, useExecutorSubscription, useExecutorSuspense } from '../main';
+import React, { useEffect } from 'react';
+import { ExecutorManager, ExecutorManagerProvider, ExecutorSuspense, useExecutorSubscription } from '../main';
 
-describe('useExecutorSuspense', () => {
+describe('ExecutorSuspense', () => {
   test('does not suspend rendering if the pending executor is settled', async () => {
     const manager = new ExecutorManager();
     const capture = jest.fn();
@@ -17,18 +17,19 @@ describe('useExecutorSuspense', () => {
         executor.execute(async () => 'bbb');
       }, []);
 
-      useExecutorSuspense(executor);
-
-      capture(executor.value);
-
-      return executor.value;
+      return (
+        <ExecutorSuspense executor={executor}>
+          {executor => {
+            capture(executor.value);
+            return executor.value;
+          }}
+        </ExecutorSuspense>
+      );
     };
 
     const result = render(
       <ExecutorManagerProvider value={manager}>
-        <Suspense>
-          <Component />
-        </Suspense>
+        <Component />
       </ExecutorManagerProvider>
     );
 
@@ -54,18 +55,22 @@ describe('useExecutorSuspense', () => {
         executor.execute(async () => 'bbb');
       }, []);
 
-      useExecutorSuspense(executor, predicateMock);
-
-      capture(executor.value);
-
-      return executor.value;
+      return (
+        <ExecutorSuspense
+          executor={executor}
+          predicate={predicateMock}
+        >
+          {executor => {
+            capture(executor.value);
+            return executor.value;
+          }}
+        </ExecutorSuspense>
+      );
     };
 
     const result = render(
       <ExecutorManagerProvider value={manager}>
-        <Suspense>
-          <Component />
-        </Suspense>
+        <Component />
       </ExecutorManagerProvider>
     );
 

@@ -16,7 +16,7 @@ export interface SSRHydrationOptions {
 /**
  * Enables the SSR hydration for the given executor.
  *
- * **Note:** SSR hydration can be enabled for one executor only.
+ * **Note:** SSR hydration can be enabled only for one executor manager.
  *
  * @param manager The executor manager for which SSR hydration must be enabled.
  * @param options Additional options.
