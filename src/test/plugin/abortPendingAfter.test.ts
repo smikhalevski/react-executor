@@ -1,9 +1,9 @@
 import { delay } from 'parallel-universe';
 import { ExecutorManager } from '../../main';
-import abortPending from '../../main/plugin/abortPending';
+import abortPendingAfter from '../../main/plugin/abortPendingAfter';
 import { TimeoutError } from '../../main/utils';
 
-describe('abortPending', () => {
+describe('abortPendingAfter', () => {
   let manager: ExecutorManager;
 
   beforeEach(() => {
@@ -11,7 +11,7 @@ describe('abortPending', () => {
   });
 
   test('aborts the pending task', async () => {
-    const executor = manager.getOrCreate('xxx', undefined, [abortPending(0)]);
+    const executor = manager.getOrCreate('xxx', undefined, [abortPendingAfter(0)]);
 
     const promise = executor.execute(() => delay(100));
 
@@ -20,7 +20,7 @@ describe('abortPending', () => {
   });
 
   test('does not abort the pending when it is settled before the timeout', async () => {
-    const executor = manager.getOrCreate('xxx', undefined, [abortPending(100)]);
+    const executor = manager.getOrCreate('xxx', undefined, [abortPendingAfter(100)]);
 
     const promise = executor.execute(() => delay(0, 'aaa'));
 

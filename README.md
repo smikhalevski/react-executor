@@ -35,7 +35,7 @@ npm install --save-prod react-executor
 🔌&ensp;[**Plugins**](#plugins)
 
 - [`abortDeactivated`](#abortdeactivated)
-- [`abortPending`](#abortpending)
+- [`abortPendingAfter`](#abortpendingafter)
 - [`abortWhen`](#abortwhen)
 - [`bindAll`](#bindall)
 - [`detachDeactivated`](#detachdeactivated)
@@ -43,7 +43,7 @@ npm install --save-prod react-executor
 - [`invalidateAfter`](#invalidateafter)
 - [`invalidateByPeers`](#invalidatebypeers)
 - [`invalidatePeers`](#invalidatepeers)
-- [`rejectPending`](#rejectpending)
+- [`rejectPendingAfter`](#rejectpendingafter)
 - [`resolveWhen`](#resolvewhen)
 - [`retryActivated`](#retryactivated)
 - [`retryFulfilled`](#retryfulfilled)
@@ -803,12 +803,14 @@ execute(heavyTask)
 
 ## `abortDeactivated`
 
-[Aborts the pending task](#abort-a-task) after the timeout if the executor is deactivated.
+[Aborts the pending task](#abort-a-task) after the delay if the executor is deactivated.
 
 ```ts
 import abortDeactivated from 'react-executor/plugin/abortDeactivated';
 
-const executor = useExecutor('test', heavyTask, [abortDeactivated(2_000)]);
+const executor = useExecutor('test', heavyTask, [
+  abortDeactivated({ delay: 2_000 })
+]);
 
 executor.activate();
 
@@ -816,42 +818,42 @@ executor.activate();
 executor.deactivate();
 ```
 
-`abortDeactivated` has a single argument: the delay after which the task should be aborted. If an executor is
-re-activated during this delay, the task won't be aborted. 
+If an executor is re-activated during this delay, the task won't be aborted. The executor must be activated at least
+once for this plugin to have an effect.
 
-## `abortPending`
+## `abortPendingAfter`
 
 [Aborts the pending task](#abort-a-task)
 with [`TimeoutError`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#timeouterror) if the task execution
-took longer then the given timeout.
+took longer then the given delay.
 
 ```ts
-import abortPending from 'react-executor/plugin/abortPending';
+import abortPendingAfter from 'react-executor/plugin/abortPendingAfter';
 
 const executor = useExecutor('test', heavyTask, [
-  abortPending(10_000)
+  abortPendingAfter(10_000)
 ]);
 ```
 
 ## `abortWhen`
 
-[Aborts the pending task](#abort-a-task) depending on boolean values pushed by an
-[`Observable`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Observable.html).
+[Aborts the pending task](#abort-a-task) if the
+[observable](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Observable.html) emits `true`.
 
-For example, if the window was offline for more than 5 seconds then the pending task is aborted:
+For example, abort all tasks if the device is disconnected from the network for more then 5 seconds:
 
 ```ts
 import abortWhen from 'react-executor/plugin/abortWhen';
-import windowOnline from 'react-executor/observable/windowOnline';
+import navigatorOffline from 'react-executor/observable/navigatorOffline';
 
 const executor = useExecutor('test', heavyTask, [
-  abortWhen(windowOnline, 5_000)
+  abortWhen(navigatorOffline, { delay: 5_000 })
 ]);
 ```
 
 If a new task is passed to the
 [`Executor.execute`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Executor.html#execute)
-method after the timeout has run out then the task is instantly aborted.
+method after the delay has run out then the task is instantly aborted.
 
 Read more about observables in the [`retryWhen`](#retrywhen) section.
 
@@ -868,7 +870,7 @@ const { resolve } = useExecutor('test', 'Bye', [bindAll()]);
 resolve('Hello');
 ```
 
-You can enable this plugin for all executors created by the execution manager:
+It is handy to enable this plugin for all executors created by the execution manager:
 
 ```ts
 import { ExecutorManager } from 'react-executor';
@@ -894,7 +896,9 @@ Provide the manager so the `useExecutor` hook would employ it to create new exec
 ```ts
 import detachDeactivated from 'react-executor/plugin/detachDeactivated';
 
-const executor = useExecutor('test', heavyTask, [detachDeactivated(2_000)]);
+const executor = useExecutor('test', heavyTask, [
+  detachDeactivated({ delay: 2_000 })
+]);
 
 executor.activate();
 
@@ -902,19 +906,18 @@ executor.activate();
 executor.deactivate();
 ```
 
-`detachDeactivated` has a single argument: the delay after which the executor should be detached. If an executor is
-re-activated during this delay, the executor won't be detached.
+If an executor is re-activated during this delay, the executor won't be detached.
 
-Both an executor manager and this plugin don't abort the pending task when executor is detached.
-Use [`abortDeactivated`](#abortdeactivated) to do the job:
+This plugin doesn't abort the pending task when executor is detached. Use [`abortDeactivated`](#abortdeactivated) to do
+the job:
 
 ```ts
 import abortDeactivated from 'react-executor/plugin/abortDeactivated';
 import detachDeactivated from 'react-executor/plugin/detachDeactivated';
 
 const executor = useExecutor('test', heavyTask, [
-  abortDeactivated(2_000),
-  detachDeactivated(2_000)
+  abortDeactivated({ delay: 2_000 }),
+  detachDeactivated({ delay: 2_000 })
 ]);
 
 executor.activate();
@@ -925,7 +928,7 @@ executor.deactivate();
 
 ## `invalidateAfter`
 
-Invalidates the executor result after a timeout elapses.
+Invalidates the executor result after a delay.
 
 ```ts
 import invalidateAfter from 'react-executor/plugin/invalidateAfter';
@@ -936,8 +939,7 @@ const executor = useExecutor('test', 42, [invalidateAfter(2_000)]);
 executor.activate();
 ```
 
-If the executor is settled then the timeout is restarted. If an executor is [deactivated](#activate-an-executor) then
-it won't be invalidated.
+If the executor is settled then the timeout is restarted.
 
 ## `invalidateByPeers`
 
@@ -973,17 +975,17 @@ const breadExecutor = useExecutor('bread', 'Focaccia');
 cheeseExecutor.resolve('Mozzarella');
 ```
 
-## `rejectPending`
+## `rejectPendingAfter`
 
 [Aborts the pending task](#abort-a-task) and [rejects the executor](#settle-an-executor)
 with [`TimeoutError`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#timeouterror) if the task execution
 took longer then the given timeout.
 
 ```ts
-import rejectPending from 'react-executor/plugin/rejectPending';
+import rejectPendingAfter from 'react-executor/plugin/rejectPendingAfter';
 
 const executor = useExecutor('test', heavyTask, [
-  rejectPending(10_000)
+  rejectPendingAfter(10_000)
 ]);
 ```
 
@@ -1030,7 +1032,6 @@ executor.value;
 // ⮕ 'Venus'
 ```
 
-
 ## `retryFulfilled`
 
 [Retries the latest task](#retry-the-latest-task) after the execution was fulfilled.
@@ -1068,6 +1069,14 @@ retryFulfilled({
   count: 5,
   delay: (index, executor) => 1000 * index
 });
+```
+
+By default, `retryFulfilled` doesn't retry inactive executors. The executor is retried only after it becomes active.
+
+To retry the latest task regardless of the executor activation status:
+
+```ts
+retryFulfilled({ isEager: true });
 ```
 
 ## `retryInvalidated`
@@ -1114,6 +1123,14 @@ breadExecutor.resolve('Ciabatta');
 
 Read more about [dependent tasks](#dependent-tasks).
 
+By default, `retryInvalidated` doesn't retry inactive executors. The executor is retried only after it becomes active.
+
+To retry the latest task regardless of the executor activation status:
+
+```ts
+retryInvalidated({ isEager: true });
+```
+
 ## `retryRejected`
 
 Retries the last task after the execution has failed.
@@ -1151,20 +1168,28 @@ retryRejected({
 });
 ```
 
+By default, `retryRejected` doesn't retry inactive executors. The executor is retried only after it becomes active.
+
+To retry the latest task regardless of the executor activation status:
+
+```ts
+retryRejected({ isEager: true });
+```
+
 ## `retryWhen`
 
-[Retries the latest task](#retry-the-latest-task) depending on boolean values pushed by an
-[`Observable`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Observable.html).
+[Retries the latest task](#abort-a-task) if the
+[observable](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Observable.html) emits `true`.
 
 For example, if the window was offline for more than 5 seconds, the executor would retry the `heavyTask` after
 the window is back online:
 
 ```ts
 import retryWhen from 'react-executor/plugin/retryWhen';
-import windowOnline from 'react-executor/observable/windowOnline';
+import navigatorOnline from 'react-executor/observable/navigatorOnline';
 
 const executor = useExecutor('test', heavyTask, [
-  retryWhen(windowOnline, { delay: 5_000 })
+  retryWhen(navigatorOnline, { delay: 5_000 })
 ]);
 ```
 
@@ -1182,7 +1207,9 @@ import abortWhen from 'react-executor/plugin/abortWhen';
 import retryWhen from 'react-executor/plugin/retryWhen';
 import retryFulfilled from 'react-executor/plugin/retryFulfilled';
 import windowFocused from 'react-executor/observable/windowFocused';
-import windowOnline from 'react-executor/observable/windowOnline';
+import windowBlurred from 'react-executor/observable/windowBlurred';
+import navigatorOnline from 'react-executor/observable/navigatorOnline';
+import navigatorOffline from 'react-executor/observable/navigatorOffline';
 
 useExecutor('test', heavyTask, [
 
@@ -1191,17 +1218,16 @@ useExecutor('test', heavyTask, [
   
   // Abort the task and prevent future executions
   // if the window looses focus for at least 10 seconds
-  abortWhen(windowFocused, { delay: 10_000 }),
+  abortWhen(windowBlurred, { delay: 10_000 }),
 
-  // Retry the latest task if the window gains focus
-  // after being out of focus for at least 10 seconds
-  retryWhen(windowFocused, { delay: 10_000 }),
+  // Retry the latest task when the window gains focus
+  retryWhen(windowFocused),
   
-  // Instantly abort the pending task if the window goes offline
-  abortWhen(windowOnline),
+  // Instantly abort the pending task if the device is disconnected from the network
+  abortWhen(navigatorOffline),
 
   // Retry the latest task if the window goes online
-  retryWhen(windowOnline)
+  retryWhen(navigatorOnline)
 ]);
 ```
 

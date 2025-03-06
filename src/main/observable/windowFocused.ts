@@ -1,6 +1,6 @@
 /**
- * Observable of the
- * [`document.visibilityState`](https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState).
+ * The observable that emits `true` when
+ * [the window receives focus](https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState).
  *
  * ```ts
  * import retryWhen from 'react-executor/plugin/retryWhen';
@@ -20,13 +20,13 @@ import { noop } from '../utils';
 
 const pubSub = new PubSub<boolean>();
 
-function publish() {
-  pubSub.publish(typeof document === 'undefined' || document.visibilityState === 'visible');
+function handleChange(): void {
+  pubSub.publish(document.visibilityState === 'visible');
 }
 
 /**
- * Observable of the
- * [`document.visibilityState`](https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState).
+ * The observable that emits `true` when
+ * [the window receives focus](https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState).
  */
 const windowFocused: Observable<boolean> = {
   subscribe(listener) {
@@ -35,20 +35,20 @@ const windowFocused: Observable<boolean> = {
     }
 
     if (pubSub.listenerCount === 0) {
-      window.addEventListener('visibilitychange', publish, false);
-      window.addEventListener('focus', publish, false);
+      window.addEventListener('visibilitychange', handleChange, false);
+      window.addEventListener('focus', handleChange, false);
     }
 
     const unsubscribe = pubSub.subscribe(listener);
 
-    setTimeout(publish, 0);
+    setTimeout(handleChange, 0);
 
     return () => {
       unsubscribe();
 
       if (pubSub.listenerCount === 0) {
-        window.removeEventListener('visibilitychange', publish, false);
-        window.removeEventListener('focus', publish, false);
+        window.removeEventListener('visibilitychange', handleChange, false);
+        window.removeEventListener('focus', handleChange, false);
       }
     };
   },

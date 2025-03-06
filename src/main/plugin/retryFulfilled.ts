@@ -29,7 +29,7 @@ export interface RetryFulfilledOptions<Value> {
   /**
    * The delay in milliseconds after which the repetition is scheduled.
    *
-   * @default 5000
+   * @default 5_000
    */
   delay?: number | ((index: number, executor: Executor<Value>) => number);
 

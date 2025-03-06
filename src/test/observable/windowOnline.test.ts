@@ -1,13 +1,13 @@
 import { fireEvent } from '@testing-library/react';
-import windowOnline from '../../main/observable/windowOnline';
+import navigatorOnline from '../../main/observable/navigatorOnline';
 
 jest.useFakeTimers();
 
-describe('windowOnline', () => {
+describe('navigatorOnline', () => {
   test('invokes listener after subscribe', () => {
     const listenerMock = jest.fn();
 
-    windowOnline.subscribe(listenerMock);
+    navigatorOnline.subscribe(listenerMock);
 
     jest.runAllTimers();
 
@@ -18,7 +18,7 @@ describe('windowOnline', () => {
   test('invokes listener when offline event if dispatched', () => {
     const listenerMock = jest.fn();
 
-    windowOnline.subscribe(listenerMock);
+    navigatorOnline.subscribe(listenerMock);
 
     jest.runAllTimers();
 
@@ -32,7 +32,7 @@ describe('windowOnline', () => {
   test('invokes listener when online event if dispatched', () => {
     const listenerMock = jest.fn();
 
-    windowOnline.subscribe(listenerMock);
+    navigatorOnline.subscribe(listenerMock);
 
     jest.runAllTimers();
 
