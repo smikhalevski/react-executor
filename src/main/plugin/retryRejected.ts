@@ -1,5 +1,5 @@
 /**
- * The plugin that retries the last task after the execution has failed.
+ * The plugin that retries the last task if it has is failed.
  *
  * ```ts
  * import retryRejected from 'react-executor/plugin/retryRejected';
@@ -11,18 +11,47 @@
  */
 
 import type { Executor, ExecutorPlugin, PluginConfiguredPayload } from '../types';
+import { emptyObject } from '../utils';
 
 /**
- * Retries the last task after the execution has failed.
+ * Options of the {@link retryRejected} plugin.
  *
- * @param count The number of times the task must be repeated if rejected.
- * @param delay The delay in milliseconds after which the retry is scheduled.
+ * @template Value The value stored by the executor.
+ */
+export interface RetryRejectedOptions<Value> {
+  /**
+   * The number of times the task must be repeated if it fails.
+   *
+   * @default 3
+   */
+  count?: number;
+
+  /**
+   * The delay in milliseconds after which the retry is scheduled.
+   *
+   * By default, an exponential backoff is used.
+   */
+  delay?: number | ((index: number, executor: Executor<Value>) => number);
+
+  /**
+   * If `true` then executor is retried even if it isn't {@link Executor.isActive active}.
+   *
+   * @default false
+   */
+  isEager?: boolean;
+}
+
+/**
+ * Retries the last task if it has is failed.
+ *
+ * @param options Retry options.
  * @template Value The value stored by the executor.
  */
 export default function retryRejected<Value = any>(
-  count = 3,
-  delay: number | ((index: number, executor: Executor<Value>) => number) = exponentialDelay
+  options: RetryRejectedOptions<Value> = emptyObject
 ): ExecutorPlugin<Value> {
+  const { count = 3, delay = exponentialBackoff, isEager = false } = options;
+
   return executor => {
     let timer: NodeJS.Timeout;
     let index = 0;
@@ -33,7 +62,7 @@ export default function retryRejected<Value = any>(
         case 'rejected':
           clearTimeout(timer);
 
-          if (!executor.isPending && executor.isActive && executor.isRejected && index < count) {
+          if (!executor.isPending && (isEager || executor.isActive) && executor.isRejected && index < count) {
             timer = setTimeout(
               () => {
                 index++;
@@ -56,11 +85,11 @@ export default function retryRejected<Value = any>(
 
     executor.publish<PluginConfiguredPayload>('plugin_configured', {
       type: 'retryRejected',
-      options: { count, delay },
+      options: { count, delay, isEager },
     });
   };
 }
 
-function exponentialDelay(index: number): number {
+function exponentialBackoff(index: number): number {
   return 1000 * 1.8 ** index;
 }
