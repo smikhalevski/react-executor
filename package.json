@@ -26,25 +26,40 @@
       "import": "./ssr/node/index.mjs",
       "require": "./ssr/node/index.js"
     },
+    "./observable/navigatorOffline": {
+      "types": "./observable/navigatorOffline.d.ts",
+      "import": "./observable/navigatorOffline.mjs",
+      "require": "./observable/navigatorOffline.js"
+    },
+    "./observable/navigatorOnline": {
+      "types": "./observable/navigatorOnline.d.ts",
+      "import": "./observable/navigatorOnline.mjs",
+      "require": "./observable/navigatorOnline.js"
+    },
+    "./observable/not": {
+      "types": "./observable/not.d.ts",
+      "import": "./observable/not.mjs",
+      "require": "./observable/not.js"
+    },
+    "./observable/windowBlurred": {
+      "types": "./observable/windowBlurred.d.ts",
+      "import": "./observable/windowBlurred.mjs",
+      "require": "./observable/windowBlurred.js"
+    },
     "./observable/windowFocused": {
       "types": "./observable/windowFocused.d.ts",
       "import": "./observable/windowFocused.mjs",
       "require": "./observable/windowFocused.js"
-    },
-    "./observable/windowOnline": {
-      "types": "./observable/windowOnline.d.ts",
-      "import": "./observable/windowOnline.mjs",
-      "require": "./observable/windowOnline.js"
     },
     "./plugin/abortDeactivated": {
       "types": "./plugin/abortDeactivated.d.ts",
       "import": "./plugin/abortDeactivated.mjs",
       "require": "./plugin/abortDeactivated.js"
     },
-    "./plugin/abortPending": {
-      "types": "./plugin/abortPending.d.ts",
-      "import": "./plugin/abortPending.mjs",
-      "require": "./plugin/abortPending.js"
+    "./plugin/abortPendingAfter": {
+      "types": "./plugin/abortPendingAfter.d.ts",
+      "import": "./plugin/abortPendingAfter.mjs",
+      "require": "./plugin/abortPendingAfter.js"
     },
     "./plugin/abortWhen": {
       "types": "./plugin/abortWhen.d.ts",
@@ -76,10 +91,10 @@
       "import": "./plugin/invalidatePeers.mjs",
       "require": "./plugin/invalidatePeers.js"
     },
-    "./plugin/rejectPending": {
-      "types": "./plugin/rejectPending.d.ts",
-      "import": "./plugin/rejectPending.mjs",
-      "require": "./plugin/rejectPending.js"
+    "./plugin/rejectPendingAfter": {
+      "types": "./plugin/rejectPendingAfter.d.ts",
+      "import": "./plugin/rejectPendingAfter.mjs",
+      "require": "./plugin/rejectPendingAfter.js"
     },
     "./plugin/resolveWhen": {
       "types": "./plugin/resolveWhen.d.ts",

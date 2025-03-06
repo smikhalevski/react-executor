@@ -21,7 +21,7 @@ describe('abortWhen', () => {
 
     executor.execute(taskMock).catch(noop);
 
-    pubSub.publish(false);
+    pubSub.publish(true);
 
     jest.advanceTimersByTime(5_000);
 
@@ -35,7 +35,7 @@ describe('abortWhen', () => {
 
     const executor = manager.getOrCreate('xxx', undefined, [abortWhen(pubSub)]);
 
-    pubSub.publish(false);
+    pubSub.publish(true);
 
     jest.runAllTimers();
 
@@ -49,15 +49,15 @@ describe('abortWhen', () => {
 
     const taskMock = jest.fn(_signal => delay(15_000, 'aaa'));
 
-    const executor = manager.getOrCreate('xxx', undefined, [abortWhen(pubSub, 10_000)]);
+    const executor = manager.getOrCreate('xxx', undefined, [abortWhen(pubSub, { delay: 10_000 })]);
 
     executor.execute(taskMock).catch(noop);
 
-    pubSub.publish(false);
+    pubSub.publish(true);
 
     jest.advanceTimersByTime(5_000);
 
-    pubSub.publish(true);
+    pubSub.publish(false);
 
     jest.advanceTimersByTime(20_000);
 
