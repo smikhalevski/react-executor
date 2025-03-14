@@ -242,4 +242,26 @@ describe('synchronizeStorage', () => {
 
     expect(localStorage.getItem('"xxx"')).toBeNull();
   });
+
+  test('sets storage item if executor was cleared', () => {
+    localStorage.setItem('"xxx"', '{"key":"xxx","isFulfilled":false,"annotations":{},"settledAt":0,"invalidatedAt":0}');
+
+    const executor = manager.getOrCreate('xxx', undefined, [synchronizeStorage(localStorage)]);
+
+    expect(executor.value).toBe(undefined);
+
+    executor.resolve('aaa');
+
+    expect(executor.value).toBe('aaa');
+    expect(localStorage.getItem('"xxx"')).toBe(
+      '{"key":"xxx","isFulfilled":true,"value":"aaa","annotations":{},"settledAt":50,"invalidatedAt":0}'
+    );
+
+    executor.clear();
+
+    expect(executor.value).toBe(undefined);
+    expect(localStorage.getItem('"xxx"')).toBe(
+      '{"key":"xxx","isFulfilled":false,"annotations":{},"settledAt":0,"invalidatedAt":0}'
+    );
+  });
 });

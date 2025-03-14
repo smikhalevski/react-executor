@@ -129,6 +129,7 @@ export default function synchronizeStorage<Value = any>(
           const stateStr = serializer.stringify(executor.toJSON());
 
           if (latestStateStr !== stateStr) {
+            latestStateStr = stateStr;
             storage.setItem(executorStorageKey, stateStr);
           }
           break;
