@@ -171,12 +171,11 @@ export interface ExecutorState<Value = any> {
 }
 
 /**
- * Manages the async task execution process and provides ways to access execution results, abort or replace a task
- * execution, and subscribe to an execution state changes.
+ * Provides access execution results and allows to subscribe to an execution state changes.
  *
  * @template Value The value stored by the executor.
  */
-export interface Executor<Value = any> extends ExecutorState<Value>, Observable<ExecutorEvent<Value>> {
+export interface ReadonlyExecutor<Value = any> extends ExecutorState<Value>, Observable<ExecutorEvent<Value>> {
   /**
    * The value of the latest fulfillment.
    *
@@ -275,6 +274,19 @@ export interface Executor<Value = any> extends ExecutorState<Value>, Observable<
   getOrAwait(): AbortablePromise<Value>;
 
   /**
+   * Returns the serializable executor state.
+   */
+  toJSON(): ExecutorState<Value>;
+}
+
+/**
+ * Manages the async task execution process and provides ways to access execution results, abort or replace a task
+ * execution, and subscribe to an execution state changes.
+ *
+ * @template Value The value stored by the executor.
+ */
+export interface Executor<Value = any> extends ReadonlyExecutor<Value> {
+  /**
    * Executes a task and populates the executor with the returned result.
    *
    * Instantly aborts pending execution (if any), marks the executor as {@link isPending pending} and then invokes the
@@ -358,11 +370,6 @@ export interface Executor<Value = any> extends ExecutorState<Value>, Observable<
    * @param patch The patch containing new annotations.
    */
   annotate(patch: ExecutorAnnotations): void;
-
-  /**
-   * Returns the serializable executor state.
-   */
-  toJSON(): ExecutorState<Value>;
 }
 
 /**
