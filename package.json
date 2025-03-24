@@ -101,10 +101,10 @@
       "import": "./plugin/rejectPendingAfter.mjs",
       "require": "./plugin/rejectPendingAfter.js"
     },
-    "./plugin/resolveWhen": {
-      "types": "./plugin/resolveWhen.d.ts",
-      "import": "./plugin/resolveWhen.mjs",
-      "require": "./plugin/resolveWhen.js"
+    "./plugin/resolveBy": {
+      "types": "./plugin/resolveBy.d.ts",
+      "import": "./plugin/resolveBy.mjs",
+      "require": "./plugin/resolveBy.js"
     },
     "./plugin/retryActivated": {
       "types": "./plugin/retryActivated.d.ts",

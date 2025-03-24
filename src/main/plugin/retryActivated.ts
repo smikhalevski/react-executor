@@ -30,6 +30,8 @@ export interface RetryActivatedOptions {
 
 /**
  * Retries the latest task if the executor is activated.
+ *
+ * @param options Retry options.
  */
 export default function retryActivated(options: RetryActivatedOptions = emptyObject): ExecutorPlugin {
   const { staleDelay = 0 } = options;

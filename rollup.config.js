@@ -18,7 +18,7 @@ module.exports = {
     './src/main/plugin/invalidateByPeers.ts',
     './src/main/plugin/invalidatePeers.ts',
     './src/main/plugin/rejectPendingAfter.ts',
-    './src/main/plugin/resolveWhen.ts',
+    './src/main/plugin/resolveBy.ts',
     './src/main/plugin/retryActivated.ts',
     './src/main/plugin/retryFulfilled.ts',
     './src/main/plugin/retryInvalidated.ts',

@@ -44,7 +44,7 @@ npm install --save-prod react-executor
 - [`invalidateByPeers`](#invalidatebypeers)
 - [`invalidatePeers`](#invalidatepeers)
 - [`rejectPendingAfter`](#rejectpendingafter)
-- [`resolveWhen`](#resolvewhen)
+- [`resolveBy`](#resolveby)
 - [`retryActivated`](#retryactivated)
 - [`retryFulfilled`](#retryfulfilled)
 - [`retryInvalidated`](#retryinvalidated)
@@ -1040,14 +1040,14 @@ const executor = useExecutor('test', heavyTask, [
 ]);
 ```
 
-## `resolveWhen`
+## `resolveBy`
 
 [Resolves the executor](#settle-an-executor) with values pushed by an
 [`Observable`](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Observable.html).
 
 ```ts
 import { Observable } from 'react-executor';
-import resolveWhen from 'react-executor/plugin/resolveWhen';
+import resolveBy from 'react-executor/plugin/resolveBy';
 
 const observable: Observable<string> = {
   subscribe(listener) {
@@ -1062,7 +1062,7 @@ const observable: Observable<string> = {
 };
 
 const executor = useExecutor('planet', 'Mars', [
-  resolveWhen(observable)
+  resolveBy(observable)
 ]);
 ```
 
@@ -1074,7 +1074,7 @@ import { PubSub } from 'parallel-universe';
 const pubSub = new PubSub<string>();
 
 const executor = useExecutor('planet', 'Mars', [
-  resolveWhen(pubSub)
+  resolveBy(pubSub)
 ]);
 
 pubSub.publish('Venus');
