@@ -1,6 +1,7 @@
 /**
  * The observable that emits `true` when
- * [the window looses focus](https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState).
+ * [the window looses focus](https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState), and emits
+ * `false` when the window receives focus.
  *
  * ```ts
  * import abortWhen from 'react-executor/plugin/abortWhen';
@@ -11,6 +12,7 @@
  * ]);
  * ```
  *
+ * @see {@link windowFocused}
  * @module observable/windowBlurred
  */
 
@@ -19,7 +21,8 @@ import windowFocused from './windowFocused';
 
 /**
  * The observable that emits `true` when
- * [the window looses focus](https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState).
+ * [the window looses focus](https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState), and emits
+ * `false` when the window receives focus.
  */
 const windowBlurred = not(windowFocused);
 

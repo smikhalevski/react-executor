@@ -1,6 +1,7 @@
 /**
  * The observable that emits `true` if
- * [the device is connected to the network](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/onLine).
+ * [the device is _connected_ to the network](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/onLine), and
+ * emits `false` if the device is disconnected from the network.
  *
  * ```ts
  * import retryWhen from 'react-executor/plugin/retryWhen';
@@ -11,6 +12,7 @@
  * ]);
  * ```
  *
+ * @see {@link navigatorOffline}
  * @module observable/navigatorOnline
  */
 
@@ -26,7 +28,8 @@ function handleChange(): void {
 
 /**
  * The observable that emits `true` if
- * [the device is connected to the network](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/onLine).
+ * [the device is _connected_ to the network](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/onLine), and
+ * emits `false` if the device is disconnected from the network.
  */
 const navigatorOnline: Observable<boolean> = {
   subscribe(listener) {

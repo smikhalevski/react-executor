@@ -1,6 +1,7 @@
 /**
- * The plugin that aborts the pending task after the delay if the executor is deactivated. The executor must be
- * activated at least once for this plugin to have an effect.
+ * Aborts the pending task after the delay if the executor is deactivated.
+ *
+ * The executor must be activated at least once for this plugin to have an effect.
  *
  * ```ts
  * import abortDeactivated from 'react-executor/plugin/abortDeactivated';
@@ -19,7 +20,8 @@ import { emptyObject } from '../utils';
  */
 export interface AbortDeactivatedOptions {
   /**
-   * The delay in milliseconds after which the task is aborted.
+   * The delay in milliseconds after which the task is aborted. If an executor is re-activated during this delay,
+   * the task won't be aborted. The executor must be activated at least once for this plugin to have an effect.
    *
    * @default 0
    */
@@ -28,8 +30,8 @@ export interface AbortDeactivatedOptions {
 
 /**
  * Aborts the pending task after the {@link AbortDeactivatedOptions.delay delay} if the executor is deactivated.
- * If an executor is re-activated during this delay, the task won't be aborted. The executor must be activated at least
- * once for this plugin to have an effect.
+ *
+ * The executor must be activated at least once for this plugin to have an effect.
  *
  * @param options Abort options.
  */

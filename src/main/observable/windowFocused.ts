@@ -1,6 +1,7 @@
 /**
  * The observable that emits `true` when
- * [the window receives focus](https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState).
+ * [the window receives focus](https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState), and emits
+ * `false` when the window looses focus.
  *
  * ```ts
  * import retryWhen from 'react-executor/plugin/retryWhen';
@@ -11,6 +12,7 @@
  * ]);
  * ```
  *
+ * @see {@link windowBlurred}
  * @module observable/windowFocused
  */
 
@@ -26,7 +28,8 @@ function handleChange(): void {
 
 /**
  * The observable that emits `true` when
- * [the window receives focus](https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState).
+ * [the window receives focus](https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState), and emits
+ * `false` when the window looses focus.
  */
 const windowFocused: Observable<boolean> = {
   subscribe(listener) {
@@ -35,8 +38,8 @@ const windowFocused: Observable<boolean> = {
     }
 
     if (pubSub.listenerCount === 0) {
-      window.addEventListener('visibilitychange', handleChange, false);
-      window.addEventListener('focus', handleChange, false);
+      window.addEventListener('visibilitychange', handleChange);
+      window.addEventListener('focus', handleChange);
     }
 
     const unsubscribe = pubSub.subscribe(listener);
@@ -47,8 +50,8 @@ const windowFocused: Observable<boolean> = {
       unsubscribe();
 
       if (pubSub.listenerCount === 0) {
-        window.removeEventListener('visibilitychange', handleChange, false);
-        window.removeEventListener('focus', handleChange, false);
+        window.removeEventListener('visibilitychange', handleChange);
+        window.removeEventListener('focus', handleChange);
       }
     };
   },

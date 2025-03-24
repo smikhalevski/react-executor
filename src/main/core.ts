@@ -16,9 +16,11 @@ export type { ExecutorManagerOptions } from './ExecutorManager';
 export type {
   Executor,
   ExecutorAnnotations,
+  ExecutorEventType,
   ExecutorEvent,
   ExecutorState,
   ExecutorPlugin,
   ExecutorTask,
   Observable,
+  ReadonlyExecutor,
 } from './types';

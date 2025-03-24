@@ -11,6 +11,26 @@ export interface ExecutorAnnotations {
 }
 
 /**
+ * The type of the event.
+ *
+ * See {@link ExecutorEvent} for more details.
+ */
+export type ExecutorEventType =
+  | 'attached'
+  | 'detached'
+  | 'activated'
+  | 'deactivated'
+  | 'pending'
+  | 'fulfilled'
+  | 'rejected'
+  | 'aborted'
+  | 'cleared'
+  | 'invalidated'
+  | 'annotated'
+  | 'plugin_configured'
+  | (string & {});
+
+/**
  * The event published by the {@link Executor}.
  *
  * Lifecycle events:
@@ -71,28 +91,16 @@ export interface ExecutorAnnotations {
  *   <dd>The configuration of the plugin associated with the executor was updated.</dd>
  * </dl>
  *
+ * @template Payload The payload carried by the event.
  * @template Value The value stored by the executor.
  */
-export interface ExecutorEvent<Value = any> {
+export interface ExecutorEvent<Payload = any, Value = any> {
   /**
    * The type of the event.
    *
    * See {@link ExecutorEvent} for more details.
    */
-  type:
-    | 'attached'
-    | 'detached'
-    | 'activated'
-    | 'deactivated'
-    | 'pending'
-    | 'fulfilled'
-    | 'rejected'
-    | 'aborted'
-    | 'cleared'
-    | 'invalidated'
-    | 'annotated'
-    | 'plugin_configured'
-    | (string & {});
+  type: ExecutorEventType;
 
   /**
    * The executor for which the lifecycle event has occurred.
@@ -107,7 +115,7 @@ export interface ExecutorEvent<Value = any> {
   /**
    * The payload carried by the event, or `undefined` if there's no payload.
    */
-  payload: any;
+  payload: Payload;
 }
 
 /**
@@ -175,7 +183,7 @@ export interface ExecutorState<Value = any> {
  *
  * @template Value The value stored by the executor.
  */
-export interface ReadonlyExecutor<Value = any> extends ExecutorState<Value>, Observable<ExecutorEvent<Value>> {
+export interface ReadonlyExecutor<Value = any> extends ExecutorState<Value>, Observable<ExecutorEvent<any, Value>> {
   /**
    * The value of the latest fulfillment.
    *
@@ -215,7 +223,7 @@ export interface ReadonlyExecutor<Value = any> extends ExecutorState<Value>, Obs
   readonly isSettled: boolean;
 
   /**
-   * `true` if the executor was {@link activate activated} more times then deactivated.
+   * `true` if the executor was {@link Executor.activate activated} more times then deactivated.
    */
   readonly isActive: boolean;
 
@@ -225,13 +233,13 @@ export interface ReadonlyExecutor<Value = any> extends ExecutorState<Value>, Obs
   readonly isPending: boolean;
 
   /**
-   * `true` if {@link invalidate} was called on a {@link isSettled settled} executor and a new settlement hasn't
-   * occurred yet.
+   * `true` if {@link Executor.invalidate invalidate} was called on a {@link isSettled settled} executor and
+   * a new settlement hasn't occurred yet.
    */
   readonly isInvalidated: boolean;
 
   /**
-   * The latest task that was {@link execute executed}, or `null` if the executor didn't execute any tasks.
+   * The latest task that was {@link Executor.execute executed}, or `null` if the executor didn't execute any tasks.
    */
   readonly task: ExecutorTask<Value> | null;
 
