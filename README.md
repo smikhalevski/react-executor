@@ -172,10 +172,10 @@ If you're using objects as executor keys, then you may want to enable stable ser
 during serialized). In this case use any library that supports stable JSON serialization:
 
 ```ts
-import { stringify } from 'json-marshal';
+import JSON from 'json-marshal';
 
 const manager = new ExecutorManager({
-  keySerializer: key => stringify(key, { stable: true })
+  keySerializer: key => JSON.stringify(key, { stable: true })
 });
 
 const bobrExecutor = manager.getOrCreate({ id: 123, name: 'Woody' });
@@ -812,10 +812,10 @@ const executor = useExecutor('test', heavyTask, [
   abortDeactivated({ delay: 2_000 })
 ]);
 
-executor.activate();
+const deactivate = executor.activate();
 
 // Aborts heavyTask in 2 seconds
-executor.deactivate();
+deactivate();
 ```
 
 If an executor is re-activated during this delay, the task won't be aborted. The executor must be activated at least
@@ -840,7 +840,7 @@ const executor = useExecutor('test', heavyTask, [
 [Aborts the pending task](#abort-a-task) if the
 [observable](https://smikhalevski.github.io/react-executor/interfaces/react_executor.Observable.html) emits `true`.
 
-For example, abort all tasks if the device is disconnected from the network for more then 5 seconds:
+For example, abort the current task if the device is disconnected from the network for more then 5 seconds:
 
 ```ts
 import abortWhen from 'react-executor/plugin/abortWhen';
@@ -900,16 +900,16 @@ const executor = useExecutor('test', heavyTask, [
   detachDeactivated({ delay: 2_000 })
 ]);
 
-executor.activate();
+const deactivate = executor.activate();
 
 // Executor is detached in 2 seconds
-executor.deactivate();
+deactivate();
 ```
 
 If an executor is re-activated during this delay, the executor won't be detached.
 
-This plugin doesn't abort the pending task when executor is detached. Use [`abortDeactivated`](#abortdeactivated) to do
-the job:
+This plugin doesn't abort the pending task when an executor is detached. Use [`abortDeactivated`](#abortdeactivated)
+to do the job:
 
 ```ts
 import abortDeactivated from 'react-executor/plugin/abortDeactivated';
@@ -920,10 +920,35 @@ const executor = useExecutor('test', heavyTask, [
   detachDeactivated({ delay: 2_000 })
 ]);
 
-executor.activate();
+const deactivate = executor.activate();
 
 // The heavyTask is aborted and the executor is detached in 2 seconds
-executor.deactivate();
+deactivate();
+```
+
+## `detachInactive`
+
+Detach an executor if it wasn't activated during first 5 seconds after being created:
+
+```ts
+import detachInactive from 'react-executor/plugin/detachInactive';
+
+const executor = useExecutor('test', 42, [
+  detachInactive({ delayBeforeActivation: 5_000 })
+]);
+```
+
+Detach an executor if it was inactive for 5 seconds:
+
+```ts
+const executor = useExecutor('test', 42, [
+  detachInactive({ delayAfterActivation: 5_000 })
+]);
+
+const deactivate = executor.activate();
+
+// The executor is detached in 5 seconds
+deactivate();
 ```
 
 ## `invalidateAfter`
@@ -958,6 +983,19 @@ const breadExecutor = useExecutor('bread');
 breadExecutor.resolve('Ciabatta');
 ```
 
+Provide an array of executors as peers:
+
+```ts
+const breadExecutor = useExecutor('bread');
+
+const cheeseExecutor = useExecutor('cheese', 'Burrata', [
+  invalidateByPeers([breadExecutor])
+]);
+
+// cheeseExecutor is invalidated
+breadExecutor.resolve('Ciabatta');
+```
+
 ## `invalidatePeers`
 
 Invalidates peer executors with matching keys if the executor is fulfilled or invalidated.
@@ -970,6 +1008,19 @@ const cheeseExecutor = useExecutor('cheese', 'Burrata', [
 ]);
 
 const breadExecutor = useExecutor('bread', 'Focaccia');
+
+// breadExecutor is invalidated
+cheeseExecutor.resolve('Mozzarella');
+```
+
+Provide an array of executors as peers:
+
+```ts
+const breadExecutor = useExecutor('bread', 'Focaccia');
+
+const cheeseExecutor = useExecutor('cheese', 'Burrata', [
+  invalidatePeers([breadExecutor])
+]);
 
 // breadExecutor is invalidated
 cheeseExecutor.resolve('Mozzarella');
@@ -1030,6 +1081,31 @@ pubSub.publish('Venus');
 
 executor.value;
 // ⮕ 'Venus'
+```
+
+## `retryActivated`
+
+[Retries the latest task](#retry-the-latest-task) if the executor is activated.
+
+```ts
+import retryActivated from 'react-executor/plugin/retryActivated';
+
+const executor = useExecutor('test', heavyTask, [retryActivated()]);
+
+// Retries the task
+executor.activate();
+```
+
+Set the minimum delay in milliseconds that should pass between the activation and the moment the executor was last
+settled:
+
+```ts
+const executor = useExecutor('test', heavyTask, [
+  retryActivated({ staleDelay: 5_000 })
+]);
+
+// Doesn't retry the task if 5 seconds didn't pass
+executor.activate();
 ```
 
 ## `retryFulfilled`
@@ -1257,11 +1333,11 @@ stores a value that may contain circular references, or non-serializable data li
 Here's how you can enable serialization of objects with circular references:
 
 ```ts
-import { stringify, parse } from 'json-marshal';
+import JSON from 'json-marshal';
 
 const executor = useExecutor('test', 42, [
   synchronizeStorage(localStorage, {
-    serializer: { stringify, parse },
+    serializer: JSON,
   })
 ]);
 ```
@@ -1637,12 +1713,12 @@ option to `enableSSRHydration`:
 import React from 'react';
 import { hydrateRoot } from 'react-dom/client';
 import { enableSSRHydration, ExecutorManager, ExecutorManagerProvider } from 'react-executor';
-import { parse } from 'json-marshal';
+import JSON from 'json-marshal';
 
 const manager = new ExecutorManager();
 
 // 🟡 Pass a custom state parser
-enableSSRHydration(manager, { stateParser: parse });
+enableSSRHydration(manager, { stateParser: JSON.parse });
 
 hydrateRoot(
   document,
@@ -1660,9 +1736,9 @@ or [`ReadableSSRExecutorManager`](#readable-web-streams-support), depending on y
 
 ```ts
 import { SSRExecutorManager } from 'react-executor/ssr';
-import { stringify } from 'json-marshal';
+import JSON from 'json-marshal';
 
-const manager = new SSRExecutorManager({ stateStringifier: stringify });
+const manager = new SSRExecutorManager({ stateStringifier: JSON.stringify });
 ```
 
 > [!TIP]\
