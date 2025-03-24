@@ -1,5 +1,5 @@
 /**
- * The plugin that binds all executor methods to the instance.
+ * The plugin that binds all methods to the executor instance.
  *
  * ```ts
  * import bindAll from 'react-executor/plugin/bindAll';
@@ -13,7 +13,7 @@
 import type { ExecutorPlugin, PluginConfiguredPayload } from '../types';
 
 /**
- * Binds all executor methods to the instance.
+ * Binds all methods to the executor instance.
  */
 export default function bindAll(): ExecutorPlugin {
   return plugin;
@@ -28,7 +28,7 @@ const plugin: ExecutorPlugin = executor => {
     }
   }
 
-  executor.publish<PluginConfiguredPayload>('plugin_configured', {
+  executor.publish('plugin_configured', {
     type: 'bindAll',
-  });
+  } satisfies PluginConfiguredPayload);
 };

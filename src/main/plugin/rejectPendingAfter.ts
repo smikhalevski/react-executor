@@ -1,16 +1,16 @@
 /**
  * The plugin that aborts the pending task and rejects the executor with {@link !DOMException TimeoutError} if the task
- * execution took longer then the given timeout.
+ * execution took longer then the delay.
  *
  * ```ts
- * import rejectPending from 'react-executor/plugin/rejectPending';
+ * import rejectPendingAfter from 'react-executor/plugin/rejectPendingAfter';
  *
  * const executor = useExecutor('test', heavyTask, [
- *   rejectPending(10_000)
+ *   rejectPendingAfter(10_000)
  * ]);
  * ```
  *
- * @module plugin/rejectPending
+ * @module plugin/rejectPendingAfter
  */
 
 import type { ExecutorPlugin, PluginConfiguredPayload } from '../types';
@@ -18,11 +18,11 @@ import { TimeoutError } from '../utils';
 
 /**
  * Aborts the pending task and rejects the executor with {@link !DOMException TimeoutError} if the task execution took
- * longer then the given timeout.
+ * longer then the {@link delay}.
  *
- * @param delay The timeout in milliseconds after which the executor is rejected.
+ * @param delay The delay in milliseconds after which the executor is rejected.
  */
-export default function rejectPending(delay: number): ExecutorPlugin {
+export default function rejectPendingAfter(delay: number): ExecutorPlugin {
   return executor => {
     let timer: NodeJS.Timeout;
 
@@ -45,9 +45,9 @@ export default function rejectPending(delay: number): ExecutorPlugin {
       }
     });
 
-    executor.publish<PluginConfiguredPayload>('plugin_configured', {
-      type: 'rejectPending',
+    executor.publish('plugin_configured', {
+      type: 'rejectPendingAfter',
       options: { delay },
-    });
+    } satisfies PluginConfiguredPayload);
   };
 }

@@ -14,7 +14,7 @@ describe('detachDeactivated', () => {
   });
 
   test('detaches a deactivated executor', async () => {
-    const executor = manager.getOrCreate('xxx', undefined, [detachDeactivated(0)]);
+    const executor = manager.getOrCreate('xxx', undefined, [detachDeactivated({ delay: 0 })]);
     const deactivate = executor.activate();
     const taskMock = jest.fn(_signal => delay(100, 'aaa'));
     const promise = executor.execute(taskMock);
@@ -38,7 +38,7 @@ describe('detachDeactivated', () => {
   });
 
   test('cancels deactivation of an activated executor', async () => {
-    const executor = manager.getOrCreate('xxx', undefined, [detachDeactivated(0)]);
+    const executor = manager.getOrCreate('xxx', undefined, [detachDeactivated({ delay: 0 })]);
     const deactivate = executor.activate();
     const taskMock = jest.fn(_signal => delay(100, 'aaa'));
     const promise = executor.execute(taskMock);

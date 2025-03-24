@@ -2,7 +2,7 @@ import { ExecutorManager } from '../../main';
 import bindAll from '../../main/plugin/bindAll';
 
 describe('bindAll', () => {
-  test('binds methods to an executor instance', async () => {
+  test('binds methods to an executor instance', () => {
     const executor = new ExecutorManager().getOrCreate('xxx', undefined, [bindAll()]);
 
     (0, executor.resolve)('aaa');

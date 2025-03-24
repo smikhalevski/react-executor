@@ -1,8 +1,8 @@
 import { PubSub } from 'parallel-universe';
 import { ExecutorManager } from '../../main';
-import resolveWhen from '../../main/plugin/resolveWhen';
+import resolveBy from '../../main/plugin/resolveBy';
 
-describe('resolveWhen', () => {
+describe('resolveBy', () => {
   let manager: ExecutorManager;
 
   beforeEach(() => {
@@ -12,7 +12,7 @@ describe('resolveWhen', () => {
   test('resolves the executor', () => {
     const pubSub = new PubSub<string>();
 
-    const executor = manager.getOrCreate('xxx', undefined, [resolveWhen(pubSub)]);
+    const executor = manager.getOrCreate('xxx', undefined, [resolveBy(pubSub)]);
 
     pubSub.publish('aaa');
 

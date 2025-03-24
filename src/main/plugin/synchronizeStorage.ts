@@ -14,6 +14,7 @@
 
 import { ExecutorImpl } from '../ExecutorImpl';
 import type { Executor, ExecutorPlugin, ExecutorState, PluginConfiguredPayload } from '../types';
+import { emptyObject } from '../utils';
 
 /**
  * Serializes and deserializes values.
@@ -36,6 +37,9 @@ export interface Serializer<Value> {
   parse(valueStr: string): Value;
 }
 
+/**
+ * Options of the {@link synchronizeStorage} plugin.
+ */
 export interface SynchronizeStorageOptions<Value> {
   /**
    * The storage record serializer.
@@ -44,6 +48,8 @@ export interface SynchronizeStorageOptions<Value> {
 
   /**
    * A storage key, or a callback that returns the storage key.
+   *
+   * By default, a serialized {@link Executor.key} is used as a storage key.
    */
   storageKey?: string | ((executor: Executor) => string);
 }
@@ -60,7 +66,7 @@ export interface SynchronizeStorageOptions<Value> {
  */
 export default function synchronizeStorage<Value = any>(
   storage: Pick<Storage, 'setItem' | 'getItem' | 'removeItem'>,
-  options: SynchronizeStorageOptions<Value> = {}
+  options: SynchronizeStorageOptions<Value> = emptyObject
 ): ExecutorPlugin<Value> {
   const { serializer = JSON, storageKey } = options;
 
@@ -68,7 +74,7 @@ export default function synchronizeStorage<Value = any>(
     const executorStorageKey =
       typeof storageKey === 'function'
         ? storageKey(executor)
-        : storageKey ?? executor.manager.keySerializer(executor.key);
+        : (storageKey ?? executor.manager.keySerializer(executor.key));
 
     if (typeof executorStorageKey !== 'string') {
       throw new Error('Cannot guess a storage key for an executor, the "storageKey" option is required');
@@ -144,9 +150,9 @@ export default function synchronizeStorage<Value = any>(
       }
     });
 
-    executor.publish<PluginConfiguredPayload>('plugin_configured', {
+    executor.publish('plugin_configured', {
       type: 'synchronizeStorage',
       options: { storageKey: executorStorageKey },
-    });
+    } satisfies PluginConfiguredPayload);
   };
 }

@@ -1,16 +1,16 @@
 /**
  * The plugin that aborts the pending task with {@link !DOMException TimeoutError} if the task execution took longer
- * then the given timeout.
+ * then the given delay.
  *
  * ```ts
- * import abortPending from 'react-executor/plugin/abortPending';
+ * import abortPendingAfter from 'react-executor/plugin/abortPendingAfter';
  *
  * const executor = useExecutor('test', heavyTask, [
- *   abortPending(10_000)
+ *   abortPendingAfter(10_000)
  * ]);
  * ```
  *
- * @module plugin/abortPending
+ * @module plugin/abortPendingAfter
  */
 
 import type { ExecutorPlugin, PluginConfiguredPayload } from '../types';
@@ -18,11 +18,11 @@ import { TimeoutError } from '../utils';
 
 /**
  * Aborts the pending task with {@link !DOMException TimeoutError} if the task execution took longer then the given
- * timeout.
+ * {@link delay}.
  *
- * @param delay The timeout in milliseconds after which the task is aborted.
+ * @param delay The delay in milliseconds after which the task is aborted.
  */
-export default function abortPending(delay: number): ExecutorPlugin {
+export default function abortPendingAfter(delay: number): ExecutorPlugin {
   return executor => {
     let timer: NodeJS.Timeout;
 
@@ -43,9 +43,9 @@ export default function abortPending(delay: number): ExecutorPlugin {
       }
     });
 
-    executor.publish<PluginConfiguredPayload>('plugin_configured', {
-      type: 'abortPending',
+    executor.publish('plugin_configured', {
+      type: 'abortPendingAfter',
       options: { delay },
-    });
+    } satisfies PluginConfiguredPayload);
   };
 }

@@ -1,5 +1,5 @@
 /**
- * The plugin that invalidates the settled executor result after a timeout elapses.
+ * The plugin that invalidates the settled executor result after a delay.
  *
  * ```ts
  * import invalidateAfter from 'react-executor/plugin/invalidateAfter';
@@ -13,9 +13,9 @@
 import type { ExecutorPlugin, PluginConfiguredPayload } from '../types';
 
 /**
- * Invalidates the settled executor result after a timeout elapses.
+ * Invalidates the settled executor result after a delay.
  *
- * @param delay The timeout in milliseconds after which the executor result is invalidated.
+ * @param delay The delay in milliseconds after which the executor result is invalidated.
  */
 export default function invalidateAfter(delay: number): ExecutorPlugin {
   return executor => {
@@ -27,26 +27,25 @@ export default function invalidateAfter(delay: number): ExecutorPlugin {
 
     executor.subscribe(event => {
       switch (event.type) {
-        case 'activated':
         case 'fulfilled':
         case 'rejected':
           clearTimeout(timer);
 
-          if (!executor.isInvalidated && !executor.isPending && executor.isActive && executor.isSettled) {
-            timer = setTimeout(() => executor.invalidate(), delay - Date.now() + executor.settledAt);
+          if (!executor.isInvalidated && !executor.isPending && executor.isSettled) {
+            timer = setTimeout(() => executor.invalidate(), delay);
           }
           break;
 
         case 'invalidated':
-        case 'deactivated':
+        case 'detached':
           clearTimeout(timer);
           break;
       }
     });
 
-    executor.publish<PluginConfiguredPayload>('plugin_configured', {
+    executor.publish('plugin_configured', {
       type: 'invalidateAfter',
       options: { delay },
-    });
+    } satisfies PluginConfiguredPayload);
   };
 }

@@ -1,5 +1,5 @@
 /**
- * The plugin that retries the latest task if the observable pushes `false` and then `true`.
+ * The plugin that retries the latest task if the observable emits `true`.
  *
  * ```ts
  * import retryWhen from 'react-executor/plugin/retryWhen';
@@ -14,38 +14,65 @@
  */
 
 import type { ExecutorPlugin, Observable, PluginConfiguredPayload } from '../types';
+import { emptyObject } from '../utils';
 
 /**
- * Retries the latest task if the observable pushes `false` and then `true`.
+ * Options of the {@link retryWhen} plugin.
+ */
+export interface RetryWhenOptions {
+  /**
+   * The delay in milliseconds after `true` is emitted by the observer and before the executor is retried. If during
+   * this delay `false` is emitted, then executor isn't retried.
+   *
+   * @default 0
+   */
+  delay?: number;
+
+  /**
+   * If `true` then executor is retried even if it isn't active.
+   *
+   * @default false
+   */
+  isEager?: boolean;
+}
+
+/**
+ * Retries the latest task if the observable emits `true`. If executor isn't active and retry isn't
+ * {@link RetryWhenOptions.isEager eager} then the task is retried after the executor becomes active.
  *
  * @param observable The observable that triggers the retry of the latest task.
- * @param delay The timeout in milliseconds that should pass after `false` was pushed to retry the executor when `true` is
- * pushed.
+ * @param options Retry options.
  */
-export default function retryWhen(observable: Observable<boolean>, delay = 0): ExecutorPlugin {
+export default function retryWhen(
+  observable: Observable<boolean>,
+  options: RetryWhenOptions = emptyObject
+): ExecutorPlugin {
+  const { delay = 0, isEager = false } = options;
+
   return executor => {
     let timer: NodeJS.Timeout | undefined;
     let shouldRetry = false;
 
-    const unsubscribe = observable.subscribe(isEnabled => {
-      if (isEnabled) {
+    const unsubscribe = observable.subscribe(isRetried => {
+      if (!isRetried) {
         clearTimeout(timer);
         timer = undefined;
-
-        if (shouldRetry && executor.isActive) {
-          shouldRetry = false;
-          executor.retry();
-        }
+        shouldRetry = false;
         return;
       }
 
-      if (shouldRetry || timer !== undefined) {
+      if (shouldRetry || timer !== undefined || executor.isPending) {
         return;
       }
 
       timer = setTimeout(() => {
-        timer = undefined;
-        shouldRetry = true;
+        if (isEager || executor.isActive) {
+          shouldRetry = false;
+          executor.retry();
+        } else {
+          timer = undefined;
+          shouldRetry = true;
+        }
       }, delay);
     });
 
@@ -58,10 +85,12 @@ export default function retryWhen(observable: Observable<boolean>, delay = 0): E
           }
           break;
 
+        case 'pending':
         case 'fulfilled':
         case 'rejected':
           clearTimeout(timer);
           timer = undefined;
+          shouldRetry = false;
           break;
 
         case 'detached':
@@ -71,9 +100,9 @@ export default function retryWhen(observable: Observable<boolean>, delay = 0): E
       }
     });
 
-    executor.publish<PluginConfiguredPayload>('plugin_configured', {
+    executor.publish('plugin_configured', {
       type: 'retryWhen',
-      options: { observable, delay },
-    });
+      options: { observable, delay, isEager },
+    } satisfies PluginConfiguredPayload);
   };
 }

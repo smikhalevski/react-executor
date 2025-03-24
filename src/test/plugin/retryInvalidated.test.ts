@@ -40,7 +40,7 @@ describe('retryInvalidated', () => {
       type: 'plugin_configured',
       target: executor,
       version: 0,
-      payload: { type: 'retryInvalidated' },
+      payload: { type: 'retryInvalidated', options: { isEager: false } },
     });
     expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
     expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'pending', target: executor, version: 1 });
@@ -79,7 +79,7 @@ describe('retryInvalidated', () => {
       type: 'plugin_configured',
       target: executor,
       version: 0,
-      payload: { type: 'retryInvalidated' },
+      payload: { type: 'retryInvalidated', options: { isEager: false } },
     });
     expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
     expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'pending', target: executor, version: 1 });

@@ -11,6 +11,26 @@ export interface ExecutorAnnotations {
 }
 
 /**
+ * The type of the event.
+ *
+ * See {@link ExecutorEvent} for more details.
+ */
+export type ExecutorEventType =
+  | 'attached'
+  | 'detached'
+  | 'activated'
+  | 'deactivated'
+  | 'pending'
+  | 'fulfilled'
+  | 'rejected'
+  | 'aborted'
+  | 'cleared'
+  | 'invalidated'
+  | 'annotated'
+  | 'plugin_configured'
+  | (string & {});
+
+/**
  * The event published by the {@link Executor}.
  *
  * Lifecycle events:
@@ -79,20 +99,7 @@ export interface ExecutorEvent<Value = any> {
    *
    * See {@link ExecutorEvent} for more details.
    */
-  type:
-    | 'attached'
-    | 'detached'
-    | 'activated'
-    | 'deactivated'
-    | 'pending'
-    | 'fulfilled'
-    | 'rejected'
-    | 'aborted'
-    | 'cleared'
-    | 'invalidated'
-    | 'annotated'
-    | 'plugin_configured'
-    | (string & {});
+  type: ExecutorEventType;
 
   /**
    * The executor for which the lifecycle event has occurred.
@@ -215,7 +222,7 @@ export interface ReadonlyExecutor<Value = any> extends ExecutorState<Value>, Obs
   readonly isSettled: boolean;
 
   /**
-   * `true` if the executor was {@link activate activated} more times then deactivated.
+   * `true` if the executor was {@link Executor.activate activated} more times then deactivated.
    */
   readonly isActive: boolean;
 
@@ -225,13 +232,13 @@ export interface ReadonlyExecutor<Value = any> extends ExecutorState<Value>, Obs
   readonly isPending: boolean;
 
   /**
-   * `true` if {@link invalidate} was called on a {@link isSettled settled} executor and a new settlement hasn't
-   * occurred yet.
+   * `true` if {@link Executor.invalidate invalidate} was called on a {@link isSettled settled} executor and
+   * a new settlement hasn't occurred yet.
    */
   readonly isInvalidated: boolean;
 
   /**
-   * The latest task that was {@link execute executed}, or `null` if the executor didn't execute any tasks.
+   * The latest task that was {@link Executor.execute executed}, or `null` if the executor didn't execute any tasks.
    */
   readonly task: ExecutorTask<Value> | null;
 
@@ -360,9 +367,8 @@ export interface Executor<Value = any> extends ReadonlyExecutor<Value> {
    *
    * @param eventType The type of the published event.
    * @param payload The optional payload associated with the event.
-   * @template Payload The payload published with the event.
    */
-  publish<Payload>(eventType: ExecutorEvent['type'], payload?: Payload): void;
+  publish(eventType: ExecutorEventType, payload?: any): void;
 
   /**
    * Assigns patch to {@link annotations existing annotations}.
@@ -370,23 +376,6 @@ export interface Executor<Value = any> extends ReadonlyExecutor<Value> {
    * @param patch The patch containing new annotations.
    */
   annotate(patch: ExecutorAnnotations): void;
-}
-
-/**
- * Payload of the {@link ExecutorEvent plugin_configured} event.
- */
-export interface PluginConfiguredPayload {
-  /**
-   * The type of the plugin that was configured.
-   *
-   * @example "abortDeactivated"
-   */
-  type: string;
-
-  /**
-   * The options that the plugin now uses.
-   */
-  options?: object;
 }
 
 /**
@@ -403,7 +392,28 @@ export interface Observable<T> {
   subscribe(listener: (value: T) => void): () => void;
 }
 
-// NoInfer polyfill
-// https://www.typescriptlang.org/docs/handbook/release-notes/typescript-2-8.html#type-inference-in-conditional-types
-// https://devblogs.microsoft.com/typescript/announcing-typescript-5-4-beta/#the-noinfer-utility-type
+/**
+ * {@link https://www.typescriptlang.org/docs/handbook/utility-types.html#noinfertype NoInfer} polyfill.
+ *
+ * @internal
+ */
 export type NoInfer<T> = [T][T extends any ? 0 : never];
+
+/**
+ * Payload of the {@link ExecutorEvent plugin_configured} event.
+ *
+ * @internal
+ */
+export interface PluginConfiguredPayload {
+  /**
+   * The type of the plugin that was configured.
+   *
+   * @example "abortDeactivated"
+   */
+  type: string;
+
+  /**
+   * The options that the plugin now uses.
+   */
+  options?: object;
+}

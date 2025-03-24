@@ -1,5 +1,5 @@
 /**
- * The plugin that retries the latest task of the active executor if it was invalidated.
+ * The plugin that retries the last task if the executor is invalidated.
  *
  * ```ts
  * import retryInvalidated from 'react-executor/plugin/retryInvalidated';
@@ -11,22 +11,39 @@
  */
 
 import type { ExecutorPlugin, PluginConfiguredPayload } from '../types';
+import { emptyObject } from '../utils';
 
 /**
- * Retries the latest task of the active executor if it was invalidated.
+ * Options of the {@link retryInvalidated} plugin.
  */
-export default function retryInvalidated(): ExecutorPlugin {
-  return plugin;
+export interface RetryInvalidatedOptions {
+  /**
+   * If `true` then executor is retried even if it isn't active.
+   *
+   * @default false
+   */
+  isEager?: boolean;
 }
 
-const plugin: ExecutorPlugin = executor => {
-  executor.subscribe(event => {
-    if ((event.type === 'invalidated' && executor.isActive) || (event.type === 'activated' && executor.isInvalidated)) {
-      executor.retry();
-    }
-  });
+/**
+ * Retries the last task if the executor is invalidated.
+ */
+export default function retryInvalidated(options: RetryInvalidatedOptions = emptyObject): ExecutorPlugin {
+  const { isEager = false } = options;
 
-  executor.publish<PluginConfiguredPayload>('plugin_configured', {
-    type: 'retryInvalidated',
-  });
-};
+  return executor => {
+    executor.subscribe(event => {
+      if (
+        (event.type === 'invalidated' && (isEager || executor.isActive)) ||
+        (event.type === 'activated' && executor.isInvalidated)
+      ) {
+        executor.retry();
+      }
+    });
+
+    executor.publish('plugin_configured', {
+      type: 'retryInvalidated',
+      options: { isEager },
+    } satisfies PluginConfiguredPayload);
+  };
+}

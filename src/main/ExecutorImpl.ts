@@ -1,6 +1,13 @@
 import { AbortablePromise, PubSub } from 'parallel-universe';
 import type { ExecutorManager } from './ExecutorManager';
-import type { Executor, ExecutorAnnotations, ExecutorEvent, ExecutorState, ExecutorTask } from './types';
+import type {
+  Executor,
+  ExecutorAnnotations,
+  ExecutorEvent,
+  ExecutorEventType,
+  ExecutorState,
+  ExecutorTask,
+} from './types';
 import { AbortError, noop } from './utils';
 
 /**
@@ -232,7 +239,7 @@ export class ExecutorImpl<Value = any> implements Executor {
     return this._pubSub.subscribe(listener);
   }
 
-  publish(eventType: ExecutorEvent['type'], payload?: unknown): void {
+  publish(eventType: ExecutorEventType, payload?: unknown): void {
     this._pubSub.publish({ type: eventType, target: this, version: this.version, payload });
   }
 

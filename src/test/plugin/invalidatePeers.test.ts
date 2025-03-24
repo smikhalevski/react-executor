@@ -14,6 +14,24 @@ describe('invalidatePeers', () => {
     manager.subscribe(listenerMock);
   });
 
+  test('invalidates a peer executor', () => {
+    const executor1 = manager.getOrCreate('yyy', 'bbb');
+    const executor2 = manager.getOrCreate('xxx', 'aaa', [invalidatePeers([executor1])]);
+
+    expect(executor1.isInvalidated).toBe(true);
+    expect(executor2.isInvalidated).toBe(false);
+
+    executor1.resolve('ccc');
+
+    expect(executor1.isInvalidated).toBe(false);
+    expect(executor2.isInvalidated).toBe(false);
+
+    executor2.invalidate();
+
+    expect(executor1.isInvalidated).toBe(true);
+    expect(executor2.isInvalidated).toBe(true);
+  });
+
   test('invalidates a peer executor with the matching key if an executor is created with an initial value', () => {
     const executor1 = manager.getOrCreate('yyy', 'bbb');
 
