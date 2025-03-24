@@ -55,6 +55,7 @@ npm install --save-prod react-executor
 ⚛️&ensp;[**React integration**](#react-integration)
 
 - [Suspense](#suspense)
+- [External executors](#external-executors)
 
 🚀&ensp;[**Server-side rendering**](#server-side-rendering)
 
@@ -1467,14 +1468,11 @@ import { useExecutor, useExecutorSuspense } from 'react-executor';
 
 const Account = () => {
   const accountExecutor = useExecutor('account', signal => {
-    // Fetch the account from the server
+    // Fetch an account from a server
   });
   
-  // Suspend rendering
-  useExecutorSuspense(accountExecutor);
-
-  // accountExecutor is settled during render
-  accountExecutor.get();
+  // Suspend rendering if accountExecutor is pending and isn't fulfilled
+  const account = useExecutorSuspense(accountExecutor).get();
 };
 ```
 
@@ -1490,13 +1488,36 @@ const App = () => (
 );
 ```
 
-You can provide multiple executors to `useExecutorSuspense` to wait for them in parallel:
+Executors can run tasks in parallel and rendering is suspended until both of them are settled:
 
 ```ts
-const accountExecutor = useExecutor('account');
-const shoppingCartExecutor = useExecutor('shoppingCart');
+const cheeseExecutor = useExecutor('cheese', buyCheeseTask);
+const beadExecutor = useExecutor('bread', bakeBreadTask);
 
-useExecutorSuspense([accountExecutor, shoppingCartExecutor]);
+const cheese = useExecutorSuspense(cheeseExecutor).get();
+const bread = useExecutorSuspense(breadExecutor).get();
+```
+
+## External executors
+
+You can use executors created outside the rendering process in your components, rerender and suspend your components
+when such executors get updated:
+
+```ts
+const manager = new ExecutorManager();
+
+// 1️⃣ Create an executor
+const accountExecutor = useExecutor('account', signal => {
+  // Fetch an account from a server
+});
+
+function Account() {
+  // 2️⃣ Re-render a component when accountExecutor is updated
+  useExecutorSubscription(accountExecutor);
+
+  // 3️⃣ Suspend rendering if accountExecutor is pending and isn't fulfilled
+  const account = useExecutorSuspense(accountExecutor);
+}
 ```
 
 # Server-side rendering
@@ -1505,7 +1526,7 @@ useExecutorSuspense([accountExecutor, shoppingCartExecutor]);
 > Check out the live example
 > of [streaming SSR](https://codesandbox.io/p/devbox/react-executor-ssr-streaming-example-mwrmrs) with React Executor.
 
-Executors can be hydrated on the client after being rendered on the server.
+Executors can be hydrated on the client after being settled on the server.
 
 To enable hydration on the client, create the executor manager and provide it through a context:
 

@@ -10,14 +10,9 @@ import {
 } from '../main';
 
 describe('useExecutorSuspense', () => {
-  test('suspends component rendering until executors are settled', async () => {
+  test('suspends component rendering until the executor is settled', async () => {
     const Component = () => {
-      const executor1 = useExecutor('xxx', () => 'aaa');
-      const executor2 = useExecutor('yyy', () => 'bbb');
-
-      useExecutorSuspense([executor1, executor2]);
-
-      return executor1.get() + executor2.get();
+      return useExecutorSuspense(useExecutor('xxx', () => 'aaa')).get();
     };
 
     const result = render(
@@ -28,7 +23,7 @@ describe('useExecutorSuspense', () => {
 
     expect(result.getByText('ccc')).toBeInTheDocument();
 
-    expect(await result.findByText('aaabbb')).toBeInTheDocument();
+    expect(await result.findByText('aaa')).toBeInTheDocument();
   });
 
   test('does not suspend rendering if the pending executor is settled', async () => {
@@ -67,10 +62,10 @@ describe('useExecutorSuspense', () => {
     expect(capture).toHaveBeenNthCalledWith(3, 'bbb');
   });
 
-  test('respects a custom condition', async () => {
+  test('respects a predicate', async () => {
     const manager = new ExecutorManager();
     const capture = jest.fn();
-    const conditionMock = jest.fn().mockReturnValue(true);
+    const predicateMock = jest.fn().mockReturnValue(true);
 
     const executor = manager.getOrCreate('xxx', 'aaa');
 
@@ -81,7 +76,7 @@ describe('useExecutorSuspense', () => {
         executor.execute(async () => 'bbb');
       }, []);
 
-      useExecutorSuspense(executor, conditionMock);
+      useExecutorSuspense(executor, predicateMock);
 
       capture(executor.value);
 

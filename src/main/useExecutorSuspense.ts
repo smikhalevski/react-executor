@@ -1,32 +1,33 @@
 import type { Executor } from './types';
-import { noop } from './utils';
 
 /**
- * Suspends rendering until all of provided executors are settled.
+ * Suspends rendering until an executor satisfies a predicate.
  *
- * @param executors Executors to wait for.
+ * @example
+ * // Suspend if executor is pending or get the current value
+ * const value = useExecutorSuspense(useExecutor('test', heavyTask)).get();
+ *
+ * @example
+ * const cheeseExecutor = useExecutor('cheese', buyCheeseTask);
+ * const beadExecutor = useExecutor('bread', bakeBreadTask);
+ *
+ * // Executors run in parallel and rendering is suspended until both of them are settled
+ * useExecutorSuspense(cheeseExecutor);
+ * useExecutorSuspense(breadExecutor);
+ *
+ * @param executor The executors to get value of.
  * @param predicate The predicate which a pending executor must conform to suspend the rendering process. By default,
  * only non-fulfilled executors are awaited.
- * @template T Executors to wait for.
+ * @returns The executor value.
+ * @template Value The value stored by the executor.
  */
-export function useExecutorSuspense<T extends Executor | Executor[]>(
-  executors: T,
-  predicate = (executor: Executor) => !executor.isFulfilled
-): T {
-  if (Array.isArray(executors)) {
-    const promises = [];
-
-    for (const executor of executors) {
-      if (executor.isPending && predicate(executor)) {
-        promises.push(executor.getOrAwait().then(noop, noop));
-      }
-    }
-    if (promises.length !== 0) {
-      throw Promise.all(promises);
-    }
-  } else if (executors.isPending && predicate(executors)) {
-    throw executors.getOrAwait().then(noop, noop);
+export function useExecutorSuspense<Value>(executor: Executor<Value>, predicate = isNotFulfilled): Executor<Value> {
+  if (executor.isPending && predicate(executor)) {
+    throw executor.getOrAwait();
   }
+  return executor;
+}
 
-  return executors;
+function isNotFulfilled(executor: Executor): boolean {
+  return !executor.isFulfilled;
 }
