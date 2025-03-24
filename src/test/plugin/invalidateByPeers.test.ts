@@ -10,6 +10,19 @@ describe('invalidateByPeers', () => {
     manager = new ExecutorManager();
   });
 
+  test('invalidates an executor if a peer executor is fulfilled', () => {
+    const executor2 = manager.getOrCreate('yyy');
+    const executor1 = manager.getOrCreate('xxx', 'aaa', [invalidateByPeers([executor2])]);
+
+    expect(executor1.isInvalidated).toBe(false);
+    expect(executor1.isInvalidated).toBe(false);
+
+    executor2.resolve('bbb');
+
+    expect(executor1.isInvalidated).toBe(true);
+    expect(executor2.isInvalidated).toBe(false);
+  });
+
   test('invalidates an executor if a peer executor with the matching key is fulfilled', () => {
     const executor1 = manager.getOrCreate('xxx', 'aaa', [invalidateByPeers(executor => executor.key === 'yyy')]);
     const executor2 = manager.getOrCreate('yyy');

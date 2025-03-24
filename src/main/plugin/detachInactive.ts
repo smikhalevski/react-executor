@@ -1,5 +1,5 @@
 /**
- * The plugin that detaches an inactive executor after a delay.
+ * The plugin that detaches an executor that isn't {@link Executor.isActive active} after a delay.
  *
  * ```ts
  * import detachInactive from 'react-executor/plugin/detachInactive';
@@ -19,7 +19,7 @@ import type { ExecutorPlugin, PluginConfiguredPayload } from '../types';
  */
 export interface DetachInactiveOptions {
   /**
-   * The delay in milliseconds after which the executor is detached if it was created but was never attached.
+   * The delay in milliseconds after which the executor is detached if it wasn't activated after being attached.
    *
    * Use this if you create an executor prematurely and not sure whether is will be used or not.
    *
@@ -37,7 +37,7 @@ export interface DetachInactiveOptions {
 }
 
 /**
- * Detaches an inactive executor after a delay.
+ * Detaches an executor that isn't {@link Executor.isActive active} after a delay.
  *
  * @param options Detach options.
  */

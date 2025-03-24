@@ -13,7 +13,7 @@
 import type { ExecutorPlugin, PluginConfiguredPayload } from '../types';
 
 /**
- * Binds all executor methods to the instance.
+ * Binds all {@link Executor} methods to the executor instance.
  */
 export default function bindAll(): ExecutorPlugin {
   return plugin;

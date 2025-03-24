@@ -1,5 +1,5 @@
 /**
- * The plugin that invalidates the executor result if another executor with a matching key is fulfilled or invalidated.
+ * The plugin that invalidates the executor result if another executor is fulfilled or invalidated.
  *
  * ```ts
  * import invalidateByPeers from 'react-executor/plugin/invalidateByPeers';
@@ -15,41 +15,43 @@
 import type { Executor, ExecutorPlugin, PluginConfiguredPayload } from '../types';
 
 /**
- * Invalidates the executor result if another executor with a matching key is fulfilled or invalidated.
+ * Invalidates the executor result if another executor is fulfilled or invalidated.
  *
- * @param peerMatcher The callback that returns a truthy value for a matching peer executor.
+ * @param peerMatcher A collection of peer executors or a callback that returns a truthy value for a matching peer
+ * executor.
  */
-export default function invalidateByPeers(peerMatcher: (executor: Executor) => any): ExecutorPlugin {
+export default function invalidateByPeers(
+  peerMatcher: Iterable<Executor> | ((executor: Executor) => any)
+): ExecutorPlugin {
   return executor => {
-    const peerExecutors = new Set(Array.from(executor.manager).filter(peerMatcher));
+    const peerExecutors = new Set(
+      typeof peerMatcher === 'function' ? Array.from(executor.manager).filter(peerMatcher) : peerMatcher
+    );
 
     const unsubscribe = executor.manager.subscribe(event => {
-      const peerExecutor = event.target;
+      const { type: eventType, target: peerExecutor } = event;
 
       if (peerExecutor === executor) {
-        if (event.type === 'detached') {
+        if (eventType === 'detached') {
           unsubscribe();
         }
         return;
       }
 
       if (
-        (event.type === 'attached' && peerMatcher(peerExecutor)) ||
-        (event.type === 'detached' && peerExecutors.has(peerExecutor))
+        (eventType === 'attached' &&
+          typeof peerMatcher === 'function' &&
+          peerMatcher(peerExecutor) &&
+          (peerExecutors.add(peerExecutor), true)) ||
+        (eventType === 'detached' && peerExecutors.delete(peerExecutor))
       ) {
-        if (event.type === 'attached') {
-          peerExecutors.add(peerExecutor);
-        } else {
-          peerExecutors.delete(peerExecutor);
-        }
-
         executor.publish('plugin_configured', {
           type: 'invalidateByPeers',
           options: { peerExecutors: Array.from(peerExecutors) },
         } satisfies PluginConfiguredPayload);
       }
 
-      if ((event.type === 'invalidated' || event.type === 'fulfilled') && peerExecutors.has(peerExecutor)) {
+      if ((eventType === 'invalidated' || eventType === 'fulfilled') && peerExecutors.has(peerExecutor)) {
         executor.invalidate();
       }
     });
