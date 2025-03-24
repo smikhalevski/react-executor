@@ -68,9 +68,9 @@ export default function detachInactive(options: DetachInactiveOptions): Executor
       }
     });
 
-    executor.publish<PluginConfiguredPayload>('plugin_configured', {
+    executor.publish('plugin_configured', {
       type: 'detachInactive',
       options: { delayBeforeActivation, delayAfterDeactivation },
-    });
+    } satisfies PluginConfiguredPayload);
   };
 }

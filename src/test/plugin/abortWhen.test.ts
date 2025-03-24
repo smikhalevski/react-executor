@@ -28,7 +28,7 @@ describe('abortWhen', () => {
     expect(taskMock.mock.calls[0][0].aborted).toBe(true);
   });
 
-  test('aborts an executed task', () => {
+  test('aborts the executed task', () => {
     const pubSub = new PubSub<boolean>();
 
     const taskMock = jest.fn();
@@ -44,7 +44,7 @@ describe('abortWhen', () => {
     expect(taskMock.mock.calls[0][0].aborted).toBe(true);
   });
 
-  test('does not abort if observable has pushed true before timeout', async () => {
+  test('does not abort if the observable has pushed false before the timeout', async () => {
     const pubSub = new PubSub<boolean>();
 
     const taskMock = jest.fn(_signal => delay(15_000, 'aaa'));
@@ -62,6 +62,24 @@ describe('abortWhen', () => {
     jest.advanceTimersByTime(20_000);
 
     await expect(executor.getOrAwait()).resolves.toBe('aaa');
+
+    expect(taskMock.mock.calls[0][0].aborted).toBe(false);
+  });
+
+  test('does not abort if true pushed twice', () => {
+    const pubSub = new PubSub<boolean>();
+
+    const taskMock = jest.fn(_signal => delay(15_000, 'aaa'));
+
+    const executor = manager.getOrCreate('xxx', undefined, [abortWhen(pubSub)]);
+
+    executor.execute(taskMock).catch(noop);
+
+    pubSub.publish(true);
+    pubSub.publish(true);
+    pubSub.publish(false);
+
+    jest.advanceTimersToNextTimer();
 
     expect(taskMock.mock.calls[0][0].aborted).toBe(false);
   });

@@ -91,10 +91,9 @@ export type ExecutorEventType =
  *   <dd>The configuration of the plugin associated with the executor was updated.</dd>
  * </dl>
  *
- * @template Payload The payload carried by the event.
  * @template Value The value stored by the executor.
  */
-export interface ExecutorEvent<Payload = any, Value = any> {
+export interface ExecutorEvent<Value = any> {
   /**
    * The type of the event.
    *
@@ -115,7 +114,7 @@ export interface ExecutorEvent<Payload = any, Value = any> {
   /**
    * The payload carried by the event, or `undefined` if there's no payload.
    */
-  payload: Payload;
+  payload: any;
 }
 
 /**
@@ -183,7 +182,7 @@ export interface ExecutorState<Value = any> {
  *
  * @template Value The value stored by the executor.
  */
-export interface ReadonlyExecutor<Value = any> extends ExecutorState<Value>, Observable<ExecutorEvent<any, Value>> {
+export interface ReadonlyExecutor<Value = any> extends ExecutorState<Value>, Observable<ExecutorEvent<Value>> {
   /**
    * The value of the latest fulfillment.
    *
@@ -368,9 +367,8 @@ export interface Executor<Value = any> extends ReadonlyExecutor<Value> {
    *
    * @param eventType The type of the published event.
    * @param payload The optional payload associated with the event.
-   * @template Payload The payload published with the event.
    */
-  publish<Payload>(eventType: ExecutorEvent['type'], payload?: Payload): void;
+  publish(eventType: ExecutorEventType, payload?: any): void;
 
   /**
    * Assigns patch to {@link annotations existing annotations}.
@@ -378,23 +376,6 @@ export interface Executor<Value = any> extends ReadonlyExecutor<Value> {
    * @param patch The patch containing new annotations.
    */
   annotate(patch: ExecutorAnnotations): void;
-}
-
-/**
- * Payload of the {@link ExecutorEvent plugin_configured} event.
- */
-export interface PluginConfiguredPayload {
-  /**
-   * The type of the plugin that was configured.
-   *
-   * @example "abortDeactivated"
-   */
-  type: string;
-
-  /**
-   * The options that the plugin now uses.
-   */
-  options?: object;
 }
 
 /**
@@ -411,7 +392,28 @@ export interface Observable<T> {
   subscribe(listener: (value: T) => void): () => void;
 }
 
-// NoInfer polyfill
-// https://www.typescriptlang.org/docs/handbook/release-notes/typescript-2-8.html#type-inference-in-conditional-types
-// https://devblogs.microsoft.com/typescript/announcing-typescript-5-4-beta/#the-noinfer-utility-type
+/**
+ * {@link https://www.typescriptlang.org/docs/handbook/utility-types.html#noinfertype NoInfer} polyfill.
+ *
+ * @internal
+ */
 export type NoInfer<T> = [T][T extends any ? 0 : never];
+
+/**
+ * Payload of the {@link ExecutorEvent plugin_configured} event.
+ *
+ * @internal
+ */
+export interface PluginConfiguredPayload {
+  /**
+   * The type of the plugin that was configured.
+   *
+   * @example "abortDeactivated"
+   */
+  type: string;
+
+  /**
+   * The options that the plugin now uses.
+   */
+  options?: object;
+}

@@ -28,7 +28,7 @@ const plugin: ExecutorPlugin = executor => {
     }
   }
 
-  executor.publish<PluginConfiguredPayload>('plugin_configured', {
+  executor.publish('plugin_configured', {
     type: 'bindAll',
-  });
+  } satisfies PluginConfiguredPayload);
 };

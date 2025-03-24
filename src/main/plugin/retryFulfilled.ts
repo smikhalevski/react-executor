@@ -83,9 +83,9 @@ export default function retryFulfilled<Value = any>(
       }
     });
 
-    executor.publish<PluginConfiguredPayload>('plugin_configured', {
+    executor.publish('plugin_configured', {
       type: 'retryFulfilled',
       options: { count, delay, isEager },
-    });
+    } satisfies PluginConfiguredPayload);
   };
 }

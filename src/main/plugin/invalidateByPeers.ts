@@ -43,10 +43,10 @@ export default function invalidateByPeers(peerMatcher: (executor: Executor) => a
           peerExecutors.delete(peerExecutor);
         }
 
-        executor.publish<PluginConfiguredPayload>('plugin_configured', {
+        executor.publish('plugin_configured', {
           type: 'invalidateByPeers',
           options: { peerExecutors: Array.from(peerExecutors) },
-        });
+        } satisfies PluginConfiguredPayload);
       }
 
       if ((event.type === 'invalidated' || event.type === 'fulfilled') && peerExecutors.has(peerExecutor)) {
@@ -54,9 +54,9 @@ export default function invalidateByPeers(peerMatcher: (executor: Executor) => a
       }
     });
 
-    executor.publish<PluginConfiguredPayload>('plugin_configured', {
+    executor.publish('plugin_configured', {
       type: 'invalidateByPeers',
       options: { peerExecutors: Array.from(peerExecutors) },
-    });
+    } satisfies PluginConfiguredPayload);
   };
 }

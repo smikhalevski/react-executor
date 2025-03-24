@@ -48,6 +48,8 @@ export interface SynchronizeStorageOptions<Value> {
 
   /**
    * A storage key, or a callback that returns the storage key.
+   *
+   * By default, a {@link ExecutorManager.keySerializer serialized} {@link Executor.key} is used as a storage key.
    */
   storageKey?: string | ((executor: Executor) => string);
 }
@@ -148,9 +150,9 @@ export default function synchronizeStorage<Value = any>(
       }
     });
 
-    executor.publish<PluginConfiguredPayload>('plugin_configured', {
+    executor.publish('plugin_configured', {
       type: 'synchronizeStorage',
       options: { storageKey: executorStorageKey },
-    });
+    } satisfies PluginConfiguredPayload);
   };
 }

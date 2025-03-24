@@ -83,10 +83,10 @@ export default function retryRejected<Value = any>(
       }
     });
 
-    executor.publish<PluginConfiguredPayload>('plugin_configured', {
+    executor.publish('plugin_configured', {
       type: 'retryRejected',
       options: { count, delay, isEager },
-    });
+    } satisfies PluginConfiguredPayload);
   };
 }
 

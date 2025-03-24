@@ -43,9 +43,9 @@ export default function abortPendingAfter(delay: number): ExecutorPlugin {
       }
     });
 
-    executor.publish<PluginConfiguredPayload>('plugin_configured', {
+    executor.publish('plugin_configured', {
       type: 'abortPendingAfter',
       options: { delay },
-    });
+    } satisfies PluginConfiguredPayload);
   };
 }

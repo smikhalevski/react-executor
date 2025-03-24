@@ -51,16 +51,16 @@ export default function invalidatePeers(peerMatcher: (executor: Executor) => any
           peerExecutors.delete(peerExecutor);
         }
 
-        executor.publish<PluginConfiguredPayload>('plugin_configured', {
+        executor.publish('plugin_configured', {
           type: 'invalidatePeers',
           options: { peerExecutors: Array.from(peerExecutors) },
-        });
+        } satisfies PluginConfiguredPayload);
       }
     });
 
-    executor.publish<PluginConfiguredPayload>('plugin_configured', {
+    executor.publish('plugin_configured', {
       type: 'invalidatePeers',
       options: { peerExecutors: Array.from(peerExecutors) },
-    });
+    } satisfies PluginConfiguredPayload);
   };
 }

@@ -46,8 +46,8 @@ export default function abortWhen(
     let timer: NodeJS.Timeout | undefined;
     let shouldAbort = false;
 
-    const unsubscribe = observable.subscribe(isTrue => {
-      if (!isTrue) {
+    const unsubscribe = observable.subscribe(isAborted => {
+      if (!isAborted) {
         clearTimeout(timer);
         timer = undefined;
         shouldAbort = false;
@@ -80,9 +80,9 @@ export default function abortWhen(
       }
     });
 
-    executor.publish<PluginConfiguredPayload>('plugin_configured', {
+    executor.publish('plugin_configured', {
       type: 'abortWhen',
       options: { observable, delay },
-    });
+    } satisfies PluginConfiguredPayload);
   };
 }

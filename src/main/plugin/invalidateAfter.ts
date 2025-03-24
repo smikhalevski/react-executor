@@ -43,9 +43,9 @@ export default function invalidateAfter(delay: number): ExecutorPlugin {
       }
     });
 
-    executor.publish<PluginConfiguredPayload>('plugin_configured', {
+    executor.publish('plugin_configured', {
       type: 'invalidateAfter',
       options: { delay },
-    });
+    } satisfies PluginConfiguredPayload);
   };
 }

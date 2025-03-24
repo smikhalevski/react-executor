@@ -53,8 +53,8 @@ export default function retryWhen(
     let timer: NodeJS.Timeout | undefined;
     let shouldRetry = false;
 
-    const unsubscribe = observable.subscribe(isTrue => {
-      if (!isTrue) {
+    const unsubscribe = observable.subscribe(isRetried => {
+      if (!isRetried) {
         clearTimeout(timer);
         timer = undefined;
         shouldRetry = false;
@@ -100,9 +100,9 @@ export default function retryWhen(
       }
     });
 
-    executor.publish<PluginConfiguredPayload>('plugin_configured', {
+    executor.publish('plugin_configured', {
       type: 'retryWhen',
       options: { observable, delay, isEager },
-    });
+    } satisfies PluginConfiguredPayload);
   };
 }

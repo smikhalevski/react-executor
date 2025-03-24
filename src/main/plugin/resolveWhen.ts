@@ -22,9 +22,7 @@ import type { ExecutorPlugin, Observable, PluginConfiguredPayload } from '../typ
  */
 export default function resolveWhen<Value>(observable: Observable<PromiseLike<Value> | Value>): ExecutorPlugin<Value> {
   return executor => {
-    const unsubscribe = observable.subscribe(value => {
-      executor.resolve(value);
-    });
+    const unsubscribe = observable.subscribe(value => executor.resolve(value));
 
     executor.subscribe(event => {
       if (event.type === 'detached') {
@@ -32,9 +30,9 @@ export default function resolveWhen<Value>(observable: Observable<PromiseLike<Va
       }
     });
 
-    executor.publish<PluginConfiguredPayload>('plugin_configured', {
+    executor.publish('plugin_configured', {
       type: 'resolveWhen',
       options: { observable },
-    });
+    } satisfies PluginConfiguredPayload);
   };
 }
