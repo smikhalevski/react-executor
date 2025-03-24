@@ -18,7 +18,7 @@ import { emptyObject } from '../utils';
  */
 export interface RetryInvalidatedOptions {
   /**
-   * If `true` then executor is retried even if it isn't {@link Executor.isActive active}.
+   * If `true` then executor is retried even if it isn't active.
    *
    * @default false
    */

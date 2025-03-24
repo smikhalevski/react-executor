@@ -29,7 +29,7 @@ export interface RetryWhenOptions {
   delay?: number;
 
   /**
-   * If `true` then executor is retried even if it isn't {@link Executor.isActive active}.
+   * If `true` then executor is retried even if it isn't active.
    *
    * @default false
    */

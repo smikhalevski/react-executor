@@ -12,7 +12,6 @@
  * ]);
  * ```
  *
- * @see {@link windowBlurred}
  * @module observable/windowFocused
  */
 

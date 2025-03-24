@@ -49,7 +49,7 @@ export interface SynchronizeStorageOptions<Value> {
   /**
    * A storage key, or a callback that returns the storage key.
    *
-   * By default, a {@link ExecutorManager.keySerializer serialized} {@link Executor.key} is used as a storage key.
+   * By default, a serialized {@link Executor.key} is used as a storage key.
    */
   storageKey?: string | ((executor: Executor) => string);
 }
@@ -74,7 +74,7 @@ export default function synchronizeStorage<Value = any>(
     const executorStorageKey =
       typeof storageKey === 'function'
         ? storageKey(executor)
-        : storageKey ?? executor.manager.keySerializer(executor.key);
+        : (storageKey ?? executor.manager.keySerializer(executor.key));
 
     if (typeof executorStorageKey !== 'string') {
       throw new Error('Cannot guess a storage key for an executor, the "storageKey" option is required');

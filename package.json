@@ -76,6 +76,11 @@
       "import": "./plugin/detachDeactivated.mjs",
       "require": "./plugin/detachDeactivated.js"
     },
+    "./plugin/detachInactive": {
+      "types": "./plugin/detachInactive.d.ts",
+      "import": "./plugin/detachInactive.mjs",
+      "require": "./plugin/detachInactive.js"
+    },
     "./plugin/invalidateAfter": {
       "types": "./plugin/invalidateAfter.d.ts",
       "import": "./plugin/invalidateAfter.mjs",
@@ -156,27 +161,28 @@
   },
   "homepage": "https://github.com/smikhalevski/react-executor#readme",
   "devDependencies": {
-    "@rollup/plugin-typescript": "^11.1.6",
-    "@testing-library/jest-dom": "^6.4.2",
-    "@testing-library/react": "^15.0.5",
-    "@types/jest": "^29.5.12",
+    "@rollup/plugin-typescript": "^12.1.2",
+    "@swc/core": "^1.11.13",
+    "@swc/jest": "^0.2.37",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.2.0",
+    "@types/jest": "^29.5.14",
     "@types/react": "^18.3.1",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
-    "prettier": "^3.2.5",
-    "rimraf": "^5.0.5",
-    "rollup": "^4.17.2",
-    "ts-jest": "^29.1.2",
-    "tslib": "^2.6.2",
-    "typedoc": "^0.25.13",
+    "prettier": "^3.5.3",
+    "rimraf": "^6.0.1",
+    "rollup": "^4.37.0",
+    "tslib": "^2.8.1",
+    "typedoc": "^0.26.11",
     "typedoc-custom-css": "github:smikhalevski/typedoc-custom-css#master",
-    "typedoc-plugin-mdn-links": "^3.1.27",
-    "typescript": "^5.4.5"
+    "typedoc-plugin-mdn-links": "^4.0.15",
+    "typescript": "^5.6.3"
   },
   "optionalDependencies": {
     "react": ">=16.8.0"
   },
   "dependencies": {
-    "parallel-universe": "^6.1.1"
+    "parallel-universe": "^6.1.2"
   }
 }

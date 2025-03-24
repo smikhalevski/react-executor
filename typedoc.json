@@ -21,17 +21,12 @@
     "./src/main/index.ts",
     "./src/main/ssr/index.ts",
     "./src/main/ssr/node/index.ts",
-    "./src/main/plugin/*.ts",
     "./src/main/observable/*.ts",
+    "./src/main/plugin/*.ts",
     "./src/main/core.ts"
   ],
-  "intentionallyNotExported": [
-    "ExecutorImpl",
-    "NoInfer"
-  ],
-  "plugin": [
-    "typedoc-plugin-mdn-links"
-  ],
+  "intentionallyNotExported": ["ExecutorImpl", "NoInfer"],
+  "plugin": ["typedoc-plugin-mdn-links"],
   "externalSymbolLinkMappings": {
     "parallel-universe": {
       "AbortablePromise": "https://smikhalevski.github.io/parallel-universe/classes/AbortablePromise.html"

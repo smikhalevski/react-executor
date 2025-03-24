@@ -12,7 +12,6 @@
  * ]);
  * ```
  *
- * @see {@link navigatorOffline}
  * @module observable/navigatorOffline
  */
 
