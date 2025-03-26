@@ -38,5 +38,5 @@ export interface DetachDeactivatedOptions {
 export default function detachDeactivated(options: DetachDeactivatedOptions = emptyObject): ExecutorPlugin {
   const { delay = 5_000 } = options;
 
-  return detachInactive({ delayBeforeActivation: -1, delayAfterDeactivation: delay });
+  return detachInactive({ delayAfterDeactivation: delay });
 }

@@ -28,7 +28,7 @@ describe('detachDeactivated', () => {
       type: 'plugin_configured',
       target: executor,
       version: 0,
-      payload: { type: 'detachInactive', options: { delayAfterDeactivation: 0, delayBeforeActivation: -1 } },
+      payload: { type: 'detachInactive', options: { delayAfterDeactivation: 0 } },
     });
     expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
     expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'activated', target: executor, version: 0 });
@@ -53,7 +53,7 @@ describe('detachDeactivated', () => {
       type: 'plugin_configured',
       target: executor,
       version: 0,
-      payload: { type: 'detachInactive', options: { delayAfterDeactivation: 0, delayBeforeActivation: -1 } },
+      payload: { type: 'detachInactive', options: { delayAfterDeactivation: 0 } },
     });
     expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
     expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'activated', target: executor, version: 0 });
