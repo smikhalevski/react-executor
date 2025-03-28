@@ -21,6 +21,10 @@ export class ReadableSSRExecutorManager extends SSRExecutorManager implements Re
       transform: (chunk, controller) => {
         controller.enqueue(chunk);
 
+        if (!chunk.toString().endsWith('</script>')) {
+          return;
+        }
+
         const hydrationChunk = this.nextHydrationChunk();
 
         if (hydrationChunk !== '') {

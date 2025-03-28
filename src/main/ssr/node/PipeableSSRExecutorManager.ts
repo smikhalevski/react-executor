@@ -27,6 +27,11 @@ export class PipeableSSRExecutorManager extends SSRExecutorManager {
             return;
           }
 
+          if (!chunk.toString().endsWith('</script>')) {
+            callback();
+            return;
+          }
+
           const hydrationChunk = this.nextHydrationChunk();
 
           if (hydrationChunk !== '') {

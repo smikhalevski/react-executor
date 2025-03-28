@@ -1628,7 +1628,7 @@ import { renderToPipeableStream } from 'react-dom/server';
 import { ExecutorManagerProvider } from 'react-executor';
 import { PipeableSSRExecutorManager } from 'react-executor/ssr/node';
 
-const server = createServer(async (request, response) => {
+const server = createServer((request, response) => {
 
   // 1️⃣ Create a new manager for each request
   const manager = new PipeableSSRExecutorManager(response);
