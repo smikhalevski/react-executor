@@ -173,10 +173,10 @@ If you're using objects as executor keys, then you may want to enable stable ser
 alphabetically during serialization). In this case use any library that supports stable JSON serialization:
 
 ```ts
-import JSON from 'json-marshal';
+import { stringify } from 'json-marshal';
 
 const manager = new ExecutorManager({
-  keySerializer: key => JSON.stringify(key, { stable: true })
+  keySerializer: key => stringify(key, { isStable: true })
 });
 
 const bobrExecutor = manager.getOrCreate({ id: 123, name: 'Woody' });
@@ -1334,11 +1334,11 @@ stores a value that may contain circular references, or non-serializable data li
 Here's how you can enable serialization of objects with circular references:
 
 ```ts
-import JSON from 'json-marshal';
+import JSONMarshal from 'json-marshal';
 
 const executor = useExecutor('test', 42, [
   synchronizeStorage(localStorage, {
-    serializer: JSON,
+    serializer: JSONMarshal,
   })
 ]);
 ```
@@ -1734,12 +1734,12 @@ option to `enableSSRHydration`:
 import React from 'react';
 import { hydrateRoot } from 'react-dom/client';
 import { enableSSRHydration, ExecutorManager, ExecutorManagerProvider } from 'react-executor';
-import JSON from 'json-marshal';
+import JSONMarshal from 'json-marshal';
 
 const manager = new ExecutorManager();
 
 // 🟡 Pass a custom state parser
-enableSSRHydration(manager, { stateParser: JSON.parse });
+enableSSRHydration(manager, { stateParser: JSONMarshal.parse });
 
 hydrateRoot(
   document,
@@ -1757,9 +1757,9 @@ or [`ReadableSSRExecutorManager`](#readable-web-streams-support), depending on y
 
 ```ts
 import { SSRExecutorManager } from 'react-executor/ssr';
-import JSON from 'json-marshal';
+import JSONMarshal from 'json-marshal';
 
-const manager = new SSRExecutorManager({ stateStringifier: JSON.stringify });
+const manager = new SSRExecutorManager({ stateStringifier: JSONMarshal.stringify });
 ```
 
 > [!TIP]\
