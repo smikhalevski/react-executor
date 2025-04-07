@@ -5,7 +5,7 @@ Date.now = () => 50;
 
 describe('SSRExecutorManager', () => {
   describe('nextHydrationScript', () => {
-    test('returns undefined if there no changes in state', () => {
+    test('returns an empty string if there no changes in state', () => {
       const manager = new SSRExecutorManager();
 
       manager.getOrCreate('xxx');
@@ -136,7 +136,7 @@ describe('SSRExecutorManager', () => {
   });
 
   describe('nextHydrationChunk', () => {
-    test('returns undefined if there no changes in state', () => {
+    test('returns an empty string if there no changes in state', () => {
       const manager = new SSRExecutorManager();
 
       manager.getOrCreate('xxx');

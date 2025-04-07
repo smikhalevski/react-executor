@@ -29,12 +29,8 @@ export function enableSSRHydration<T extends ExecutorManager>(manager: T, option
   const ssrState =
     typeof window.__REACT_EXECUTOR_SSR_STATE__ !== 'undefined' ? window.__REACT_EXECUTOR_SSR_STATE__ : undefined;
 
-  if (Array.isArray(ssrState)) {
-    for (const stateStr of ssrState) {
-      manager.hydrate(stateParser(stateStr));
-    }
-  } else if (ssrState !== undefined) {
-    throw new Error('SSR hydration already enabled');
+  if (ssrState !== undefined && !Array.isArray(ssrState)) {
+    throw new Error('Executor manager hydration has already begun');
   }
 
   window.__REACT_EXECUTOR_SSR_STATE__ = {
@@ -44,6 +40,12 @@ export function enableSSRHydration<T extends ExecutorManager>(manager: T, option
       }
     },
   };
+
+  if (ssrState !== undefined) {
+    for (const stateStr of ssrState) {
+      manager.hydrate(stateParser(stateStr));
+    }
+  }
 
   return manager;
 }

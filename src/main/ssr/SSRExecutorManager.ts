@@ -24,7 +24,7 @@ export interface SSRExecutorManagerOptions extends ExecutorManagerOptions {
   executorFilter?: (executor: Executor) => boolean;
 
   /**
-   * A nonce string to allow scripts for
+   * A nonce string to allow hydration scripts under a
    * [`script-src` Content-Security-Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src).
    */
   nonce?: string;
@@ -50,7 +50,7 @@ export class SSRExecutorManager extends ExecutorManager {
   protected _executorFilter;
 
   /**
-   * A nonce string to allow scripts for
+   * A nonce string to allow hydration scripts under a
    * [`script-src` Content-Security-Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src).
    */
   nonce;
@@ -93,9 +93,7 @@ export class SSRExecutorManager extends ExecutorManager {
     const stateStrs = [];
 
     for (const executor of this._executors.values()) {
-      const hydratedVersion = this._hydratedVersions.get(executor);
-
-      if ((hydratedVersion === undefined || hydratedVersion !== executor.version) && this._executorFilter(executor)) {
+      if (this._hydratedVersions.get(executor) !== executor.version && this._executorFilter(executor)) {
         stateStrs.push(JSON.stringify(this._stateStringifier(executor.toJSON())));
 
         this._hydratedVersions.set(executor, executor.version);

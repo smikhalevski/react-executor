@@ -5,7 +5,7 @@ describe('enableSSRHydration', () => {
     window.__REACT_EXECUTOR_SSR_STATE__ = undefined;
   });
 
-  test('returns the provided executor', () => {
+  test('returns the provided executor manager', () => {
     const manager = new ExecutorManager();
 
     expect(enableSSRHydration(manager)).toBe(manager);
