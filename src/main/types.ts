@@ -249,7 +249,7 @@ export interface ReadonlyExecutor<Value = any> extends ExecutorState<Value>, Obs
    * [the task is replaced](https://github.com/smikhalevski/react-executor?tab=readme-ov-file#replace-a-task).
    * Use {@link getOrAwait} to wait until the executor becomes {@link isSettled settled}.
    */
-  readonly pendingPromise: AbortablePromise<Value> | null;
+  readonly promise: AbortablePromise<Value> | null;
 
   /**
    * Returns a {@link value} if the executor is {@link isFulfilled fulfilled}. Throws a {@link reason} if the executor

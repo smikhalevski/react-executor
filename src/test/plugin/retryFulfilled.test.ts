@@ -56,7 +56,7 @@ describe('retryFulfilled', () => {
     jest.runAllTimers();
     expect(executor.isPending).toBe(true);
 
-    executor.pendingPromise!.catch(noop);
+    executor.promise!.catch(noop);
     executor.abort();
 
     // Retry 2
@@ -79,7 +79,7 @@ describe('retryFulfilled', () => {
     jest.runAllTimers();
     expect(executor.isPending).toBe(true);
 
-    executor.pendingPromise!.catch(noop);
+    executor.promise!.catch(noop);
     executor.reject(undefined);
 
     // Retry 2

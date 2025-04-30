@@ -24,7 +24,7 @@ export class ExecutorImpl<Value = any> implements Executor {
   isFulfilled = false;
   annotations: ExecutorAnnotations = Object.create(null);
   version = 0;
-  pendingPromise: AbortablePromise<Value> | null = null;
+  promise: AbortablePromise<Value> | null = null;
 
   /**
    * The number of times the executor was activated.
@@ -49,7 +49,7 @@ export class ExecutorImpl<Value = any> implements Executor {
   }
 
   get isPending(): boolean {
-    return this.pendingPromise !== null;
+    return this.promise !== null;
   }
 
   get isInvalidated(): boolean {
@@ -108,8 +108,8 @@ export class ExecutorImpl<Value = any> implements Executor {
   execute(task: ExecutorTask<Value>): AbortablePromise<Value> {
     const promise = new AbortablePromise<Value>((resolve, reject, signal) => {
       signal.addEventListener('abort', () => {
-        if (this.pendingPromise === promise) {
-          this.pendingPromise = null;
+        if (this.promise === promise) {
+          this.promise = null;
           this.version++;
         }
         this.publish('aborted');
@@ -123,7 +123,7 @@ export class ExecutorImpl<Value = any> implements Executor {
           if (signal.aborted) {
             return;
           }
-          this.pendingPromise = null;
+          this.promise = null;
           this.resolve(value);
           resolve(value);
         },
@@ -132,7 +132,7 @@ export class ExecutorImpl<Value = any> implements Executor {
           if (signal.aborted) {
             return;
           }
-          this.pendingPromise = null;
+          this.promise = null;
           this.reject(reason);
           reject(reason);
         }
@@ -141,16 +141,16 @@ export class ExecutorImpl<Value = any> implements Executor {
 
     promise.catch(noop);
 
-    const { pendingPromise } = this;
-    this.pendingPromise = promise;
+    const prevPromise = this.promise;
+    this.promise = promise;
 
-    if (pendingPromise !== null) {
-      pendingPromise.abort(AbortError('The task was replaced'));
+    if (prevPromise !== null) {
+      prevPromise.abort(AbortError('The task was replaced'));
     } else {
       this.version++;
     }
 
-    if (this.pendingPromise === promise) {
+    if (this.promise === promise) {
       this.task = task;
       this.publish('pending');
     }
@@ -175,7 +175,7 @@ export class ExecutorImpl<Value = any> implements Executor {
   }
 
   abort(reason: unknown = AbortError('The executor was aborted')): void {
-    this.pendingPromise?.abort(reason);
+    this.promise?.abort(reason);
   }
 
   invalidate(invalidatedAt = Date.now()): void {
@@ -192,10 +192,10 @@ export class ExecutorImpl<Value = any> implements Executor {
       return;
     }
 
-    const { pendingPromise } = this;
-    this.pendingPromise = null;
+    const prevPromise = this.promise;
+    this.promise = null;
 
-    pendingPromise?.abort();
+    prevPromise?.abort();
 
     this.isFulfilled = true;
     this.value = value;
@@ -207,10 +207,10 @@ export class ExecutorImpl<Value = any> implements Executor {
   }
 
   reject(reason: any, settledAt = Date.now()): void {
-    const { pendingPromise } = this;
-    this.pendingPromise = null;
+    const prevPromise = this.promise;
+    this.promise = null;
 
-    pendingPromise?.abort();
+    prevPromise?.abort();
 
     this.isFulfilled = false;
     this.reason = reason;
