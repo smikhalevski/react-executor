@@ -80,9 +80,12 @@ export default function abortWhen(
       }
     });
 
-    executor.publish('plugin_configured', {
-      type: 'abortWhen',
-      options: { observable, delay },
-    } satisfies PluginConfiguredPayload);
+    executor.publish({
+      type: 'plugin_configured',
+      payload: {
+        type: 'abortWhen',
+        options: { observable, delay },
+      } satisfies PluginConfiguredPayload,
+    });
   };
 }

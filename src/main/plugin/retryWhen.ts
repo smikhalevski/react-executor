@@ -100,9 +100,12 @@ export default function retryWhen(
       }
     });
 
-    executor.publish('plugin_configured', {
-      type: 'retryWhen',
-      options: { observable, delay, isEager },
-    } satisfies PluginConfiguredPayload);
+    executor.publish({
+      type: 'plugin_configured',
+      payload: {
+        type: 'retryWhen',
+        options: { observable, delay, isEager },
+      } satisfies PluginConfiguredPayload,
+    });
   };
 }

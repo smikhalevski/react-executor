@@ -43,9 +43,12 @@ export default function retryActivated(options: RetryActivatedOptions = emptyObj
       }
     });
 
-    executor.publish('plugin_configured', {
-      type: 'retryActivated',
-      options: { staleDelay },
-    } satisfies PluginConfiguredPayload);
+    executor.publish({
+      type: 'plugin_configured',
+      payload: {
+        type: 'retryActivated',
+        options: { staleDelay },
+      } satisfies PluginConfiguredPayload,
+    });
   };
 }

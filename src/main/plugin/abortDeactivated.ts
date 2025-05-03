@@ -56,9 +56,12 @@ export default function abortDeactivated(options: AbortDeactivatedOptions = empt
       }
     });
 
-    executor.publish('plugin_configured', {
-      type: 'abortDeactivated',
-      options: { delay },
-    } satisfies PluginConfiguredPayload);
+    executor.publish({
+      type: 'plugin_configured',
+      payload: {
+        type: 'abortDeactivated',
+        options: { delay },
+      } satisfies PluginConfiguredPayload,
+    });
   };
 }

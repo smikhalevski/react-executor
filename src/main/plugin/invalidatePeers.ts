@@ -52,16 +52,22 @@ export default function invalidatePeers(
           (peerExecutors.add(peerExecutor), true)) ||
         (eventType === 'detached' && peerExecutors.delete(peerExecutor))
       ) {
-        executor.publish('plugin_configured', {
-          type: 'invalidatePeers',
-          options: { peerExecutors: Array.from(peerExecutors) },
-        } satisfies PluginConfiguredPayload);
+        executor.publish({
+          type: 'plugin_configured',
+          payload: {
+            type: 'invalidatePeers',
+            options: { peerExecutors: Array.from(peerExecutors) },
+          } satisfies PluginConfiguredPayload,
+        });
       }
     });
 
-    executor.publish('plugin_configured', {
-      type: 'invalidatePeers',
-      options: { peerExecutors: Array.from(peerExecutors) },
-    } satisfies PluginConfiguredPayload);
+    executor.publish({
+      type: 'plugin_configured',
+      payload: {
+        type: 'invalidatePeers',
+        options: { peerExecutors: Array.from(peerExecutors) },
+      } satisfies PluginConfiguredPayload,
+    });
   };
 }

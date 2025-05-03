@@ -166,7 +166,7 @@ export class ExecutorManager implements Iterable<Executor>, Observable<ExecutorE
     this._initialState.delete(serializedKey);
     this._executors.set(serializedKey, executor);
 
-    executor.publish('attached');
+    executor.publish({ type: 'attached' });
 
     if (initialValue === undefined || executor.isSettled || executor.isPending) {
       return executor;
@@ -224,7 +224,7 @@ export class ExecutorManager implements Iterable<Executor>, Observable<ExecutorE
 
     this._executors.delete(serializedKey);
 
-    executor.publish('detached');
+    executor.publish({ type: 'detached' });
     executor._pubSub.unsubscribeAll();
 
     return true;

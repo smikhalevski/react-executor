@@ -43,9 +43,12 @@ export default function invalidateAfter(delay: number): ExecutorPlugin {
       }
     });
 
-    executor.publish('plugin_configured', {
-      type: 'invalidateAfter',
-      options: { delay },
-    } satisfies PluginConfiguredPayload);
+    executor.publish({
+      type: 'plugin_configured',
+      payload: {
+        type: 'invalidateAfter',
+        options: { delay },
+      } satisfies PluginConfiguredPayload,
+    });
   };
 }
