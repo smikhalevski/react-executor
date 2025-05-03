@@ -22,5 +22,6 @@ export type {
   ExecutorPlugin,
   ExecutorTask,
   Observable,
+  PartialExecutorEvent,
   ReadonlyExecutor,
 } from './types.js';

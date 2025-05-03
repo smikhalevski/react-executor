@@ -28,7 +28,10 @@ const plugin: ExecutorPlugin = executor => {
     }
   }
 
-  executor.publish('plugin_configured', {
-    type: 'bindAll',
-  } satisfies PluginConfiguredPayload);
+  executor.publish({
+    type: 'plugin_configured',
+    payload: {
+      type: 'bindAll',
+    } satisfies PluginConfiguredPayload,
+  });
 };

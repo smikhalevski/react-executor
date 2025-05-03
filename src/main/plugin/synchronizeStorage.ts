@@ -153,9 +153,12 @@ export default function synchronizeStorage<Value = any>(
       }
     });
 
-    executor.publish('plugin_configured', {
-      type: 'synchronizeStorage',
-      options: { storageKey: executorStorageKey },
-    } satisfies PluginConfiguredPayload);
+    executor.publish({
+      type: 'plugin_configured',
+      payload: {
+        type: 'synchronizeStorage',
+        options: { storageKey: executorStorageKey },
+      } satisfies PluginConfiguredPayload,
+    });
   };
 }
