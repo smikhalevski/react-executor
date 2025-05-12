@@ -41,9 +41,12 @@ export default function retryInvalidated(options: RetryInvalidatedOptions = empt
       }
     });
 
-    executor.publish('plugin_configured', {
-      type: 'retryInvalidated',
-      options: { isEager },
-    } satisfies PluginConfiguredPayload);
+    executor.publish({
+      type: 'plugin_configured',
+      payload: {
+        type: 'retryInvalidated',
+        options: { isEager },
+      } satisfies PluginConfiguredPayload,
+    });
   };
 }

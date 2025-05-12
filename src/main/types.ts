@@ -118,6 +118,23 @@ export interface ExecutorEvent<Value = any> {
 }
 
 /**
+ * The event that can be published by an executor.
+ */
+export interface PartialExecutorEvent {
+  /**
+   * The type of the event.
+   *
+   * See {@link ExecutorEvent} for more details.
+   */
+  type: ExecutorEventType;
+
+  /**
+   * The payload carried by the event.
+   */
+  payload?: any;
+}
+
+/**
  * The plugin callback that is invoked when the executor is created by the {@link ExecutorManager}.
  *
  * @param executor The executor that was just created.
@@ -363,12 +380,11 @@ export interface Executor<Value = any> extends ReadonlyExecutor<Value> {
   activate(): () => void;
 
   /**
-   * Publishes the event for subscribers of the executor and its manager.
+   * Publishes the {@link event} for subscribers of the executor and its manager.
    *
-   * @param eventType The type of the published event.
-   * @param payload The optional payload associated with the event.
+   * @param event The event to publish.
    */
-  publish(eventType: ExecutorEventType, payload?: any): void;
+  publish(event: PartialExecutorEvent): void;
 
   /**
    * Assigns patch to {@link annotations existing annotations}.

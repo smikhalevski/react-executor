@@ -4,9 +4,9 @@ import type {
   Executor,
   ExecutorAnnotations,
   ExecutorEvent,
-  ExecutorEventType,
   ExecutorState,
   ExecutorTask,
+  PartialExecutorEvent,
 } from './types.js';
 import { AbortError, noop } from './utils.js';
 
@@ -112,7 +112,7 @@ export class ExecutorImpl<Value = any> implements Executor {
           this.promise = null;
           this.version++;
         }
-        this.publish('aborted');
+        this.publish({ type: 'aborted' });
       });
 
       new Promise<Value>(resolve => {
@@ -152,7 +152,7 @@ export class ExecutorImpl<Value = any> implements Executor {
 
     if (this.promise === promise) {
       this.task = task;
-      this.publish('pending');
+      this.publish({ type: 'pending' });
     }
 
     return promise;
@@ -170,7 +170,7 @@ export class ExecutorImpl<Value = any> implements Executor {
       this.value = this.reason = undefined;
       this.settledAt = this.invalidatedAt = 0;
       this.version++;
-      this.publish('cleared');
+      this.publish({ type: 'cleared' });
     }
   }
 
@@ -182,7 +182,7 @@ export class ExecutorImpl<Value = any> implements Executor {
     if (!this.isInvalidated && this.isSettled) {
       this.invalidatedAt = invalidatedAt;
       this.version++;
-      this.publish('invalidated');
+      this.publish({ type: 'invalidated' });
     }
   }
 
@@ -203,7 +203,7 @@ export class ExecutorImpl<Value = any> implements Executor {
     this.invalidatedAt = 0;
 
     this.version++;
-    this.publish('fulfilled');
+    this.publish({ type: 'fulfilled' });
   }
 
   reject(reason: any, settledAt = Date.now()): void {
@@ -218,35 +218,40 @@ export class ExecutorImpl<Value = any> implements Executor {
     this.invalidatedAt = 0;
 
     this.version++;
-    this.publish('rejected');
+    this.publish({ type: 'rejected' });
   }
 
   activate(): () => void {
     let isApplicable = true;
 
     if (this._activationCount++ === 0) {
-      this.publish('activated');
+      this.publish({ type: 'activated' });
     }
 
     return () => {
       if (isApplicable && ((isApplicable = false), --this._activationCount === 0)) {
-        this.publish('deactivated');
+        this.publish({ type: 'deactivated' });
       }
     };
   }
 
-  subscribe(listener: (event: ExecutorEvent) => void): () => void {
+  subscribe(listener: (event: ExecutorEvent<Value>) => void): () => void {
     return this._pubSub.subscribe(listener);
   }
 
-  publish(eventType: ExecutorEventType, payload?: unknown): void {
-    this._pubSub.publish({ type: eventType, target: this, version: this.version, payload });
+  publish(event: PartialExecutorEvent): void {
+    this._pubSub.publish({
+      type: event.type,
+      target: this,
+      version: this.version,
+      payload: event.payload,
+    });
   }
 
   annotate(patch: ExecutorAnnotations): void {
     this.version++;
     Object.assign(this.annotations, patch);
-    this.publish('annotated');
+    this.publish({ type: 'annotated' });
   }
 
   toJSON(): ExecutorState<Value> {

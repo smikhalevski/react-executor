@@ -45,9 +45,12 @@ export default function rejectPendingAfter(delay: number): ExecutorPlugin {
       }
     });
 
-    executor.publish('plugin_configured', {
-      type: 'rejectPendingAfter',
-      options: { delay },
-    } satisfies PluginConfiguredPayload);
+    executor.publish({
+      type: 'plugin_configured',
+      payload: {
+        type: 'rejectPendingAfter',
+        options: { delay },
+      } satisfies PluginConfiguredPayload,
+    });
   };
 }
