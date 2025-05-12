@@ -1,14 +1,15 @@
+import { describe, expect, test, beforeEach, vi, Mock } from 'vitest';
 import { ExecutorManager } from '../../main';
 import invalidateAfter from '../../main/plugin/invalidateAfter';
 
-jest.useFakeTimers();
+vi.useFakeTimers();
 
 describe('invalidateAfter', () => {
-  let listenerMock: jest.Mock;
+  let listenerMock: Mock;
   let manager: ExecutorManager;
 
   beforeEach(() => {
-    listenerMock = jest.fn();
+    listenerMock = vi.fn();
 
     manager = new ExecutorManager();
     manager.subscribe(listenerMock);
@@ -35,7 +36,7 @@ describe('invalidateAfter', () => {
     executor.activate();
     executor.resolve('aaa');
 
-    jest.runAllTimers();
+    vi.runAllTimers();
 
     expect(executor.isInvalidated).toBe(true);
 
@@ -57,11 +58,11 @@ describe('invalidateAfter', () => {
     executor.activate();
     executor.resolve('aaa');
 
-    jest.advanceTimersByTime(99);
+    vi.advanceTimersByTime(99);
 
     executor.resolve('bbb');
 
-    jest.advanceTimersByTime(99);
+    vi.advanceTimersByTime(99);
 
     expect(listenerMock).toHaveBeenCalledTimes(5);
     expect(listenerMock).toHaveBeenNthCalledWith(1, {

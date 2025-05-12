@@ -1,3 +1,4 @@
+import { describe, expect, test } from 'vitest';
 import { ExecutorManager } from '../../main';
 import bindAll from '../../main/plugin/bindAll';
 

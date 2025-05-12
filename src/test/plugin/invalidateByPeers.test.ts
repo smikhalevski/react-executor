@@ -1,7 +1,8 @@
+import { describe, expect, test, beforeEach, vi as vi } from 'vitest';
 import { ExecutorManager } from '../../main';
 import invalidateByPeers from '../../main/plugin/invalidateByPeers';
 
-jest.useFakeTimers();
+vi.useFakeTimers();
 
 describe('invalidateByPeers', () => {
   let manager: ExecutorManager;

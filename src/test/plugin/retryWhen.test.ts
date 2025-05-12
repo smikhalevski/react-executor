@@ -1,8 +1,9 @@
+import { describe, expect, test, beforeEach, vi } from 'vitest';
 import { PubSub } from 'parallel-universe';
 import { ExecutorManager } from '../../main';
 import retryWhen from '../../main/plugin/retryWhen';
 
-jest.useFakeTimers();
+vi.useFakeTimers();
 
 describe('retryWhen', () => {
   let manager: ExecutorManager;
@@ -14,7 +15,7 @@ describe('retryWhen', () => {
   test('retries an active executor', async () => {
     const pubSub = new PubSub<boolean>();
 
-    const taskMock = jest.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
+    const taskMock = vi.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
 
     const executor = manager.getOrCreate('xxx', taskMock, [retryWhen(pubSub)]);
 
@@ -24,13 +25,13 @@ describe('retryWhen', () => {
 
     pubSub.publish(false);
 
-    jest.runAllTimers();
+    vi.runAllTimers();
 
     expect(executor.isPending).toBe(false);
 
     pubSub.publish(true);
 
-    jest.runAllTimers();
+    vi.runAllTimers();
 
     expect(executor.isPending).toBe(true);
     expect(executor.value).toBe('aaa');
@@ -43,7 +44,7 @@ describe('retryWhen', () => {
   test('does not retry a non-active executor', async () => {
     const pubSub = new PubSub<boolean>();
 
-    const taskMock = jest.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
+    const taskMock = vi.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
 
     const executor = manager.getOrCreate('xxx', taskMock, [retryWhen(pubSub)]);
 
@@ -51,13 +52,13 @@ describe('retryWhen', () => {
 
     pubSub.publish(false);
 
-    jest.runAllTimers();
+    vi.runAllTimers();
 
     expect(executor.isPending).toBe(false);
 
     pubSub.publish(true);
 
-    jest.runAllTimers();
+    vi.runAllTimers();
 
     expect(executor.isPending).toBe(false);
 
@@ -67,7 +68,7 @@ describe('retryWhen', () => {
   test('does not retry if observable has pushed false before timeout', async () => {
     const pubSub = new PubSub<boolean>();
 
-    const taskMock = jest.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
+    const taskMock = vi.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
 
     const executor = manager.getOrCreate('xxx', taskMock, [retryWhen(pubSub, { delay: 10_000 })]);
 
@@ -77,13 +78,13 @@ describe('retryWhen', () => {
 
     pubSub.publish(true);
 
-    jest.advanceTimersByTime(5_000);
+    vi.advanceTimersByTime(5_000);
 
     expect(executor.isPending).toBe(false);
 
     pubSub.publish(false);
 
-    jest.runAllTimers();
+    vi.runAllTimers();
 
     expect(executor.isPending).toBe(false);
 
@@ -93,7 +94,7 @@ describe('retryWhen', () => {
   test('retries if observable has pushed true after timeout', async () => {
     const pubSub = new PubSub<boolean>();
 
-    const taskMock = jest.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
+    const taskMock = vi.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
 
     const executor = manager.getOrCreate('xxx', taskMock, [retryWhen(pubSub, { delay: 5_000 })]);
 
@@ -103,13 +104,13 @@ describe('retryWhen', () => {
 
     pubSub.publish(false);
 
-    jest.advanceTimersByTime(10_000);
+    vi.advanceTimersByTime(10_000);
 
     expect(executor.isPending).toBe(false);
 
     pubSub.publish(true);
 
-    jest.runAllTimers();
+    vi.runAllTimers();
 
     expect(executor.isPending).toBe(true);
 

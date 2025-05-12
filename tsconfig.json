@@ -12,7 +12,5 @@
     "module": "ES6",
     "outDir": "./lib"
   },
-  "include": [
-    "./src/**/*"
-  ]
+  "include": ["./src/**/*"]
 }

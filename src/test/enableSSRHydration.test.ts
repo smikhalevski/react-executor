@@ -1,3 +1,8 @@
+/**
+ * @vitest-environment jsdom
+ */
+
+import { describe, expect, test, beforeEach, vi } from 'vitest';
 import { enableSSRHydration, ExecutorManager } from '../main';
 
 describe('enableSSRHydration', () => {
@@ -138,7 +143,7 @@ describe('enableSSRHydration', () => {
 
   test('uses custom parser', () => {
     const manager = new ExecutorManager();
-    const stateParserMock = jest.fn(JSON.parse);
+    const stateParserMock = vi.fn(JSON.parse);
 
     enableSSRHydration(manager, { stateParser: stateParserMock });
 

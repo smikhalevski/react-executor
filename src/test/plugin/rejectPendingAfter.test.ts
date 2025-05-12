@@ -1,3 +1,4 @@
+import { describe, expect, test, beforeEach } from 'vitest';
 import { delay } from 'parallel-universe';
 import { ExecutorManager } from '../../main';
 import rejectPendingAfter from '../../main/plugin/rejectPendingAfter';

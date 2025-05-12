@@ -1,4 +1,9 @@
-import '@testing-library/jest-dom';
+/**
+ * @vitest-environment jsdom
+ */
+
+import { describe, expect, test, vi } from 'vitest';
+import '@testing-library/jest-dom/vitest';
 import { render } from '@testing-library/react';
 import React, { Suspense, useEffect } from 'react';
 import {
@@ -28,7 +33,7 @@ describe('useExecutorSuspense', () => {
 
   test('does not suspend rendering if the pending executor is settled', async () => {
     const manager = new ExecutorManager();
-    const capture = jest.fn();
+    const capture = vi.fn();
 
     const executor = manager.getOrCreate('xxx', 'aaa');
 
@@ -64,8 +69,8 @@ describe('useExecutorSuspense', () => {
 
   test('respects a predicate', async () => {
     const manager = new ExecutorManager();
-    const capture = jest.fn();
-    const predicateMock = jest.fn().mockReturnValue(true);
+    const capture = vi.fn();
+    const predicateMock = vi.fn().mockReturnValue(true);
 
     const executor = manager.getOrCreate('xxx', 'aaa');
 

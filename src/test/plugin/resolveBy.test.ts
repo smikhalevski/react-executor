@@ -1,3 +1,4 @@
+import { describe, expect, test, beforeEach } from 'vitest';
 import { PubSub } from 'parallel-universe';
 import { ExecutorManager } from '../../main';
 import resolveBy from '../../main/plugin/resolveBy';

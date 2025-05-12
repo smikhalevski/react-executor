@@ -1,14 +1,15 @@
+import { describe, expect, test, beforeEach, vi, Mock } from 'vitest';
 import { delay } from 'parallel-universe';
 import { ExecutorManager } from '../../main';
 import abortDeactivated from '../../main/plugin/abortDeactivated';
 import { AbortError } from '../../main/utils';
 
 describe('abortDeactivated', () => {
-  let listenerMock: jest.Mock;
+  let listenerMock: Mock;
   let manager: ExecutorManager;
 
   beforeEach(() => {
-    listenerMock = jest.fn();
+    listenerMock = vi.fn();
 
     manager = new ExecutorManager();
     manager.subscribe(listenerMock);
@@ -17,7 +18,7 @@ describe('abortDeactivated', () => {
   test('aborts a deactivated executor', async () => {
     const executor = manager.getOrCreate('xxx', undefined, [abortDeactivated({ delay: 0 })]);
     const deactivate = executor.activate();
-    const taskMock = jest.fn(_signal => delay(100));
+    const taskMock = vi.fn(_signal => delay(100));
     const promise = executor.execute(taskMock);
 
     deactivate();
@@ -43,7 +44,7 @@ describe('abortDeactivated', () => {
   test('cancels abortion of an activated executor', async () => {
     const executor = manager.getOrCreate('xxx', undefined, [abortDeactivated({ delay: 0 })]);
     const deactivate = executor.activate();
-    const taskMock = jest.fn(_signal => delay(100, 'aaa'));
+    const taskMock = vi.fn(_signal => delay(100, 'aaa'));
     const promise = executor.execute(taskMock);
 
     deactivate();

@@ -1,3 +1,4 @@
+import { describe, expect, test, beforeEach, vi, Mock } from 'vitest';
 import { AbortablePromise } from 'parallel-universe';
 import { ExecutorImpl } from '../main/ExecutorImpl';
 import { AbortError, noop } from '../main/utils';
@@ -7,11 +8,11 @@ Date.now = () => 50;
 describe('ExecutorImpl', () => {
   const expectedReason = new Error('expected');
 
-  let listenerMock: jest.Mock;
+  let listenerMock: Mock;
   let executor: ExecutorImpl<string | number>;
 
   beforeEach(() => {
-    listenerMock = jest.fn();
+    listenerMock = vi.fn();
     executor = new ExecutorImpl('xxx', null!);
     executor.subscribe(listenerMock);
   });
@@ -66,7 +67,7 @@ describe('ExecutorImpl', () => {
 
   describe('execute', () => {
     test('executes a task', async () => {
-      const taskMock = jest.fn((_signal, _executor) => 'aaa');
+      const taskMock = vi.fn((_signal, _executor) => 'aaa');
       const promise = executor.execute(taskMock);
 
       expect(executor.task).toBe(taskMock);
@@ -92,8 +93,8 @@ describe('ExecutorImpl', () => {
     });
 
     test('aborts the pending task if a new task is submitted', async () => {
-      const taskMock1 = jest.fn(_signal => 'aaa');
-      const taskMock2 = jest.fn(_signal => 'bbb');
+      const taskMock1 = vi.fn(_signal => 'aaa');
+      const taskMock2 = vi.fn(_signal => 'bbb');
 
       const promise1 = executor.execute(taskMock1);
 
@@ -127,7 +128,7 @@ describe('ExecutorImpl', () => {
     });
 
     test('rejects if a task throws an error', async () => {
-      const taskMock = jest.fn(() => {
+      const taskMock = vi.fn(() => {
         throw expectedReason;
       });
       const promise = executor.execute(taskMock);
@@ -150,7 +151,7 @@ describe('ExecutorImpl', () => {
     });
 
     test('task promise can be aborted', () => {
-      const taskMock = jest.fn((_signal, _executor) => 'aaa');
+      const taskMock = vi.fn((_signal, _executor) => 'aaa');
 
       const promise = executor.execute(taskMock);
 
@@ -175,8 +176,8 @@ describe('ExecutorImpl', () => {
     });
 
     test('a new task can be executed from abort event handler if previous task is aborted manually', async () => {
-      const taskMock1 = jest.fn(_signal => 'aaa');
-      const taskMock2 = jest.fn(_signal => 'bbb');
+      const taskMock1 = vi.fn(_signal => 'aaa');
+      const taskMock2 = vi.fn(_signal => 'bbb');
 
       executor.subscribe(event => {
         if (event.type === 'aborted') {
@@ -210,9 +211,9 @@ describe('ExecutorImpl', () => {
     });
 
     test('a new task can be executed from abort event handler if a task is replaced', async () => {
-      const taskMock1 = jest.fn(_signal => 'aaa');
-      const taskMock2 = jest.fn(_signal => 'bbb');
-      const taskMock3 = jest.fn(_signal => 'ccc');
+      const taskMock1 = vi.fn(_signal => 'aaa');
+      const taskMock2 = vi.fn(_signal => 'bbb');
+      const taskMock3 = vi.fn(_signal => 'ccc');
 
       listenerMock.mockImplementationOnce(noop).mockImplementationOnce(event => {
         if (event.type === 'aborted') {
@@ -251,13 +252,13 @@ describe('ExecutorImpl', () => {
     });
 
     test('an AbortablePromise returned from a task is aborted when a task is replaced', async () => {
-      const taskMock1 = jest.fn(
+      const taskMock1 = vi.fn(
         _signal =>
           new AbortablePromise<string>(resolve => {
             resolve('aaa');
           })
       );
-      const taskMock2 = jest.fn(_signal => 'bbb');
+      const taskMock2 = vi.fn(_signal => 'bbb');
 
       const promise1 = executor.execute(taskMock1);
       const promise2 = executor.execute(taskMock2);
@@ -331,7 +332,7 @@ describe('ExecutorImpl', () => {
     });
 
     test('aborts pending task and preserves it as the latest task', () => {
-      const taskMock = jest.fn((_signal, _executor) => 'aaa');
+      const taskMock = vi.fn((_signal, _executor) => 'aaa');
 
       executor.execute(taskMock).catch(noop);
       executor.resolve('bbb');
@@ -407,7 +408,7 @@ describe('ExecutorImpl', () => {
     });
 
     test('aborts pending task and preserves it as the latest task', () => {
-      const taskMock = jest.fn((_signal, _executor) => 'aaa');
+      const taskMock = vi.fn((_signal, _executor) => 'aaa');
 
       executor.execute(taskMock).catch(noop);
       executor.reject('bbb');
@@ -460,7 +461,7 @@ describe('ExecutorImpl', () => {
     });
 
     test('executes the latest task', async () => {
-      const taskMock = jest.fn(() => 'aaa');
+      const taskMock = vi.fn(() => 'aaa');
 
       await executor.execute(taskMock);
 
@@ -547,7 +548,7 @@ describe('ExecutorImpl', () => {
     });
 
     test('aborts the pending task', async () => {
-      const taskMock = jest.fn(_signal => 'aaa');
+      const taskMock = vi.fn(_signal => 'aaa');
 
       executor.execute(taskMock).catch(noop);
       executor.abort('bbb');

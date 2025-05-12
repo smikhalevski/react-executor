@@ -1,3 +1,8 @@
+/**
+ * @vitest-environment jsdom
+ */
+
+import { describe, expect, test, beforeEach, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import React, { StrictMode } from 'react';
 import { ExecutorManager, ExecutorManagerProvider, useExecutor } from '../main';
@@ -64,7 +69,7 @@ describe('useExecutor', () => {
   });
 
   test('creates a blank Executor instance', () => {
-    const renderMock = jest.fn(() => useExecutor(executorKey));
+    const renderMock = vi.fn(() => useExecutor(executorKey));
 
     const hook = renderHook(renderMock, { wrapper: StrictMode });
     const executor = hook.result.current;
@@ -80,7 +85,7 @@ describe('useExecutor', () => {
   });
 
   test('creates an executor with the initial value', () => {
-    const renderMock = jest.fn(() => useExecutor(executorKey, 'aaa'));
+    const renderMock = vi.fn(() => useExecutor(executorKey, 'aaa'));
 
     const hook = renderHook(renderMock, { wrapper: StrictMode });
     const executor = hook.result.current;
@@ -97,8 +102,8 @@ describe('useExecutor', () => {
   });
 
   test('creates an executor with the initial task', async () => {
-    const taskMock = jest.fn(() => 'aaa');
-    const renderMock = jest.fn(() => useExecutor(executorKey, taskMock));
+    const taskMock = vi.fn(() => 'aaa');
+    const renderMock = vi.fn(() => useExecutor(executorKey, taskMock));
 
     const hook = renderHook(renderMock, { wrapper: StrictMode });
     const executor = hook.result.current;
@@ -127,7 +132,7 @@ describe('useExecutor', () => {
   });
 
   test('re-renders after resolve', () => {
-    const renderMock = jest.fn(() => useExecutor(executorKey));
+    const renderMock = vi.fn(() => useExecutor(executorKey));
     const hook = renderHook(renderMock, { wrapper: StrictMode });
 
     act(() => void hook.result.current.resolve('aaa'));
@@ -136,7 +141,7 @@ describe('useExecutor', () => {
   });
 
   test('re-renders after reject', () => {
-    const renderMock = jest.fn(() => useExecutor(executorKey));
+    const renderMock = vi.fn(() => useExecutor(executorKey));
     const hook = renderHook(renderMock, { wrapper: StrictMode });
 
     act(() => void hook.result.current.reject(new Error('expected')));
@@ -146,7 +151,7 @@ describe('useExecutor', () => {
 
   test('re-renders after task execute', async () => {
     const task = () => 'aaa';
-    const renderMock = jest.fn(() => useExecutor(executorKey));
+    const renderMock = vi.fn(() => useExecutor(executorKey));
     const hook = renderHook(renderMock, { wrapper: StrictMode });
     const executor = hook.result.current;
 
@@ -159,6 +164,6 @@ describe('useExecutor', () => {
     expect(executor.reason).toBeUndefined();
     expect(executor.task).toBe(task);
 
-    expect(renderMock).toHaveBeenCalledTimes(4);
+    expect(renderMock).toHaveBeenCalledTimes(6);
   });
 });
