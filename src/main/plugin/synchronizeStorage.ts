@@ -98,6 +98,9 @@ export default function synchronizeStorage<Value = any>(
       if (state.settledAt === executor.settledAt) {
         return;
       }
+      if (Object.keys(state.annotations).length !== 0) {
+        executor.annotate(state.annotations);
+      }
       if (executor instanceof ExecutorImpl) {
         executor.value = state.value;
         executor.reason = state.reason;
