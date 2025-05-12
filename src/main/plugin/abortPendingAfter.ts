@@ -18,7 +18,7 @@ import { TimeoutError } from '../utils.js';
 
 /**
  * Aborts the pending task with {@link !DOMException TimeoutError} if the task execution took longer then the given
- * {@link delay}.
+ * delay.
  *
  * @param delay The delay in milliseconds after which the task is aborted.
  */
