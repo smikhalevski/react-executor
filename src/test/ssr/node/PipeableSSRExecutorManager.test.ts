@@ -1,64 +1,62 @@
-import { describe, expect, test, vi } from 'vitest';
+import { expect, test, vi } from 'vitest';
 import { delay } from 'parallel-universe';
 import { Writable } from 'stream';
 import { PipeableSSRExecutorManager } from '../../../main/ssr/node/index.js';
 
 Date.now = () => 50;
 
-describe('PipeableSSRExecutorManager', () => {
-  test('sends hydration chunk after the content chunk', async () => {
-    const writeMock = vi.fn();
+test('sends hydration chunk after the content chunk', async () => {
+  const writeMock = vi.fn();
 
-    const outputStream = new Writable({
-      write(chunk, _encoding, callback) {
-        writeMock(chunk.toString());
-        callback();
-      },
-    });
-
-    const manager = new PipeableSSRExecutorManager(outputStream);
-
-    manager.getOrCreate('xxx', 111);
-
-    manager.stream.write('aaa</script>');
-
-    await delay(200);
-
-    expect(writeMock).toHaveBeenCalledTimes(2);
-    expect(writeMock).toHaveBeenNthCalledWith(1, 'aaa</script>');
-    expect(writeMock).toHaveBeenNthCalledWith(
-      2,
-      '<script>(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("{\\"key\\":\\"xxx\\",\\"isFulfilled\\":true,\\"value\\":111,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);</script>'
-    );
+  const outputStream = new Writable({
+    write(chunk, _encoding, callback) {
+      writeMock(chunk.toString());
+      callback();
+    },
   });
 
-  test('does not send hydration chunk if nothing has changed', async () => {
-    const writeMock = vi.fn();
+  const manager = new PipeableSSRExecutorManager(outputStream);
 
-    const outputStream = new Writable({
-      write(chunk, _encoding, callback) {
-        writeMock(chunk.toString());
-        callback();
-      },
-    });
+  manager.getOrCreate('xxx', 111);
 
-    const manager = new PipeableSSRExecutorManager(outputStream);
+  manager.stream.write('aaa</script>');
 
-    manager.getOrCreate('xxx', 111);
+  await delay(200);
 
-    manager.stream.write('aaa</script>');
-    manager.stream.write('bbb');
-    manager.stream.write('ccc</script>');
+  expect(writeMock).toHaveBeenCalledTimes(2);
+  expect(writeMock).toHaveBeenNthCalledWith(1, 'aaa</script>');
+  expect(writeMock).toHaveBeenNthCalledWith(
+    2,
+    '<script>(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("{\\"key\\":\\"xxx\\",\\"isFulfilled\\":true,\\"value\\":111,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);</script>'
+  );
+});
 
-    await delay(200);
+test('does not send hydration chunk if nothing has changed', async () => {
+  const writeMock = vi.fn();
 
-    expect(writeMock).toHaveBeenCalledTimes(4);
-    expect(writeMock).toHaveBeenNthCalledWith(1, 'aaa</script>');
-    expect(writeMock).toHaveBeenNthCalledWith(
-      2,
-      '<script>(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("{\\"key\\":\\"xxx\\",\\"isFulfilled\\":true,\\"value\\":111,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);</script>'
-    );
-    expect(writeMock).toHaveBeenNthCalledWith(3, 'bbb');
-    expect(writeMock).toHaveBeenNthCalledWith(4, 'ccc</script>');
+  const outputStream = new Writable({
+    write(chunk, _encoding, callback) {
+      writeMock(chunk.toString());
+      callback();
+    },
   });
+
+  const manager = new PipeableSSRExecutorManager(outputStream);
+
+  manager.getOrCreate('xxx', 111);
+
+  manager.stream.write('aaa</script>');
+  manager.stream.write('bbb');
+  manager.stream.write('ccc</script>');
+
+  await delay(200);
+
+  expect(writeMock).toHaveBeenCalledTimes(4);
+  expect(writeMock).toHaveBeenNthCalledWith(1, 'aaa</script>');
+  expect(writeMock).toHaveBeenNthCalledWith(
+    2,
+    '<script>(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("{\\"key\\":\\"xxx\\",\\"isFulfilled\\":true,\\"value\\":111,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);</script>'
+  );
+  expect(writeMock).toHaveBeenNthCalledWith(3, 'bbb');
+  expect(writeMock).toHaveBeenNthCalledWith(4, 'ccc</script>');
 });

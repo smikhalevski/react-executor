@@ -1,119 +1,117 @@
-import { describe, expect, test, beforeEach, vi } from 'vitest';
+import { beforeEach, expect, test, vi } from 'vitest';
 import { PubSub } from 'parallel-universe';
 import { ExecutorManager } from '../../main/index.js';
 import retryWhen from '../../main/plugin/retryWhen.js';
 
 vi.useFakeTimers();
 
-describe('retryWhen', () => {
-  let manager: ExecutorManager;
+let manager: ExecutorManager;
 
-  beforeEach(() => {
-    manager = new ExecutorManager();
-  });
+beforeEach(() => {
+  manager = new ExecutorManager();
+});
 
-  test('retries an active executor', async () => {
-    const pubSub = new PubSub<boolean>();
+test('retries an active executor', async () => {
+  const pubSub = new PubSub<boolean>();
 
-    const taskMock = vi.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
+  const taskMock = vi.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
 
-    const executor = manager.getOrCreate('xxx', taskMock, [retryWhen(pubSub)]);
+  const executor = manager.getOrCreate('xxx', taskMock, [retryWhen(pubSub)]);
 
-    executor.activate();
+  executor.activate();
 
-    await expect(executor.getOrAwait()).resolves.toBe('aaa');
+  await expect(executor.getOrAwait()).resolves.toBe('aaa');
 
-    pubSub.publish(false);
+  pubSub.publish(false);
 
-    vi.runAllTimers();
+  vi.runAllTimers();
 
-    expect(executor.isPending).toBe(false);
+  expect(executor.isPending).toBe(false);
 
-    pubSub.publish(true);
+  pubSub.publish(true);
 
-    vi.runAllTimers();
+  vi.runAllTimers();
 
-    expect(executor.isPending).toBe(true);
-    expect(executor.value).toBe('aaa');
+  expect(executor.isPending).toBe(true);
+  expect(executor.value).toBe('aaa');
 
-    await expect(executor.getOrAwait()).resolves.toBe('bbb');
+  await expect(executor.getOrAwait()).resolves.toBe('bbb');
 
-    expect(taskMock).toHaveBeenCalledTimes(2);
-  });
+  expect(taskMock).toHaveBeenCalledTimes(2);
+});
 
-  test('does not retry a non-active executor', async () => {
-    const pubSub = new PubSub<boolean>();
+test('does not retry a non-active executor', async () => {
+  const pubSub = new PubSub<boolean>();
 
-    const taskMock = vi.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
+  const taskMock = vi.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
 
-    const executor = manager.getOrCreate('xxx', taskMock, [retryWhen(pubSub)]);
+  const executor = manager.getOrCreate('xxx', taskMock, [retryWhen(pubSub)]);
 
-    await expect(executor.getOrAwait()).resolves.toBe('aaa');
+  await expect(executor.getOrAwait()).resolves.toBe('aaa');
 
-    pubSub.publish(false);
+  pubSub.publish(false);
 
-    vi.runAllTimers();
+  vi.runAllTimers();
 
-    expect(executor.isPending).toBe(false);
+  expect(executor.isPending).toBe(false);
 
-    pubSub.publish(true);
+  pubSub.publish(true);
 
-    vi.runAllTimers();
+  vi.runAllTimers();
 
-    expect(executor.isPending).toBe(false);
+  expect(executor.isPending).toBe(false);
 
-    expect(taskMock).toHaveBeenCalledTimes(1);
-  });
+  expect(taskMock).toHaveBeenCalledTimes(1);
+});
 
-  test('does not retry if observable has pushed false before timeout', async () => {
-    const pubSub = new PubSub<boolean>();
+test('does not retry if observable has pushed false before timeout', async () => {
+  const pubSub = new PubSub<boolean>();
 
-    const taskMock = vi.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
+  const taskMock = vi.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
 
-    const executor = manager.getOrCreate('xxx', taskMock, [retryWhen(pubSub, { delay: 10_000 })]);
+  const executor = manager.getOrCreate('xxx', taskMock, [retryWhen(pubSub, { delay: 10_000 })]);
 
-    executor.activate();
+  executor.activate();
 
-    await expect(executor.getOrAwait()).resolves.toBe('aaa');
+  await expect(executor.getOrAwait()).resolves.toBe('aaa');
 
-    pubSub.publish(true);
+  pubSub.publish(true);
 
-    vi.advanceTimersByTime(5_000);
+  vi.advanceTimersByTime(5_000);
 
-    expect(executor.isPending).toBe(false);
+  expect(executor.isPending).toBe(false);
 
-    pubSub.publish(false);
+  pubSub.publish(false);
 
-    vi.runAllTimers();
+  vi.runAllTimers();
 
-    expect(executor.isPending).toBe(false);
+  expect(executor.isPending).toBe(false);
 
-    expect(taskMock).toHaveBeenCalledTimes(1);
-  });
+  expect(taskMock).toHaveBeenCalledTimes(1);
+});
 
-  test('retries if observable has pushed true after timeout', async () => {
-    const pubSub = new PubSub<boolean>();
+test('retries if observable has pushed true after timeout', async () => {
+  const pubSub = new PubSub<boolean>();
 
-    const taskMock = vi.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
+  const taskMock = vi.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
 
-    const executor = manager.getOrCreate('xxx', taskMock, [retryWhen(pubSub, { delay: 5_000 })]);
+  const executor = manager.getOrCreate('xxx', taskMock, [retryWhen(pubSub, { delay: 5_000 })]);
 
-    executor.activate();
+  executor.activate();
 
-    await expect(executor.getOrAwait()).resolves.toBe('aaa');
+  await expect(executor.getOrAwait()).resolves.toBe('aaa');
 
-    pubSub.publish(false);
+  pubSub.publish(false);
 
-    vi.advanceTimersByTime(10_000);
+  vi.advanceTimersByTime(10_000);
 
-    expect(executor.isPending).toBe(false);
+  expect(executor.isPending).toBe(false);
 
-    pubSub.publish(true);
+  pubSub.publish(true);
 
-    vi.runAllTimers();
+  vi.runAllTimers();
 
-    expect(executor.isPending).toBe(true);
+  expect(executor.isPending).toBe(true);
 
-    expect(taskMock).toHaveBeenCalledTimes(2);
-  });
+  expect(taskMock).toHaveBeenCalledTimes(2);
 });

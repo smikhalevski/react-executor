@@ -1,137 +1,135 @@
-import { describe, expect, test, beforeEach, vi, Mock } from 'vitest';
+import { beforeEach, expect, Mock, test, vi } from 'vitest';
 import { ExecutorManager } from '../../main/index.js';
 import retryRejected from '../../main/plugin/retryRejected.js';
 import { noop } from '../../main/utils.js';
 
 vi.useFakeTimers();
 
-describe('retryRejected', () => {
-  const expectedReason = new Error('expected');
+const expectedReason = new Error('expected');
 
-  let listenerMock: Mock;
-  let manager: ExecutorManager;
+let listenerMock: Mock;
+let manager: ExecutorManager;
 
-  beforeEach(() => {
-    listenerMock = vi.fn();
+beforeEach(() => {
+  listenerMock = vi.fn();
 
-    manager = new ExecutorManager();
-    manager.subscribe(listenerMock);
+  manager = new ExecutorManager();
+  manager.subscribe(listenerMock);
+});
+
+test('retries a rejected executor', async () => {
+  const taskMock = vi.fn(() => {
+    throw expectedReason;
   });
 
-  test('retries a rejected executor', async () => {
-    const taskMock = vi.fn(() => {
-      throw expectedReason;
-    });
+  const executor = manager.getOrCreate<any>('xxx', taskMock, [retryRejected({ count: 2, delay: 0 })]);
 
-    const executor = manager.getOrCreate<any>('xxx', taskMock, [retryRejected({ count: 2, delay: 0 })]);
+  executor.activate();
+  expect(executor.isPending).toBe(true);
+  executor.promise!.catch(noop);
+  await executor.getOrAwait().then(noop, noop);
+  expect(executor.isPending).toBe(false);
 
-    executor.activate();
-    expect(executor.isPending).toBe(true);
-    executor.promise!.catch(noop);
-    await executor.getOrAwait().then(noop, noop);
-    expect(executor.isPending).toBe(false);
+  // Retry 1
+  vi.runAllTimers();
+  expect(executor.isPending).toBe(true);
+  executor.promise!.catch(noop);
+  await executor.getOrAwait().then(noop, noop);
+  expect(executor.isPending).toBe(false);
 
-    // Retry 1
-    vi.runAllTimers();
-    expect(executor.isPending).toBe(true);
-    executor.promise!.catch(noop);
-    await executor.getOrAwait().then(noop, noop);
-    expect(executor.isPending).toBe(false);
+  // Retry 2
+  vi.runAllTimers();
+  expect(executor.isPending).toBe(true);
+  executor.promise!.catch(noop);
+  await executor.getOrAwait().then(noop, noop);
+  expect(executor.isPending).toBe(false);
 
-    // Retry 2
-    vi.runAllTimers();
-    expect(executor.isPending).toBe(true);
-    executor.promise!.catch(noop);
-    await executor.getOrAwait().then(noop, noop);
-    expect(executor.isPending).toBe(false);
+  // Retry 3
+  vi.runAllTimers();
+  expect(executor.isPending).toBe(false);
 
-    // Retry 3
-    vi.runAllTimers();
-    expect(executor.isPending).toBe(false);
+  expect(taskMock).toHaveBeenCalledTimes(3);
+});
 
-    expect(taskMock).toHaveBeenCalledTimes(3);
+test('stops retrying if an executor is aborted', async () => {
+  const taskMock = vi.fn(() => {
+    throw expectedReason;
   });
 
-  test('stops retrying if an executor is aborted', async () => {
-    const taskMock = vi.fn(() => {
-      throw expectedReason;
-    });
+  const executor = manager.getOrCreate<any>('xxx', taskMock, [retryRejected({ count: 2, delay: 0 })]);
 
-    const executor = manager.getOrCreate<any>('xxx', taskMock, [retryRejected({ count: 2, delay: 0 })]);
+  executor.activate();
+  expect(executor.isPending).toBe(true);
+  executor.promise!.catch(noop);
+  await executor.getOrAwait().then(noop, noop);
+  expect(executor.isPending).toBe(false);
 
-    executor.activate();
-    expect(executor.isPending).toBe(true);
-    executor.promise!.catch(noop);
-    await executor.getOrAwait().then(noop, noop);
-    expect(executor.isPending).toBe(false);
+  // Retry 1
+  vi.runAllTimers();
+  expect(executor.isPending).toBe(true);
 
-    // Retry 1
-    vi.runAllTimers();
-    expect(executor.isPending).toBe(true);
+  executor.promise!.catch(noop);
+  executor.abort();
 
-    executor.promise!.catch(noop);
-    executor.abort();
+  // Retry 2
+  vi.runAllTimers();
+  expect(executor.isPending).toBe(false);
 
-    // Retry 2
-    vi.runAllTimers();
-    expect(executor.isPending).toBe(false);
+  expect(taskMock).toHaveBeenCalledTimes(2);
+});
 
-    expect(taskMock).toHaveBeenCalledTimes(2);
+test('stops retrying if an executor is fulfilled', async () => {
+  const taskMock = vi.fn(() => {
+    throw expectedReason;
   });
 
-  test('stops retrying if an executor is fulfilled', async () => {
-    const taskMock = vi.fn(() => {
-      throw expectedReason;
-    });
+  const executor = manager.getOrCreate<any>('xxx', taskMock, [retryRejected({ count: 2, delay: 0 })]);
 
-    const executor = manager.getOrCreate<any>('xxx', taskMock, [retryRejected({ count: 2, delay: 0 })]);
+  executor.activate();
+  expect(executor.isPending).toBe(true);
+  executor.promise!.catch(noop);
+  await executor.getOrAwait().then(noop, noop);
+  expect(executor.isPending).toBe(false);
 
-    executor.activate();
-    expect(executor.isPending).toBe(true);
-    executor.promise!.catch(noop);
-    await executor.getOrAwait().then(noop, noop);
-    expect(executor.isPending).toBe(false);
+  // Retry 1
+  vi.runAllTimers();
+  expect(executor.isPending).toBe(true);
 
-    // Retry 1
-    vi.runAllTimers();
-    expect(executor.isPending).toBe(true);
+  executor.promise!.catch(noop);
+  executor.resolve(undefined);
 
-    executor.promise!.catch(noop);
-    executor.resolve(undefined);
+  // Retry 2
+  vi.runAllTimers();
+  expect(executor.isPending).toBe(false);
 
-    // Retry 2
-    vi.runAllTimers();
-    expect(executor.isPending).toBe(false);
+  expect(taskMock).toHaveBeenCalledTimes(2);
+});
 
-    expect(taskMock).toHaveBeenCalledTimes(2);
+test('stops retrying if an executor is deactivated', async () => {
+  const taskMock = vi.fn(() => {
+    throw expectedReason;
   });
 
-  test('stops retrying if an executor is deactivated', async () => {
-    const taskMock = vi.fn(() => {
-      throw expectedReason;
-    });
+  const executor = manager.getOrCreate<any>('xxx', taskMock, [retryRejected({ count: 2, delay: 0 })]);
 
-    const executor = manager.getOrCreate<any>('xxx', taskMock, [retryRejected({ count: 2, delay: 0 })]);
+  const deactivate = executor.activate();
+  expect(executor.isPending).toBe(true);
+  executor.promise!.catch(noop);
+  await executor.getOrAwait().then(noop, noop);
+  expect(executor.isPending).toBe(false);
 
-    const deactivate = executor.activate();
-    expect(executor.isPending).toBe(true);
-    executor.promise!.catch(noop);
-    await executor.getOrAwait().then(noop, noop);
-    expect(executor.isPending).toBe(false);
+  // Retry 1
+  vi.runAllTimers();
+  expect(executor.isPending).toBe(true);
 
-    // Retry 1
-    vi.runAllTimers();
-    expect(executor.isPending).toBe(true);
+  deactivate();
 
-    deactivate();
+  executor.promise!.catch(noop);
+  await executor.getOrAwait().then(noop, noop);
 
-    executor.promise!.catch(noop);
-    await executor.getOrAwait().then(noop, noop);
+  // Retry 2
+  vi.runAllTimers();
+  expect(executor.isPending).toBe(false);
 
-    // Retry 2
-    vi.runAllTimers();
-    expect(executor.isPending).toBe(false);
-
-    expect(taskMock).toHaveBeenCalledTimes(2);
-  });
+  expect(taskMock).toHaveBeenCalledTimes(2);
 });

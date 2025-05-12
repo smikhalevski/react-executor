@@ -1,49 +1,47 @@
-import { describe, expect, test, beforeEach, vi, Mock } from 'vitest';
+import { beforeEach, expect, Mock, test, vi } from 'vitest';
 import { ExecutorManager } from '../../main/index.js';
 import retryActivated from '../../main/plugin/retryActivated.js';
 
 vi.useFakeTimers();
 
-describe('retryActivated', () => {
-  let listenerMock: Mock;
-  let manager: ExecutorManager;
+let listenerMock: Mock;
+let manager: ExecutorManager;
 
-  beforeEach(() => {
-    listenerMock = vi.fn();
+beforeEach(() => {
+  listenerMock = vi.fn();
 
-    manager = new ExecutorManager();
-    manager.subscribe(listenerMock);
-  });
+  manager = new ExecutorManager();
+  manager.subscribe(listenerMock);
+});
 
-  test('retries an activated executor', async () => {
-    const taskMock = vi.fn();
-    const executor = manager.getOrCreate('xxx', taskMock, [retryActivated()]);
+test('retries an activated executor', async () => {
+  const taskMock = vi.fn();
+  const executor = manager.getOrCreate('xxx', taskMock, [retryActivated()]);
 
-    await executor.getOrAwait();
+  await executor.getOrAwait();
 
-    expect(executor.isPending).toBe(false);
+  expect(executor.isPending).toBe(false);
 
-    executor.activate();
+  executor.activate();
 
-    expect(executor.isPending).toBe(true);
-  });
+  expect(executor.isPending).toBe(true);
+});
 
-  test('does not retry if executor is not stale yet', async () => {
-    const taskMock = vi.fn();
-    const executor = manager.getOrCreate('xxx', taskMock, [retryActivated({ staleDelay: 5_000 })]);
+test('does not retry if executor is not stale yet', async () => {
+  const taskMock = vi.fn();
+  const executor = manager.getOrCreate('xxx', taskMock, [retryActivated({ staleDelay: 5_000 })]);
 
-    await executor.getOrAwait();
+  await executor.getOrAwait();
 
-    const deactivate = executor.activate();
+  const deactivate = executor.activate();
 
-    expect(executor.isPending).toBe(false);
+  expect(executor.isPending).toBe(false);
 
-    deactivate();
+  deactivate();
 
-    vi.setSystemTime(Date.now() + 5_000);
+  vi.setSystemTime(Date.now() + 5_000);
 
-    executor.activate();
+  executor.activate();
 
-    expect(executor.isPending).toBe(true);
-  });
+  expect(executor.isPending).toBe(true);
 });
