@@ -10,7 +10,7 @@
  * @module plugin/bindAll
  */
 
-import type { ExecutorPlugin, PluginConfiguredPayload } from '../types';
+import type { ExecutorPlugin, PluginConfiguredPayload } from '../types.js';
 
 /**
  * Binds all methods to the executor instance.

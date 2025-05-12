@@ -1,18 +1,19 @@
-import { ExecutorManager } from '../../main';
-import retryInvalidated from '../../main/plugin/retryInvalidated';
+import { describe, expect, test, beforeEach, vi, Mock } from 'vitest';
+import { ExecutorManager } from '../../main/index.js';
+import retryInvalidated from '../../main/plugin/retryInvalidated.js';
 
 describe('retryInvalidated', () => {
-  let listenerMock: jest.Mock;
+  let listenerMock: Mock;
   let manager: ExecutorManager;
 
   beforeEach(() => {
-    listenerMock = jest.fn();
+    listenerMock = vi.fn();
     manager = new ExecutorManager();
     manager.subscribe(listenerMock);
   });
 
   test('retries the invalidated active executor', async () => {
-    const taskMock = jest.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
+    const taskMock = vi.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
     const executor = manager.getOrCreate('xxx', taskMock, [retryInvalidated()]);
 
     executor.activate();
@@ -52,7 +53,7 @@ describe('retryInvalidated', () => {
   });
 
   test('retries the activated and invalidated executor', async () => {
-    const taskMock = jest.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
+    const taskMock = vi.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
     const executor = manager.getOrCreate('xxx', taskMock, [retryInvalidated()]);
 
     await executor.getOrAwait();

@@ -1,5 +1,5 @@
-import { ExecutorManager, type ExecutorManagerOptions } from '../ExecutorManager';
-import type { Executor, ExecutorState } from '../types';
+import { ExecutorManager, type ExecutorManagerOptions } from '../ExecutorManager.js';
+import type { Executor, ExecutorState } from '../types.js';
 
 /**
  * Options provided to the {@link SSRExecutorManager} constructor.

@@ -1,21 +1,22 @@
-import { ExecutorManager } from '../../main';
-import retryActivated from '../../main/plugin/retryActivated';
+import { describe, expect, test, beforeEach, vi, Mock } from 'vitest';
+import { ExecutorManager } from '../../main/index.js';
+import retryActivated from '../../main/plugin/retryActivated.js';
 
-jest.useFakeTimers();
+vi.useFakeTimers();
 
 describe('retryActivated', () => {
-  let listenerMock: jest.Mock;
+  let listenerMock: Mock;
   let manager: ExecutorManager;
 
   beforeEach(() => {
-    listenerMock = jest.fn();
+    listenerMock = vi.fn();
 
     manager = new ExecutorManager();
     manager.subscribe(listenerMock);
   });
 
   test('retries an activated executor', async () => {
-    const taskMock = jest.fn();
+    const taskMock = vi.fn();
     const executor = manager.getOrCreate('xxx', taskMock, [retryActivated()]);
 
     await executor.getOrAwait();
@@ -28,7 +29,7 @@ describe('retryActivated', () => {
   });
 
   test('does not retry if executor is not stale yet', async () => {
-    const taskMock = jest.fn();
+    const taskMock = vi.fn();
     const executor = manager.getOrCreate('xxx', taskMock, [retryActivated({ staleDelay: 5_000 })]);
 
     await executor.getOrAwait();
@@ -39,7 +40,7 @@ describe('retryActivated', () => {
 
     deactivate();
 
-    jest.setSystemTime(Date.now() + 5_000);
+    vi.setSystemTime(Date.now() + 5_000);
 
     executor.activate();
 

@@ -1,4 +1,4 @@
-import type { Executor } from './types';
+import type { Executor } from './types.js';
 
 /**
  * Suspends rendering until an executor satisfies a predicate.

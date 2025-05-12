@@ -1,6 +1,7 @@
+import { describe, expect, test, beforeEach } from 'vitest';
 import { PubSub } from 'parallel-universe';
-import { ExecutorManager } from '../../main';
-import resolveBy from '../../main/plugin/resolveBy';
+import { ExecutorManager } from '../../main/index.js';
+import resolveBy from '../../main/plugin/resolveBy.js';
 
 describe('resolveBy', () => {
   let manager: ExecutorManager;

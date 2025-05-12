@@ -8,4 +8,4 @@
  * @module ssr/node
  */
 
-export { PipeableSSRExecutorManager } from './PipeableSSRExecutorManager';
+export { PipeableSSRExecutorManager } from './PipeableSSRExecutorManager.js';

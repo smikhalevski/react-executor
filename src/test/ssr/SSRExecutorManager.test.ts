@@ -1,5 +1,6 @@
-import { SSRExecutorManager } from '../../main/ssr';
-import { noop } from '../../main/utils';
+import { describe, expect, test, vi } from 'vitest';
+import { SSRExecutorManager } from '../../main/ssr/index.js';
+import { noop } from '../../main/utils.js';
 
 Date.now = () => 50;
 
@@ -100,7 +101,7 @@ describe('SSRExecutorManager', () => {
     });
 
     test('respects stateStringifier option', () => {
-      const stateStringifierMock = jest.fn(JSON.stringify);
+      const stateStringifierMock = vi.fn(JSON.stringify);
 
       const manager = new SSRExecutorManager({
         stateStringifier: stateStringifierMock,
@@ -208,7 +209,7 @@ describe('SSRExecutorManager', () => {
     test('aborts executors', () => {
       const manager = new SSRExecutorManager();
 
-      const taskMock = jest.fn(signal => 111);
+      const taskMock = vi.fn(_signal => 111);
 
       const executor = manager.getOrCreate('xxx');
 

@@ -8,11 +8,11 @@
  * @module core
  */
 
-export { enableSSRHydration } from './enableSSRHydration';
-export { ExecutorManager } from './ExecutorManager';
+export { enableSSRHydration } from './enableSSRHydration.js';
+export { ExecutorManager } from './ExecutorManager.js';
 
-export type { SSRHydrationOptions } from './enableSSRHydration';
-export type { ExecutorManagerOptions } from './ExecutorManager';
+export type { SSRHydrationOptions } from './enableSSRHydration.js';
+export type { ExecutorManagerOptions } from './ExecutorManager.js';
 export type {
   Executor,
   ExecutorAnnotations,
@@ -23,4 +23,4 @@ export type {
   ExecutorTask,
   Observable,
   ReadonlyExecutor,
-} from './types';
+} from './types.js';

@@ -1,14 +1,15 @@
-import { ExecutorManager } from '../../main';
-import invalidatePeers from '../../main/plugin/invalidatePeers';
+import { describe, expect, test, beforeEach, vi, Mock } from 'vitest';
+import { ExecutorManager } from '../../main/index.js';
+import invalidatePeers from '../../main/plugin/invalidatePeers.js';
 
-jest.useFakeTimers();
+vi.useFakeTimers();
 
 describe('invalidatePeers', () => {
-  let listenerMock: jest.Mock;
+  let listenerMock: Mock;
   let manager: ExecutorManager;
 
   beforeEach(() => {
-    listenerMock = jest.fn();
+    listenerMock = vi.fn();
 
     manager = new ExecutorManager();
     manager.subscribe(listenerMock);

@@ -10,8 +10,8 @@
  * @module plugin/retryInvalidated
  */
 
-import type { ExecutorPlugin, PluginConfiguredPayload } from '../types';
-import { emptyObject } from '../utils';
+import type { ExecutorPlugin, PluginConfiguredPayload } from '../types.js';
+import { emptyObject } from '../utils.js';
 
 /**
  * Options of the {@link retryInvalidated} plugin.

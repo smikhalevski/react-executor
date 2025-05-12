@@ -1,5 +1,5 @@
 import { Writable } from 'stream';
-import { SSRExecutorManager, SSRExecutorManagerOptions } from '../SSRExecutorManager';
+import { SSRExecutorManager, SSRExecutorManagerOptions } from '../SSRExecutorManager.js';
 
 /**
  * Streaming executor manager for NodeJS environment.

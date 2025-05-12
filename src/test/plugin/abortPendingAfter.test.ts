@@ -1,7 +1,8 @@
+import { describe, expect, test, beforeEach } from 'vitest';
 import { delay } from 'parallel-universe';
-import { ExecutorManager } from '../../main';
-import abortPendingAfter from '../../main/plugin/abortPendingAfter';
-import { TimeoutError } from '../../main/utils';
+import { ExecutorManager } from '../../main/index.js';
+import abortPendingAfter from '../../main/plugin/abortPendingAfter.js';
+import { TimeoutError } from '../../main/utils.js';
 
 describe('abortPendingAfter', () => {
   let manager: ExecutorManager;

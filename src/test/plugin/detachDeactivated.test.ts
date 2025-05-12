@@ -1,13 +1,14 @@
+import { describe, expect, test, beforeEach, vi, Mock } from 'vitest';
 import { delay } from 'parallel-universe';
-import { ExecutorManager } from '../../main';
-import detachDeactivated from '../../main/plugin/detachDeactivated';
+import { ExecutorManager } from '../../main/index.js';
+import detachDeactivated from '../../main/plugin/detachDeactivated.js';
 
 describe('detachDeactivated', () => {
-  let listenerMock: jest.Mock;
+  let listenerMock: Mock;
   let manager: ExecutorManager;
 
   beforeEach(() => {
-    listenerMock = jest.fn();
+    listenerMock = vi.fn();
 
     manager = new ExecutorManager();
     manager.subscribe(listenerMock);
@@ -16,7 +17,7 @@ describe('detachDeactivated', () => {
   test('detaches a deactivated executor', async () => {
     const executor = manager.getOrCreate('xxx', undefined, [detachDeactivated({ delay: 0 })]);
     const deactivate = executor.activate();
-    const taskMock = jest.fn(_signal => delay(100, 'aaa'));
+    const taskMock = vi.fn(_signal => delay(100, 'aaa'));
     const promise = executor.execute(taskMock);
 
     deactivate();
@@ -40,7 +41,7 @@ describe('detachDeactivated', () => {
   test('cancels deactivation of an activated executor', async () => {
     const executor = manager.getOrCreate('xxx', undefined, [detachDeactivated({ delay: 0 })]);
     const deactivate = executor.activate();
-    const taskMock = jest.fn(_signal => delay(100, 'aaa'));
+    const taskMock = vi.fn(_signal => delay(100, 'aaa'));
     const promise = executor.execute(taskMock);
 
     deactivate();

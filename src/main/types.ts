@@ -1,5 +1,5 @@
 import type { AbortablePromise } from 'parallel-universe';
-import type { ExecutorManager } from './ExecutorManager';
+import type { ExecutorManager } from './ExecutorManager.js';
 
 /**
  * Annotations that allow to associate arbitrary metadata with the {@link Executor} instance.

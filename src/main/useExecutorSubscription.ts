@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Executor } from './types';
+import type { Executor } from './types.js';
 
 /**
  * Re-renders the component when an executor's state is changed.

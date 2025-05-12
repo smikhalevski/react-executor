@@ -1,26 +1,31 @@
-import { fireEvent } from '@testing-library/react';
-import navigatorOnline from '../../main/observable/navigatorOnline';
+/**
+ * @vitest-environment jsdom
+ */
 
-jest.useFakeTimers();
+import { describe, expect, test, vi } from 'vitest';
+import { fireEvent } from '@testing-library/react';
+import navigatorOnline from '../../main/observable/navigatorOnline.js';
+
+vi.useFakeTimers();
 
 describe('navigatorOnline', () => {
   test('invokes listener after subscribe', () => {
-    const listenerMock = jest.fn();
+    const listenerMock = vi.fn();
 
     navigatorOnline.subscribe(listenerMock);
 
-    jest.runAllTimers();
+    vi.runAllTimers();
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
     expect(listenerMock).toHaveBeenNthCalledWith(1, true);
   });
 
   test('invokes listener when offline event if dispatched', () => {
-    const listenerMock = jest.fn();
+    const listenerMock = vi.fn();
 
     navigatorOnline.subscribe(listenerMock);
 
-    jest.runAllTimers();
+    vi.runAllTimers();
 
     fireEvent(window, new Event('offline'));
 
@@ -30,11 +35,11 @@ describe('navigatorOnline', () => {
   });
 
   test('invokes listener when online event if dispatched', () => {
-    const listenerMock = jest.fn();
+    const listenerMock = vi.fn();
 
     navigatorOnline.subscribe(listenerMock);
 
-    jest.runAllTimers();
+    vi.runAllTimers();
 
     fireEvent(window, new Event('online'));
 

@@ -1,26 +1,31 @@
-import { fireEvent } from '@testing-library/react';
-import windowFocused from '../../main/observable/windowFocused';
+/**
+ * @vitest-environment jsdom
+ */
 
-jest.useFakeTimers();
+import { describe, expect, test, vi } from 'vitest';
+import { fireEvent } from '@testing-library/react';
+import windowFocused from '../../main/observable/windowFocused.js';
+
+vi.useFakeTimers();
 
 describe('windowFocused', () => {
   test('invokes listener after subscribe', () => {
-    const listenerMock = jest.fn();
+    const listenerMock = vi.fn();
 
     windowFocused.subscribe(listenerMock);
 
-    jest.runAllTimers();
+    vi.runAllTimers();
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
     expect(listenerMock).toHaveBeenNthCalledWith(1, true);
   });
 
   test('invokes listener when visibilitychange event if dispatched', () => {
-    const listenerMock = jest.fn();
+    const listenerMock = vi.fn();
 
     windowFocused.subscribe(listenerMock);
 
-    jest.runAllTimers();
+    vi.runAllTimers();
 
     fireEvent(window, new Event('visibilitychange'));
 
@@ -30,11 +35,11 @@ describe('windowFocused', () => {
   });
 
   test('invokes listener when focus event if dispatched', () => {
-    const listenerMock = jest.fn();
+    const listenerMock = vi.fn();
 
     windowFocused.subscribe(listenerMock);
 
-    jest.runAllTimers();
+    vi.runAllTimers();
 
     fireEvent(window, new Event('focus'));
 

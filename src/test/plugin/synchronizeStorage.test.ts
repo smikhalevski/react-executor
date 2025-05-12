@@ -1,15 +1,20 @@
+/**
+ * @vitest-environment jsdom
+ */
+
+import { describe, expect, test, beforeEach, vi, Mock } from 'vitest';
 import { fireEvent } from '@testing-library/react';
-import { ExecutorManager } from '../../main';
-import synchronizeStorage from '../../main/plugin/synchronizeStorage';
+import { ExecutorManager } from '../../main/index.js';
+import synchronizeStorage from '../../main/plugin/synchronizeStorage.js';
 
 Date.now = () => 50;
 
 describe('synchronizeStorage', () => {
-  let listenerMock: jest.Mock;
+  let listenerMock: Mock;
   let manager: ExecutorManager;
 
   beforeEach(() => {
-    listenerMock = jest.fn();
+    listenerMock = vi.fn();
 
     manager = new ExecutorManager();
     manager.subscribe(listenerMock);
@@ -177,7 +182,7 @@ describe('synchronizeStorage', () => {
   });
 
   test('initial task is not called if storage item exists', async () => {
-    const taskMock = jest.fn(() => 'bbb');
+    const taskMock = vi.fn(() => 'bbb');
 
     localStorage.setItem(
       '"xxx"',

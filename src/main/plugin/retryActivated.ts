@@ -12,8 +12,8 @@
  * @module plugin/retryActivated
  */
 
-import { ExecutorPlugin, type PluginConfiguredPayload } from '../types';
-import { emptyObject } from '../utils';
+import { ExecutorPlugin, type PluginConfiguredPayload } from '../types.js';
+import { emptyObject } from '../utils.js';
 
 /**
  * Options of the {@link retryActivated} plugin.

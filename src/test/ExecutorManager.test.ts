@@ -1,21 +1,22 @@
-import { ExecutorManager } from '../main';
-import { ExecutorImpl } from '../main/ExecutorImpl';
+import { describe, expect, test, beforeEach, vi, Mock } from 'vitest';
+import { ExecutorManager } from '../main/index.js';
+import { ExecutorImpl } from '../main/ExecutorImpl.js';
 
 Date.now = () => 50;
 
 describe('ExecutorManager', () => {
-  let listenerMock: jest.Mock;
+  let listenerMock: Mock;
   let manager: ExecutorManager;
 
   beforeEach(() => {
-    listenerMock = jest.fn();
+    listenerMock = vi.fn();
     manager = new ExecutorManager();
     manager.subscribe(listenerMock);
   });
 
   describe('constructor', () => {
     test('creates executors with plugins', () => {
-      const pluginMock = jest.fn(_executor => {});
+      const pluginMock = vi.fn(_executor => {});
 
       const manager = new ExecutorManager({
         plugins: [pluginMock],
@@ -52,7 +53,7 @@ describe('ExecutorManager', () => {
     });
 
     test('applies the plugin only once', () => {
-      const pluginMock = jest.fn(_executor => {});
+      const pluginMock = vi.fn(_executor => {});
 
       manager.getOrCreate('aaa', undefined, [pluginMock]);
 
@@ -85,7 +86,7 @@ describe('ExecutorManager', () => {
     });
 
     test('applies the initial task only once', async () => {
-      const taskMock = jest.fn(() => 111);
+      const taskMock = vi.fn(() => 111);
 
       manager.getOrCreate('aaa', taskMock);
 
@@ -115,7 +116,7 @@ describe('ExecutorManager', () => {
     });
 
     test('does not apply initial value if executor was resolved from a plugin', () => {
-      const taskMock = jest.fn(() => 111);
+      const taskMock = vi.fn(() => 111);
 
       const executor = manager.getOrCreate('aaa', taskMock, [
         executor => {
@@ -137,7 +138,7 @@ describe('ExecutorManager', () => {
     });
 
     test('does not apply initial value if a task execution was started form a plugin', async () => {
-      const taskMock = jest.fn(() => 111);
+      const taskMock = vi.fn(() => 111);
 
       const executor = manager.getOrCreate('aaa', taskMock, [
         executor => {
@@ -237,7 +238,7 @@ describe('ExecutorManager', () => {
     });
 
     test('detaches non-active executor', () => {
-      const executorListenerMock = jest.fn();
+      const executorListenerMock = vi.fn();
       const executor = manager.getOrCreate('aaa');
 
       executor.subscribe(executorListenerMock);

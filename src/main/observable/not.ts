@@ -1,7 +1,7 @@
-import { Observable } from '../types';
+import { Observable } from '../types.js';
 
 /**
- * Returns the observable that inverses boolean values emitted by {@link observable}.
+ * Returns the observable that inverses boolean values emitted by the observable.
  *
  * @param observable The observable to inverse.
  */

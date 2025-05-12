@@ -12,9 +12,9 @@
  * @module plugin/synchronizeStorage
  */
 
-import { ExecutorImpl } from '../ExecutorImpl';
-import type { Executor, ExecutorPlugin, ExecutorState, PluginConfiguredPayload } from '../types';
-import { emptyObject } from '../utils';
+import { ExecutorImpl } from '../ExecutorImpl.js';
+import type { Executor, ExecutorPlugin, ExecutorState, PluginConfiguredPayload } from '../types.js';
+import { emptyObject } from '../utils.js';
 
 /**
  * Serializes and deserializes values.

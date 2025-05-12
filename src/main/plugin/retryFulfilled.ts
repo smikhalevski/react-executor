@@ -10,8 +10,8 @@
  * @module plugin/retryFulfilled
  */
 
-import type { Executor, ExecutorPlugin, PluginConfiguredPayload } from '../types';
-import { emptyObject } from '../utils';
+import type { Executor, ExecutorPlugin, PluginConfiguredPayload } from '../types.js';
+import { emptyObject } from '../utils.js';
 
 /**
  * Options of the {@link retryFulfilled} plugin.

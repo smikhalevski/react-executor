@@ -13,8 +13,8 @@
  * @module plugin/abortWhen
  */
 
-import type { ExecutorPlugin, Observable, PluginConfiguredPayload } from '../types';
-import { emptyObject } from '../utils';
+import type { ExecutorPlugin, Observable, PluginConfiguredPayload } from '../types.js';
+import { emptyObject } from '../utils.js';
 
 /**
  * Options of the {@link abortWhen} plugin.

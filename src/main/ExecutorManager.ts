@@ -1,5 +1,5 @@
 import { AbortablePromise, PubSub } from 'parallel-universe';
-import { ExecutorImpl } from './ExecutorImpl';
+import { ExecutorImpl } from './ExecutorImpl.js';
 import type {
   Executor,
   ExecutorEvent,
@@ -8,7 +8,7 @@ import type {
   ExecutorTask,
   NoInfer,
   Observable,
-} from './types';
+} from './types.js';
 
 /**
  * Options provided to the {@link ExecutorManager} constructor.
