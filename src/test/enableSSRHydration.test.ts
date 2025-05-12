@@ -3,7 +3,7 @@
  */
 
 import { describe, expect, test, beforeEach, vi } from 'vitest';
-import { enableSSRHydration, ExecutorManager } from '../main';
+import { enableSSRHydration, ExecutorManager } from '../main/index.js';
 
 describe('enableSSRHydration', () => {
   beforeEach(() => {

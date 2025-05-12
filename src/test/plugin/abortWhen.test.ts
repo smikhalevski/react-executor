@@ -1,8 +1,8 @@
 import { describe, expect, test, beforeEach, vi } from 'vitest';
 import { delay, PubSub } from 'parallel-universe';
-import { ExecutorManager } from '../../main';
-import abortWhen from '../../main/plugin/abortWhen';
-import { noop } from '../../main/utils';
+import { ExecutorManager } from '../../main/index.js';
+import abortWhen from '../../main/plugin/abortWhen.js';
+import { noop } from '../../main/utils.js';
 
 vi.useFakeTimers();
 

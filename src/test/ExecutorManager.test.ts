@@ -1,6 +1,6 @@
 import { describe, expect, test, beforeEach, vi, Mock } from 'vitest';
-import { ExecutorManager } from '../main';
-import { ExecutorImpl } from '../main/ExecutorImpl';
+import { ExecutorManager } from '../main/index.js';
+import { ExecutorImpl } from '../main/ExecutorImpl.js';
 
 Date.now = () => 50;
 

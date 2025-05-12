@@ -12,7 +12,7 @@ import {
   useExecutor,
   useExecutorSubscription,
   useExecutorSuspense,
-} from '../main';
+} from '../main/index.js';
 
 describe('useExecutorSuspense', () => {
   test('suspends component rendering until the executor is settled', async () => {

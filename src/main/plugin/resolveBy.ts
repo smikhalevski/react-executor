@@ -12,7 +12,7 @@
  * @module plugin/resolveBy
  */
 
-import type { ExecutorPlugin, Observable, PluginConfiguredPayload } from '../types';
+import type { ExecutorPlugin, Observable, PluginConfiguredPayload } from '../types.js';
 
 /**
  * Resolves the executor with values pushed by an observable.

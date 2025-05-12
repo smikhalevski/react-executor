@@ -8,7 +8,7 @@
  * @module ssr
  */
 
-export { ReadableSSRExecutorManager } from './ReadableSSRExecutorManager';
-export { SSRExecutorManager } from './SSRExecutorManager';
+export { ReadableSSRExecutorManager } from './ReadableSSRExecutorManager.js';
+export { SSRExecutorManager } from './SSRExecutorManager.js';
 
-export type { SSRExecutorManagerOptions } from './SSRExecutorManager';
+export type { SSRExecutorManagerOptions } from './SSRExecutorManager.js';

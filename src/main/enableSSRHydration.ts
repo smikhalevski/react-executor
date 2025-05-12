@@ -1,5 +1,5 @@
-import type { ExecutorManager } from './ExecutorManager';
-import type { ExecutorState } from './types';
+import type { ExecutorManager } from './ExecutorManager.js';
+import type { ExecutorState } from './types.js';
 
 /**
  * Options provided to {@link enableSSRHydration}.

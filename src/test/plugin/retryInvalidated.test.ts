@@ -1,6 +1,6 @@
 import { describe, expect, test, beforeEach, vi, Mock } from 'vitest';
-import { ExecutorManager } from '../../main';
-import retryInvalidated from '../../main/plugin/retryInvalidated';
+import { ExecutorManager } from '../../main/index.js';
+import retryInvalidated from '../../main/plugin/retryInvalidated.js';
 
 describe('retryInvalidated', () => {
   let listenerMock: Mock;

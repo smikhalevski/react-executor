@@ -1,7 +1,7 @@
 import { describe, expect, test, beforeEach, vi, Mock } from 'vitest';
 import { delay } from 'parallel-universe';
-import { ExecutorManager } from '../../main';
-import detachDeactivated from '../../main/plugin/detachDeactivated';
+import { ExecutorManager } from '../../main/index.js';
+import detachDeactivated from '../../main/plugin/detachDeactivated.js';
 
 describe('detachDeactivated', () => {
   let listenerMock: Mock;

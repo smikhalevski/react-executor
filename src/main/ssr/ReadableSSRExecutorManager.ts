@@ -1,4 +1,4 @@
-import { SSRExecutorManager, SSRExecutorManagerOptions } from './SSRExecutorManager';
+import { SSRExecutorManager, SSRExecutorManagerOptions } from './SSRExecutorManager.js';
 
 /**
  * The streaming executor manager that can be used as a transformer for

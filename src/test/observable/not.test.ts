@@ -1,6 +1,6 @@
 import { describe, expect, test, vi } from 'vitest';
 import { PubSub } from 'parallel-universe';
-import not from '../../main/observable/not';
+import not from '../../main/observable/not.js';
 
 describe('not', () => {
   test('inverses published value', () => {

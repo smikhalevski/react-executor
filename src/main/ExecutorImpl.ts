@@ -1,5 +1,5 @@
 import { AbortablePromise, PubSub } from 'parallel-universe';
-import type { ExecutorManager } from './ExecutorManager';
+import type { ExecutorManager } from './ExecutorManager.js';
 import type {
   Executor,
   ExecutorAnnotations,
@@ -7,8 +7,8 @@ import type {
   ExecutorEventType,
   ExecutorState,
   ExecutorTask,
-} from './types';
-import { AbortError, noop } from './utils';
+} from './types.js';
+import { AbortError, noop } from './utils.js';
 
 /**
  * The {@link Executor} implementation returned by the {@link ExecutorManager}.

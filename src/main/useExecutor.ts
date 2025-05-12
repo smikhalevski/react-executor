@@ -1,6 +1,6 @@
-import type { Executor, ExecutorPlugin, ExecutorTask, NoInfer } from './types';
-import { useExecutorManager } from './useExecutorManager';
-import { useExecutorSubscription } from './useExecutorSubscription';
+import type { Executor, ExecutorPlugin, ExecutorTask, NoInfer } from './types.js';
+import { useExecutorManager } from './useExecutorManager.js';
+import { useExecutorSubscription } from './useExecutorSubscription.js';
 
 /**
  * Gets an existing executor or create a new executor using the {@link ExecutorManager}.

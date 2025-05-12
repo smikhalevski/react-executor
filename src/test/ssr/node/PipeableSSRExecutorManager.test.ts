@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from 'vitest';
 import { delay } from 'parallel-universe';
 import { Writable } from 'stream';
-import { PipeableSSRExecutorManager } from '../../../main/ssr/node';
+import { PipeableSSRExecutorManager } from '../../../main/ssr/node/index.js';
 
 Date.now = () => 50;
 

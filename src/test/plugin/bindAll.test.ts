@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
-import { ExecutorManager } from '../../main';
-import bindAll from '../../main/plugin/bindAll';
+import { ExecutorManager } from '../../main/index.js';
+import bindAll from '../../main/plugin/bindAll.js';
 
 describe('bindAll', () => {
   test('binds methods to an executor instance', () => {

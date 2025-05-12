@@ -1,15 +1,17 @@
 {
   "compilerOptions": {
     "declaration": true,
-    "moduleResolution": "Node",
     "esModuleInterop": true,
     "isolatedModules": true,
-    "noUnusedLocals": true,
-    "downlevelIteration": true,
-    "jsx": "react",
     "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "downlevelIteration": true,
+    "skipLibCheck": true,
+    "jsx": "react",
     "target": "ES6",
-    "module": "ES6",
+    "module": "NodeNext",
+    "lib": ["DOM", "ES2020"],
     "outDir": "./lib"
   },
   "include": ["./src/**/*"]

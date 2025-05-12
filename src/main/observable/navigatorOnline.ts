@@ -16,8 +16,8 @@
  */
 
 import { PubSub } from 'parallel-universe';
-import type { Observable } from '../types';
-import { noop } from '../utils';
+import type { Observable } from '../types.js';
+import { noop } from '../utils.js';
 
 const pubSub = new PubSub<boolean>();
 

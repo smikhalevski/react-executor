@@ -4,8 +4,8 @@
 
 import { describe, expect, test, beforeEach, vi, Mock } from 'vitest';
 import { fireEvent } from '@testing-library/react';
-import { ExecutorManager } from '../../main';
-import synchronizeStorage from '../../main/plugin/synchronizeStorage';
+import { ExecutorManager } from '../../main/index.js';
+import synchronizeStorage from '../../main/plugin/synchronizeStorage.js';
 
 Date.now = () => 50;
 

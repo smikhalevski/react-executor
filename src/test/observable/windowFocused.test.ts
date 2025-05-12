@@ -4,7 +4,7 @@
 
 import { describe, expect, test, vi } from 'vitest';
 import { fireEvent } from '@testing-library/react';
-import windowFocused from '../../main/observable/windowFocused';
+import windowFocused from '../../main/observable/windowFocused.js';
 
 vi.useFakeTimers();
 

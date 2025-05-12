@@ -8,9 +8,9 @@
  * @module react-executor
  */
 
-export * from './core';
+export * from './core.js';
 
-export { useExecutor } from './useExecutor';
-export { useExecutorManager, ExecutorManagerProvider } from './useExecutorManager';
-export { useExecutorSubscription } from './useExecutorSubscription';
-export { useExecutorSuspense } from './useExecutorSuspense';
+export { useExecutor } from './useExecutor.js';
+export { useExecutorManager, ExecutorManagerProvider } from './useExecutorManager.js';
+export { useExecutorSubscription } from './useExecutorSubscription.js';
+export { useExecutorSuspense } from './useExecutorSuspense.js';

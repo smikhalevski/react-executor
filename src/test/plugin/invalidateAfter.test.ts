@@ -1,6 +1,6 @@
 import { describe, expect, test, beforeEach, vi, Mock } from 'vitest';
-import { ExecutorManager } from '../../main';
-import invalidateAfter from '../../main/plugin/invalidateAfter';
+import { ExecutorManager } from '../../main/index.js';
+import invalidateAfter from '../../main/plugin/invalidateAfter.js';
 
 vi.useFakeTimers();
 

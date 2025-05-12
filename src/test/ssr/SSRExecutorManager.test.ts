@@ -1,6 +1,6 @@
 import { describe, expect, test, vi } from 'vitest';
-import { SSRExecutorManager } from '../../main/ssr';
-import { noop } from '../../main/utils';
+import { SSRExecutorManager } from '../../main/ssr/index.js';
+import { noop } from '../../main/utils.js';
 
 Date.now = () => 50;
 
@@ -209,7 +209,7 @@ describe('SSRExecutorManager', () => {
     test('aborts executors', () => {
       const manager = new SSRExecutorManager();
 
-      const taskMock = vi.fn(signal => 111);
+      const taskMock = vi.fn(_signal => 111);
 
       const executor = manager.getOrCreate('xxx');
 

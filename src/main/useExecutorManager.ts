@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import { ExecutorManager } from './ExecutorManager';
+import { ExecutorManager } from './ExecutorManager.js';
 
 const ExecutorManagerContext = createContext(new ExecutorManager());
 

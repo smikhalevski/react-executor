@@ -1,7 +1,7 @@
 import { describe, expect, test, beforeEach, vi } from 'vitest';
 import { PubSub } from 'parallel-universe';
-import { ExecutorManager } from '../../main';
-import retryWhen from '../../main/plugin/retryWhen';
+import { ExecutorManager } from '../../main/index.js';
+import retryWhen from '../../main/plugin/retryWhen.js';
 
 vi.useFakeTimers();
 

@@ -1,7 +1,7 @@
 import { describe, expect, test, beforeEach, vi, Mock } from 'vitest';
 import { AbortablePromise } from 'parallel-universe';
-import { ExecutorImpl } from '../main/ExecutorImpl';
-import { AbortError, noop } from '../main/utils';
+import { ExecutorImpl } from '../main/ExecutorImpl.js';
+import { AbortError, noop } from '../main/utils.js';
 
 Date.now = () => 50;
 

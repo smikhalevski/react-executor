@@ -1,8 +1,8 @@
 import { describe, expect, test, beforeEach, vi, Mock } from 'vitest';
 import { delay } from 'parallel-universe';
-import { ExecutorManager } from '../../main';
-import abortDeactivated from '../../main/plugin/abortDeactivated';
-import { AbortError } from '../../main/utils';
+import { ExecutorManager } from '../../main/index.js';
+import abortDeactivated from '../../main/plugin/abortDeactivated.js';
+import { AbortError } from '../../main/utils.js';
 
 describe('abortDeactivated', () => {
   let listenerMock: Mock;
