@@ -75,6 +75,7 @@ npm install --save-prod react-executor
 - [Infinite scroll](#infinite-scroll)
 - [Invalidate all executors](#invalidate-all-executors)
 - [Prefetching](#prefetching)
+- [Storage state versioning](#storage-state-versioning)
 
 # Introduction
 
@@ -1316,8 +1317,6 @@ Persists the executor value in the synchronous storage.
 import synchronizeStorage from 'react-executor/plugin/synchronizeStorage';
 
 const executor = useExecutor('test', 42, [synchronizeStorage(localStorage)]);
-
-executor.activate();
 ```
 
 With this plugin, you can synchronize the executor state
@@ -2028,6 +2027,106 @@ const App = () => (
     {/* Render you app here */}
   </ExecutorManagerProvider>
 );
+```
+
+## Storage state versioning
+
+You can store an executor state in a `localStorage` using the [`synchronizeStorage`](#synchronizestorage) plugin:
+
+```ts
+import { useExecutor } from 'react-executor';
+import synchronizeStorage from 'react-executor/plugin/synchronizeStorage';
+
+const playerExecutor = useExecutor('player', { health: '50%' }, [synchronizeStorage(localStorage)]);
+// ⮕ Executor<{ health: string }>
+```
+
+But what if over time you'd like to change the structure of the value stored in the `playerExecutor`? For example,
+make `health` property a number:
+
+```ts
+const playerExecutor = useExecutor('player', { health: 0.5 }, [synchronizeStorage(localStorage)]);
+```
+
+After users have used the previous version of the app where `health` was a string, they would still receive a string
+value since the `playerExecutor` state is read from the `localStorage`:
+
+```ts
+playerExecutor.value.health
+// ⮕ '50%'
+```
+
+This may lead to an unexpected behavior of your app. To mitigate this issue, let's write a plugin that would annotate
+the executor with a version:
+
+```ts
+import { type ExecutorPlugin } from 'react-executor';
+
+export function requireVersion(version: number): ExecutorPlugin {
+  return executor => {
+    if (executor.annotations.version === version) {
+      // ✅ Executor is annotated with a correct version
+      return;
+    }
+
+    // ❌ Clear the executor state and annotate it with a proper version
+    executor.clear();
+    executor.annotate({ version });
+  };
+}
+```
+
+Add the plugin to the executor:
+
+```ts
+const playerExecutor = useExecutor('player', { health: 0.5 }, [
+  synchronizeStorage(localStorage),
+  requireVersion(1)
+]);
+```
+
+After the `synchronizeStorage` plugin reads the data from the `localStorage`, the `requireVersion` plugin ensures that
+the `version` annotation read from the `localStorage` matches the required version. On mismatch the executor is cleared
+and the initial value `{ health: 0.5 }` is written to the storage.
+
+```ts
+playerExecutor.value.health
+// ⮕ 0.5
+```
+
+Bump the version provided to `requireVersion` plugin every time the structure of the executor value is changed.
+
+We can enhance the `requireVersion` plugin by making it migrate the data instead of just clearing it:
+
+```ts
+export function requireVersion<T>(version: number, migrate: (executor: Executor<T>) => T): ExecutorPlugin<T> {
+  return executor => {
+    if (executor.annotations.version === version) {
+      return;
+    }
+
+    // 🟡 Migrate only if executor has a value
+    if (executor.isSettled) {
+      migrate(executor);
+    }
+    
+    executor.annotate({ version });
+  };
+}
+```
+
+Now `requireVersion` would apply the migration on the state version mismatch: 
+
+```ts
+const playerExecutor = useExecutor('player', { health: 0.5 }, [
+  synchronizeStorage(localStorage),
+  
+  requireVersion(1, executor => {
+    executor.resolve({ 
+      health: parseInt(executor.get().health) / 100
+    });
+  })
+]);
 ```
 
 <hr/>
