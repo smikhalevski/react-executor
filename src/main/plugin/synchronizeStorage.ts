@@ -135,6 +135,7 @@ export default function synchronizeStorage<Value = any>(
         case 'fulfilled':
         case 'rejected':
         case 'invalidated':
+        case 'annotated':
           const stateStr = serializer.stringify(executor.toJSON());
 
           if (latestStateStr !== stateStr) {

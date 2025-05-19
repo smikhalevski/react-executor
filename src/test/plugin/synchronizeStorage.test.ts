@@ -280,6 +280,27 @@ test('sets storage item if executor was cleared', () => {
   );
 });
 
+test('ignores stored empty annotations', () => {
+  localStorage.setItem(
+    '"xxx"',
+    '{"key":"xxx","isFulfilled":true,"value":"aaa","settledAt":30,"invalidatedAt":0,"annotations":{}}'
+  );
+
+  const executor = manager.getOrCreate('xxx', undefined, [synchronizeStorage(localStorage)]);
+
+  expect(executor.annotations).toEqual({});
+
+  expect(listenerMock).toHaveBeenCalledTimes(3);
+  expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'fulfilled', target: executor, version: 1 });
+  expect(listenerMock).toHaveBeenNthCalledWith(2, {
+    type: 'plugin_configured',
+    target: executor,
+    version: 1,
+    payload: { type: 'synchronizeStorage', options: { storageKey: '"xxx"' } },
+  });
+  expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'attached', target: executor, version: 1 });
+});
+
 test('restores non-empty annotations', () => {
   localStorage.setItem(
     '"xxx"',
@@ -300,4 +321,21 @@ test('restores non-empty annotations', () => {
     payload: { type: 'synchronizeStorage', options: { storageKey: '"xxx"' } },
   });
   expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'attached', target: executor, version: 2 });
+});
+
+test('sets storage item if annotations are changed', () => {
+  localStorage.setItem(
+    '"xxx"',
+    '{"key":"xxx","isFulfilled":false,"settledAt":0,"invalidatedAt":0,"annotations":{"zzz":111}}'
+  );
+
+  const executor = manager.getOrCreate('xxx', undefined, [synchronizeStorage(localStorage)]);
+
+  executor.annotate({ zzz: 222 });
+
+  expect(executor.annotations).toEqual({ zzz: 222 });
+
+  expect(localStorage.getItem('"xxx"')).toBe(
+    '{"key":"xxx","isFulfilled":false,"annotations":{"zzz":222},"settledAt":0,"invalidatedAt":0}'
+  );
 });
