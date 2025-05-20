@@ -12,9 +12,8 @@
  * @module plugin/synchronizeStorage
  */
 
-import { ExecutorImpl } from '../ExecutorImpl.js';
 import type { Executor, ExecutorPlugin, ExecutorState, PluginConfiguredPayload } from '../types.js';
-import { emptyObject } from '../utils.js';
+import { emptyObject, getKeyCount, isObjectLike } from '../utils.js';
 
 /**
  * Serializes and deserializes values.
@@ -72,62 +71,27 @@ export default function synchronizeStorage<Value = any>(
 
   return executor => {
     const executorStorageKey =
-      typeof storageKey === 'function'
-        ? storageKey(executor)
-        : (storageKey ?? executor.manager.keySerializer(executor.key));
+      storageKey === undefined
+        ? executor.manager.keySerializer(executor.key)
+        : typeof storageKey === 'function'
+          ? storageKey(executor)
+          : storageKey;
 
     if (typeof executorStorageKey !== 'string') {
       throw new Error('Cannot guess a storage key for an executor, the "storageKey" option is required');
     }
 
-    let latestStateStr: string | null | undefined;
-
-    const receiveState = (stateStr: string | null) => {
-      let state: ExecutorState;
-
-      if (executor.isPending) {
-        return;
-      }
-
-      latestStateStr = stateStr;
-
-      if (stateStr === null || (state = serializer.parse(stateStr)).settledAt < executor.settledAt) {
-        storage.setItem(executorStorageKey, serializer.stringify(executor.toJSON()));
-        return;
-      }
-      if (state.settledAt === executor.settledAt) {
-        return;
-      }
-      if (Object.keys(state.annotations).length !== 0) {
-        executor.annotate(state.annotations);
-      }
-      if (executor instanceof ExecutorImpl) {
-        executor.value = state.value;
-        executor.reason = state.reason;
-      }
-      if (state.isFulfilled) {
-        executor.resolve(state.value!, state.settledAt);
-      } else if (state.settledAt !== 0) {
-        executor.reject(state.reason, state.settledAt);
-      } else if (executor.isSettled) {
-        executor.clear();
-      }
-      if (state.invalidatedAt !== 0) {
-        executor.invalidate(state.invalidatedAt);
-      }
-    };
+    receiveState(executor, storage, executorStorageKey, storage.getItem(executorStorageKey), serializer);
 
     const handleStorage = (event: StorageEvent) => {
       if (event.storageArea === storage && event.key === executorStorageKey) {
-        receiveState(event.newValue);
+        receiveState(executor, storage, executorStorageKey, event.newValue, serializer);
       }
     };
 
     if (typeof window !== 'undefined') {
       window.addEventListener('storage', handleStorage);
     }
-
-    receiveState(storage.getItem(executorStorageKey));
 
     executor.subscribe(event => {
       switch (event.type) {
@@ -136,12 +100,7 @@ export default function synchronizeStorage<Value = any>(
         case 'rejected':
         case 'invalidated':
         case 'annotated':
-          const stateStr = serializer.stringify(executor.toJSON());
-
-          if (latestStateStr !== stateStr) {
-            latestStateStr = stateStr;
-            storage.setItem(executorStorageKey, stateStr);
-          }
+          storage.setItem(executorStorageKey, serializer.stringify(executor.toJSON()));
           break;
 
         case 'detached':
@@ -162,4 +121,73 @@ export default function synchronizeStorage<Value = any>(
       } satisfies PluginConfiguredPayload,
     });
   };
+}
+
+function receiveState(
+  executor: { -readonly [K in keyof Executor]: Executor[K] },
+  storage: Pick<Storage, 'setItem'>,
+  storageKey: string,
+  stateStr: string | null,
+  serializer: Serializer<ExecutorState>
+): void {
+  if (executor.isPending) {
+    // The executor would overwrite storage item after the settlement
+    return;
+  }
+
+  if (stateStr === null) {
+    // No storage item
+    storage.setItem(storageKey, serializer.stringify(executor.toJSON()));
+    return;
+  }
+
+  let state: ExecutorState | undefined;
+
+  try {
+    state = serializer.parse(stateStr);
+  } catch (error) {
+    // Cannot parse storage item
+    setTimeout(() => {
+      // Force uncaught exception
+      throw error;
+    }, 0);
+  }
+
+  if (
+    !isObjectLike(state) ||
+    !isObjectLike(state.annotations) ||
+    typeof state.settledAt !== 'number' ||
+    typeof state.invalidatedAt !== 'number' ||
+    state.settledAt < executor.settledAt
+  ) {
+    // Invalid or outdated storage item
+    storage.setItem(storageKey, serializer.stringify(executor.toJSON()));
+    return;
+  }
+
+  if (state.settledAt === executor.settledAt) {
+    // Unchanged storage item
+    return;
+  }
+
+  executor.value = state.value;
+  executor.reason = state.reason;
+
+  if (getKeyCount(state.annotations) !== 0 || getKeyCount(executor.annotations) !== 0) {
+    // Overwrite annotations instead of patching
+    executor.annotations = {};
+    executor.annotate(state.annotations);
+  }
+
+  if (state.isFulfilled) {
+    executor.resolve(state.value, state.settledAt);
+  } else if (state.settledAt !== 0) {
+    executor.reject(state.reason, state.settledAt);
+  } else if (executor.isSettled) {
+    executor.clear();
+  }
+
+  if (state.invalidatedAt !== 0) {
+    executor.invalidate(state.invalidatedAt);
+  }
 }

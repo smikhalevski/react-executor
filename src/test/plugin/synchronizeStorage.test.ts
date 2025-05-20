@@ -6,6 +6,9 @@ import { beforeEach, expect, Mock, test, vi } from 'vitest';
 import { fireEvent } from '@testing-library/react';
 import { ExecutorManager } from '../../main/index.js';
 import synchronizeStorage from '../../main/plugin/synchronizeStorage.js';
+import { ExecutorImpl } from '../../main/ExecutorImpl.js';
+
+vi.useFakeTimers();
 
 Date.now = () => 50;
 
@@ -223,7 +226,7 @@ test('resolves an executor when a storage item is set', () => {
     new StorageEvent('storage', {
       key: '"xxx"',
       storageArea: localStorage,
-      newValue: '{"value":"aaa","settledAt":50,"annotations":{}}',
+      newValue: '{"value":"aaa","settledAt":50,"invalidatedAt":0,"annotations":{}}',
     })
   );
 
@@ -323,6 +326,20 @@ test('restores non-empty annotations', () => {
   expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'attached', target: executor, version: 2 });
 });
 
+test('overwrites annotations', () => {
+  localStorage.setItem(
+    '"xxx"',
+    '{"key":"xxx","isFulfilled":true,"value":"aaa","settledAt":30,"invalidatedAt":0,"annotations":{"zzz":111}}'
+  );
+
+  const executor = manager.getOrCreate('xxx', undefined, [
+    executor => executor.annotate({ kkk: 222 }),
+    synchronizeStorage(localStorage),
+  ]);
+
+  expect(executor.annotations).toEqual({ zzz: 111 });
+});
+
 test('sets storage item if annotations are changed', () => {
   localStorage.setItem(
     '"xxx"',
@@ -338,4 +355,41 @@ test('sets storage item if annotations are changed', () => {
   expect(localStorage.getItem('"xxx"')).toBe(
     '{"key":"xxx","isFulfilled":false,"annotations":{"zzz":222},"settledAt":0,"invalidatedAt":0}'
   );
+});
+
+test('overwrites storage item if an error is thrown during parsing', () => {
+  localStorage.setItem('"xxx"', 'invalid_state');
+
+  const executor = manager.getOrCreate('xxx', undefined, [
+    synchronizeStorage(localStorage, {
+      serializer: {
+        parse() {
+          throw new Error('expected');
+        },
+        stringify: JSON.stringify,
+      },
+    }),
+  ]);
+
+  expect(executor).toBeInstanceOf(ExecutorImpl);
+
+  expect(localStorage.getItem('"xxx"')).toBe(
+    '{"key":"xxx","isFulfilled":false,"annotations":{},"settledAt":0,"invalidatedAt":0}'
+  );
+
+  expect(() => vi.runAllTimers()).toThrow(new Error('expected'));
+});
+
+test('overwrites storage item if it contains a malformed state', () => {
+  localStorage.setItem('"xxx"', '{"annotations":"zzz"}');
+
+  const executor = manager.getOrCreate('xxx', undefined, [synchronizeStorage(localStorage)]);
+
+  expect(executor).toBeInstanceOf(ExecutorImpl);
+
+  expect(localStorage.getItem('"xxx"')).toBe(
+    '{"key":"xxx","isFulfilled":false,"annotations":{},"settledAt":0,"invalidatedAt":0}'
+  );
+
+  expect(() => vi.runAllTimers()).not.toThrow();
 });

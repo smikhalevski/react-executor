@@ -8,7 +8,7 @@ import type {
   ExecutorTask,
   PartialExecutorEvent,
 } from './types.js';
-import { AbortError, noop } from './utils.js';
+import { AbortError, isObjectLike, noop } from './utils.js';
 
 /**
  * The {@link Executor} implementation returned by the {@link ExecutorManager}.
@@ -187,7 +187,7 @@ export class ExecutorImpl<Value = any> implements Executor {
   }
 
   resolve(value: PromiseLike<Value> | Value, settledAt = Date.now()): void {
-    if (value !== null && typeof value === 'object' && 'then' in value) {
+    if (isObjectLike(value) && 'then' in value) {
       this.execute(() => value);
       return;
     }
