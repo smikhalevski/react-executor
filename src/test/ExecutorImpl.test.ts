@@ -546,6 +546,32 @@ describe('abort', () => {
     expect(listenerMock).toHaveBeenCalledTimes(0);
   });
 
+  test('no-op after task is successfully completed', async () => {
+    const promise = executor.execute(() => 111);
+
+    await promise;
+
+    promise.abort();
+
+    expect(listenerMock).toHaveBeenCalledTimes(2);
+    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'pending', target: executor, version: 1 });
+    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'fulfilled', target: executor, version: 2 });
+  });
+
+  test('no-op after task has failed', async () => {
+    const promise = executor.execute(() => {
+      throw new Error('expected');
+    });
+
+    await promise.catch(noop);
+
+    promise.abort();
+
+    expect(listenerMock).toHaveBeenCalledTimes(2);
+    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'pending', target: executor, version: 1 });
+    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'rejected', target: executor, version: 2 });
+  });
+
   test('aborts the pending task', async () => {
     const taskMock = vi.fn(_signal => 'aaa');
 

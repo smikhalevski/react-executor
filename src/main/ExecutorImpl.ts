@@ -106,20 +106,24 @@ export class ExecutorImpl<Value = any> implements Executor {
   }
 
   execute(task: ExecutorTask<Value>): AbortablePromise<Value> {
+    const handleAbort = (): void => {
+      if (this.promise === promise) {
+        this.promise = null;
+        this.version++;
+      }
+      this.publish({ type: 'aborted' });
+    };
+
     const promise = new AbortablePromise<Value>((resolve, reject, signal) => {
-      signal.addEventListener('abort', () => {
-        if (this.promise === promise) {
-          this.promise = null;
-          this.version++;
-        }
-        this.publish({ type: 'aborted' });
-      });
+      signal.addEventListener('abort', handleAbort);
 
       new Promise<Value>(resolve => {
         const value = task(signal, this);
         resolve(value instanceof AbortablePromise ? value.withSignal(signal) : value);
       }).then(
         value => {
+          signal.removeEventListener('abort', handleAbort);
+
           if (signal.aborted) {
             return;
           }
@@ -128,13 +132,15 @@ export class ExecutorImpl<Value = any> implements Executor {
           resolve(value);
         },
 
-        reason => {
+        error => {
+          signal.removeEventListener('abort', handleAbort);
+
           if (signal.aborted) {
             return;
           }
           this.promise = null;
-          this.reject(reason);
-          reject(reason);
+          this.reject(error);
+          reject(error);
         }
       );
     });
@@ -222,14 +228,14 @@ export class ExecutorImpl<Value = any> implements Executor {
   }
 
   activate(): () => void {
-    let isApplicable = true;
+    let isActive = true;
 
     if (this._activationCount++ === 0) {
       this.publish({ type: 'activated' });
     }
 
     return () => {
-      if (isApplicable && ((isApplicable = false), --this._activationCount === 0)) {
+      if (isActive && ((isActive = false), --this._activationCount === 0)) {
         this.publish({ type: 'deactivated' });
       }
     };
