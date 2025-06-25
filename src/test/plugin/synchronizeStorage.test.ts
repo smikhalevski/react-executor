@@ -139,14 +139,14 @@ test('resolves an executor with an invalidated storage item', () => {
 
   expect(listenerMock).toHaveBeenCalledTimes(4);
   expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'fulfilled', target: executor, version: 1 });
-  expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'invalidated', target: executor, version: 2 });
+  expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'invalidated', target: executor, version: 1 });
   expect(listenerMock).toHaveBeenNthCalledWith(3, {
     type: 'plugin_configured',
     target: executor,
-    version: 2,
+    version: 1,
     payload: { type: 'synchronizeStorage', options: { storageKey: '"xxx"' } },
   });
-  expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'attached', target: executor, version: 2 });
+  expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'attached', target: executor, version: 1 });
 });
 
 test('sets storage item to the initial value', () => {
@@ -226,7 +226,7 @@ test('resolves an executor when a storage item is set', () => {
     new StorageEvent('storage', {
       key: '"xxx"',
       storageArea: localStorage,
-      newValue: '{"value":"aaa","settledAt":50,"invalidatedAt":0,"annotations":{}}',
+      newValue: '{"value":"aaa","settledAt":50,"invalidatedAt":0,"annotations":{},"isFulfilled":true}',
     })
   );
 
@@ -316,14 +316,14 @@ test('restores non-empty annotations', () => {
 
   expect(listenerMock).toHaveBeenCalledTimes(4);
   expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'annotated', target: executor, version: 1 });
-  expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'fulfilled', target: executor, version: 2 });
+  expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'fulfilled', target: executor, version: 1 });
   expect(listenerMock).toHaveBeenNthCalledWith(3, {
     type: 'plugin_configured',
     target: executor,
-    version: 2,
+    version: 1,
     payload: { type: 'synchronizeStorage', options: { storageKey: '"xxx"' } },
   });
-  expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'attached', target: executor, version: 2 });
+  expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'attached', target: executor, version: 1 });
 });
 
 test('overwrites annotations', () => {
