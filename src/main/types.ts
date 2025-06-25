@@ -118,7 +118,7 @@ export interface ExecutorEvent<Value = any> {
 }
 
 /**
- * The event that can be published by an executor.
+ * The details of an event that can be published by an executor.
  */
 export interface PartialExecutorEvent {
   /**

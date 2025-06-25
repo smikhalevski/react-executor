@@ -48,7 +48,7 @@ export interface SynchronizeStorageOptions<Value> {
   /**
    * A storage key, or a callback that returns the storage key.
    *
-   * By default, a serialized {@link Executor.key} is used as a storage key.
+   * By default, a {@link ExecutorManagerOptions.keySerializer serialized} {@link Executor.key} is used as a storage key.
    */
   storageKey?: string | ((executor: Executor) => string);
 }
@@ -105,6 +105,10 @@ export default function synchronizeStorage<Value = any>(
           flushState();
           break;
 
+        case 'aborted':
+          receiveState(executor, flushState, storage.getItem(executorStorageKey), serializer);
+          break;
+
         case 'detached':
           storage.removeItem(executorStorageKey);
 
@@ -132,7 +136,7 @@ function receiveState(
   serializer: Serializer<ExecutorState>
 ): void {
   if (executor.isPending) {
-    // The executor would overwrite storage item after the settlement
+    // The executor would overwrite storage item when settled
     return;
   }
 
@@ -142,10 +146,17 @@ function receiveState(
     return;
   }
 
-  let nextState: ExecutorState | undefined;
+  const actualState = executor.toJSON();
+
+  if (stateStr === serializer.stringify(actualState)) {
+    // No changes
+    return;
+  }
+
+  let storedState: ExecutorState | undefined;
 
   try {
-    nextState = serializer.parse(stateStr);
+    storedState = serializer.parse(stateStr);
   } catch (error) {
     // Cannot parse storage item
     setTimeout(() => {
@@ -155,42 +166,42 @@ function receiveState(
   }
 
   if (
-    !isObjectLike(nextState) ||
-    !isObjectLike(nextState.annotations) ||
-    typeof nextState.settledAt !== 'number' ||
-    typeof nextState.invalidatedAt !== 'number' ||
-    typeof nextState.isFulfilled !== 'boolean' ||
-    (nextState.settledAt !== 0 && nextState.settledAt < executor.settledAt)
+    // Check the stored state is malformed
+    !isObjectLike(storedState) ||
+    !isObjectLike(storedState.annotations) ||
+    typeof storedState.settledAt !== 'number' ||
+    typeof storedState.invalidatedAt !== 'number' ||
+    typeof storedState.isFulfilled !== 'boolean' ||
+    // Check the stored state is outdated
+    (storedState.settledAt !== 0 && storedState.settledAt < actualState.settledAt)
   ) {
-    // Invalid or outdated storage item
+    // Overwrite storage item with the actual state
     flushState();
     return;
   }
 
-  const prevState = executor.toJSON();
-
-  // Update the executor state before events are published
+  // Update the executor with the stored state
+  executor.value = storedState.value;
+  executor.reason = storedState.reason;
+  executor.annotations = storedState.annotations;
+  executor.settledAt = storedState.settledAt;
+  executor.invalidatedAt = storedState.invalidatedAt;
+  executor.isFulfilled = storedState.isFulfilled;
   executor.version++;
-  executor.value = nextState.value;
-  executor.reason = nextState.reason;
-  executor.annotations = nextState.annotations;
-  executor.settledAt = nextState.settledAt;
-  executor.invalidatedAt = nextState.invalidatedAt;
-  executor.isFulfilled = nextState.isFulfilled;
 
-  if (!isShallowEqual(nextState.annotations, prevState.annotations)) {
+  if (!isShallowEqual(storedState.annotations, actualState.annotations)) {
     executor.publish({ type: 'annotated' });
   }
 
-  if (nextState.isFulfilled) {
+  if (storedState.isFulfilled) {
     executor.publish({ type: 'fulfilled' });
-  } else if (nextState.settledAt !== 0) {
+  } else if (storedState.settledAt !== 0) {
     executor.publish({ type: 'rejected' });
-  } else if (prevState.settledAt !== 0) {
+  } else if (actualState.settledAt !== 0) {
     executor.publish({ type: 'cleared' });
   }
 
-  if (nextState.invalidatedAt !== 0 && prevState.invalidatedAt === 0) {
+  if (storedState.invalidatedAt !== 0 && actualState.invalidatedAt === 0) {
     executor.publish({ type: 'invalidated' });
   }
 }

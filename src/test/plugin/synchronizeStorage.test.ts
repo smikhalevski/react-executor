@@ -7,6 +7,7 @@ import { fireEvent } from '@testing-library/react';
 import { ExecutorManager } from '../../main/index.js';
 import synchronizeStorage from '../../main/plugin/synchronizeStorage.js';
 import { ExecutorImpl } from '../../main/ExecutorImpl.js';
+import { noop } from '../../main/utils.js';
 
 vi.useFakeTimers();
 
@@ -149,6 +150,33 @@ test('resolves an executor with an invalidated storage item', () => {
   expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'attached', target: executor, version: 1 });
 });
 
+test('does not publish invalidated event if executor is already invalidated', () => {
+  const executor = manager.getOrCreate('xxx', 'bbb', [synchronizeStorage(localStorage)]);
+
+  executor.invalidate();
+
+  fireEvent(
+    window,
+    new StorageEvent('storage', {
+      key: '"xxx"',
+      storageArea: localStorage,
+      newValue: '{"value":"aaa","isFulfilled":true,"settledAt":100,"invalidatedAt":30,"annotations":{}}',
+    })
+  );
+
+  expect(listenerMock).toHaveBeenCalledTimes(5);
+  expect(listenerMock).toHaveBeenNthCalledWith(1, {
+    type: 'plugin_configured',
+    target: executor,
+    version: 0,
+    payload: { type: 'synchronizeStorage', options: { storageKey: '"xxx"' } },
+  });
+  expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
+  expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor, version: 1 });
+  expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'invalidated', target: executor, version: 2 });
+  expect(listenerMock).toHaveBeenNthCalledWith(5, { type: 'fulfilled', target: executor, version: 3 });
+});
+
 test('sets storage item to the initial value', () => {
   const executor = manager.getOrCreate('xxx', 'aaa', [synchronizeStorage(localStorage)]);
 
@@ -183,7 +211,7 @@ test('sets storage item if executor was resolved from a preceding plugin', () =>
   );
 });
 
-test('initial task is not called if storage item exists', async () => {
+test('initial task is not called if storage item exists', () => {
   const taskMock = vi.fn(() => 'bbb');
 
   localStorage.setItem(
@@ -304,6 +332,31 @@ test('ignores stored empty annotations', () => {
   expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'attached', target: executor, version: 1 });
 });
 
+test('does not publish annotated events if annotations are shallow equal', () => {
+  localStorage.setItem(
+    '"xxx"',
+    '{"key":"xxx","isFulfilled":true,"value":"aaa","settledAt":30,"invalidatedAt":0,"annotations":{"zzz":111}}'
+  );
+
+  const executor = manager.getOrCreate('xxx', undefined, [
+    executor => executor.annotate({ zzz: 111 }),
+    synchronizeStorage(localStorage),
+  ]);
+
+  expect(executor.annotations).toEqual({ zzz: 111 });
+
+  expect(listenerMock).toHaveBeenCalledTimes(4);
+  expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'annotated', target: executor, version: 1 });
+  expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'fulfilled', target: executor, version: 2 });
+  expect(listenerMock).toHaveBeenNthCalledWith(3, {
+    type: 'plugin_configured',
+    target: executor,
+    version: 2,
+    payload: { type: 'synchronizeStorage', options: { storageKey: '"xxx"' } },
+  });
+  expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'attached', target: executor, version: 2 });
+});
+
 test('restores non-empty annotations', () => {
   localStorage.setItem(
     '"xxx"',
@@ -392,4 +445,70 @@ test('overwrites storage item if it contains a malformed state', () => {
   );
 
   expect(() => vi.runAllTimers()).not.toThrow();
+});
+
+test('executor is updated with storage item before any events are published', () => {
+  const executor = manager.getOrCreate('xxx', 'bbb', [synchronizeStorage(localStorage)]);
+
+  const listenerMock = vi.fn();
+
+  executor.subscribe(() => listenerMock(executor.toJSON()));
+
+  fireEvent(
+    window,
+    new StorageEvent('storage', {
+      key: '"xxx"',
+      storageArea: localStorage,
+      newValue: '{"value":"aaa","isFulfilled":true,"settledAt":100,"invalidatedAt":30,"annotations":{}}',
+    })
+  );
+
+  expect(executor.value).toBe('aaa');
+
+  expect(listenerMock).toHaveBeenNthCalledWith(1, {
+    key: 'xxx',
+    value: 'aaa',
+    reason: undefined,
+    annotations: {},
+    invalidatedAt: 30,
+    isFulfilled: true,
+    settledAt: 100,
+  });
+});
+
+test('syncs state if task is aborted', () => {
+  const executor = manager.getOrCreate('xxx', 'bbb', [synchronizeStorage(localStorage)]);
+
+  executor.execute(() => new Promise(noop));
+
+  fireEvent(
+    window,
+    new StorageEvent('storage', {
+      key: '"xxx"',
+      storageArea: localStorage,
+      newValue: '{"value":"aaa","isFulfilled":true,"settledAt":100,"invalidatedAt":30,"annotations":{}}',
+    })
+  );
+
+  expect(executor.value).toBe('bbb');
+
+  expect(listenerMock).toHaveBeenCalledTimes(4);
+  expect(listenerMock).toHaveBeenNthCalledWith(1, {
+    type: 'plugin_configured',
+    target: executor,
+    version: 0,
+    payload: { type: 'synchronizeStorage', options: { storageKey: '"xxx"' } },
+  });
+  expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
+  expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor, version: 1 });
+  expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'pending', target: executor, version: 2 });
+
+  executor.abort();
+
+  expect(executor.value).toBe('aaa');
+
+  expect(listenerMock).toHaveBeenCalledTimes(7);
+  expect(listenerMock).toHaveBeenNthCalledWith(5, { type: 'aborted', target: executor, version: 3 });
+  expect(listenerMock).toHaveBeenNthCalledWith(6, { type: 'fulfilled', target: executor, version: 4 });
+  expect(listenerMock).toHaveBeenNthCalledWith(7, { type: 'invalidated', target: executor, version: 4 });
 });
