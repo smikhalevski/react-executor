@@ -14,6 +14,7 @@
 
 import type { Executor, ExecutorPlugin, ExecutorState, PluginConfiguredPayload } from '../types.js';
 import { emptyObject, isObjectLike, isShallowEqual, throwUnhandled } from '../utils.js';
+import type { ExecutorImpl } from '../ExecutorImpl.js';
 
 /**
  * Serializes and deserializes values.
@@ -48,7 +49,8 @@ export interface SynchronizeStorageOptions<Value> {
   /**
    * A storage key, or a callback that returns the storage key.
    *
-   * By default, a {@link react-executor!ExecutorManagerOptions.keySerializer serialized} {@link Executor.key} is used as a storage key.
+   * By default, a {@link react-executor!ExecutorManagerOptions.keySerializer serialized} {@link Executor.key} is used
+   * as a storage key.
    */
   storageKey?: string | ((executor: Executor) => string);
 }
@@ -56,8 +58,7 @@ export interface SynchronizeStorageOptions<Value> {
 /**
  * Persists the executor value in the synchronous storage.
  *
- * Synchronization is enabled only for activated executors. If executor is detached, then the corresponding item is
- * removed from the storage.
+ * If executor is detached, then the corresponding item is removed from the storage.
  *
  * @param storage The storage where executor value is persisted, usually a `localStorage` or a `sessionStorage`.
  * @param options Additional options.
@@ -70,26 +71,30 @@ export default function synchronizeStorage<Value = any>(
   const { serializer = JSON, storageKey } = options;
 
   return executor => {
-    const executorStorageKey =
+    const keyStr =
       storageKey === undefined
         ? executor.manager.keySerializer(executor.key)
         : typeof storageKey === 'function'
           ? storageKey(executor)
           : storageKey;
 
-    if (typeof executorStorageKey !== 'string') {
+    if (typeof keyStr !== 'string') {
       throw new Error('Cannot guess a storage key for an executor, the "storageKey" option is required');
     }
 
-    const flushState = () => storage.setItem(executorStorageKey, serializer.stringify(executor.toJSON()));
+    const saveState = () => storage.setItem(keyStr, serializer.stringify(executor.toJSON()));
+
+    const readState = () => setExecutorState(executor as ExecutorImpl, saveState, storage.getItem(keyStr), serializer);
+
+    const dropState = () => storage.removeItem(keyStr);
 
     const handleStorage = (event: StorageEvent) => {
-      if (event.storageArea === storage && event.key === executorStorageKey) {
-        receiveState(executor, flushState, event.newValue, serializer);
+      if (event.storageArea === storage && (event.key === null || event.key === keyStr)) {
+        readState();
       }
     };
 
-    receiveState(executor, flushState, storage.getItem(executorStorageKey), serializer);
+    readState();
 
     if (typeof window !== 'undefined') {
       window.addEventListener('storage', handleStorage);
@@ -102,15 +107,15 @@ export default function synchronizeStorage<Value = any>(
         case 'rejected':
         case 'invalidated':
         case 'annotated':
-          flushState();
+          saveState();
           break;
 
         case 'aborted':
-          receiveState(executor, flushState, storage.getItem(executorStorageKey), serializer);
+          readState();
           break;
 
         case 'detached':
-          storage.removeItem(executorStorageKey);
+          dropState();
 
           if (typeof window !== 'undefined') {
             window.removeEventListener('storage', handleStorage);
@@ -123,15 +128,15 @@ export default function synchronizeStorage<Value = any>(
       type: 'plugin_configured',
       payload: {
         type: 'synchronizeStorage',
-        options: { storageKey: executorStorageKey },
+        options: { storageKey: keyStr },
       } satisfies PluginConfiguredPayload,
     });
   };
 }
 
-function receiveState(
-  executor: { -readonly [K in keyof Executor]: Executor[K] },
-  flushState: () => void,
+function setExecutorState(
+  executor: ExecutorImpl,
+  saveState: () => void,
   stateStr: string | null,
   serializer: Serializer<ExecutorState>
 ): void {
@@ -142,7 +147,7 @@ function receiveState(
 
   if (stateStr === null) {
     // No storage item
-    flushState();
+    saveState();
     return;
   }
 
@@ -163,7 +168,7 @@ function receiveState(
 
   if (!isExecutorState(nextState) || (nextState.settledAt !== 0 && nextState.settledAt < prevState.settledAt)) {
     // Stored state is malformed or outdated
-    flushState();
+    saveState();
     return;
   }
 
