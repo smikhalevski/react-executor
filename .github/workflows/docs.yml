@@ -1,21 +1,20 @@
-name: publish
+name: docs
 
 on:
-  push:
-    tags: [ "v[0-9]+.[0-9]+.[0-9]+" ]
+  - workflow_dispatch
+  - workflow_call
 
 jobs:
-
-  publish:
+  docs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: '20'
           cache: npm
-          registry-url: "https://registry.npmjs.org"
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Configure git user
         run: |
@@ -23,15 +22,7 @@ jobs:
           git config user.name "github-actions[bot]"
 
       - run: npm ci
-      - run: npm run build
       - run: npm run docs
-      - run: npm test
-
-      - name: Publish package
-        working-directory: ./lib
-        run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish docs
         run: |
@@ -50,11 +41,6 @@ jobs:
           git add .
 
           ! git diff --staged --quiet --exit-code || exit 0
-          
+
           git commit -m "Updated docs (${GITHUB_SHA::7})"
           git push origin ghpages
-
-      - name: Create release draft
-        run: gh release create ${{ github.ref_name }} --generate-notes --draft
-        env:
-          GH_TOKEN: ${{ github.token }}
