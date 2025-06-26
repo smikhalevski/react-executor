@@ -380,7 +380,7 @@ export interface Executor<Value = any> extends ReadonlyExecutor<Value> {
   activate(): () => void;
 
   /**
-   * Publishes the {@link event} for subscribers of the executor and its manager.
+   * Publishes the event for subscribers of the executor and its manager.
    *
    * @param event The event to publish.
    */

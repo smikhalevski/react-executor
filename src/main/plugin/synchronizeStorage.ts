@@ -13,7 +13,7 @@
  */
 
 import type { Executor, ExecutorPlugin, ExecutorState, PluginConfiguredPayload } from '../types.js';
-import { emptyObject, isObjectLike, isShallowEqual } from '../utils.js';
+import { emptyObject, isObjectLike, isShallowEqual, throwUnhandled } from '../utils.js';
 
 /**
  * Serializes and deserializes values.
@@ -48,7 +48,7 @@ export interface SynchronizeStorageOptions<Value> {
   /**
    * A storage key, or a callback that returns the storage key.
    *
-   * By default, a {@link ExecutorManagerOptions.keySerializer serialized} {@link Executor.key} is used as a storage key.
+   * By default, a {@link react-executor!ExecutorManagerOptions.keySerializer serialized} {@link Executor.key} is used as a storage key.
    */
   storageKey?: string | ((executor: Executor) => string);
 }
@@ -146,62 +146,65 @@ function receiveState(
     return;
   }
 
-  const actualState = executor.toJSON();
+  const prevState = executor.toJSON();
 
-  if (stateStr === serializer.stringify(actualState)) {
+  if (stateStr === serializer.stringify(prevState)) {
     // No changes
     return;
   }
 
-  let storedState: ExecutorState | undefined;
+  let nextState: ExecutorState | undefined;
 
   try {
-    storedState = serializer.parse(stateStr);
+    nextState = serializer.parse(stateStr);
   } catch (error) {
-    // Cannot parse storage item
-    setTimeout(() => {
-      // Force uncaught exception
-      throw error;
-    }, 0);
+    throwUnhandled(error);
   }
 
-  if (
-    // Check the stored state is malformed
-    !isObjectLike(storedState) ||
-    !isObjectLike(storedState.annotations) ||
-    typeof storedState.settledAt !== 'number' ||
-    typeof storedState.invalidatedAt !== 'number' ||
-    typeof storedState.isFulfilled !== 'boolean' ||
-    // Check the stored state is outdated
-    (storedState.settledAt !== 0 && storedState.settledAt < actualState.settledAt)
-  ) {
-    // Overwrite storage item with the actual state
+  if (!isExecutorState(nextState) || (nextState.settledAt !== 0 && nextState.settledAt < prevState.settledAt)) {
+    // Stored state is malformed or outdated
     flushState();
     return;
   }
 
   // Update the executor with the stored state
-  executor.value = storedState.value;
-  executor.reason = storedState.reason;
-  executor.annotations = storedState.annotations;
-  executor.settledAt = storedState.settledAt;
-  executor.invalidatedAt = storedState.invalidatedAt;
-  executor.isFulfilled = storedState.isFulfilled;
+  executor.value = nextState.value;
+  executor.reason = nextState.reason;
+  executor.annotations = nextState.annotations;
+  executor.settledAt = nextState.settledAt;
+  executor.invalidatedAt = nextState.invalidatedAt;
+  executor.isFulfilled = nextState.isFulfilled;
   executor.version++;
 
-  if (!isShallowEqual(storedState.annotations, actualState.annotations)) {
+  if (!isShallowEqual(nextState.annotations, prevState.annotations)) {
+    // Annotations have changed
     executor.publish({ type: 'annotated' });
   }
 
-  if (storedState.isFulfilled) {
-    executor.publish({ type: 'fulfilled' });
-  } else if (storedState.settledAt !== 0) {
-    executor.publish({ type: 'rejected' });
-  } else if (actualState.settledAt !== 0) {
-    executor.publish({ type: 'cleared' });
+  if (nextState.settledAt !== prevState.settledAt) {
+    // The executor was resolved, rejected or cleared
+
+    if (nextState.isFulfilled) {
+      executor.publish({ type: 'fulfilled' });
+    } else if (nextState.settledAt !== 0) {
+      executor.publish({ type: 'rejected' });
+    } else if (prevState.settledAt !== 0) {
+      executor.publish({ type: 'cleared' });
+    }
   }
 
-  if (storedState.invalidatedAt !== 0 && actualState.invalidatedAt === 0) {
+  if (nextState.invalidatedAt !== 0 && prevState.invalidatedAt === 0) {
+    // The executor was invalidated
     executor.publish({ type: 'invalidated' });
   }
+}
+
+function isExecutorState(state: ExecutorState | null | undefined): state is ExecutorState {
+  return (
+    isObjectLike(state) &&
+    isObjectLike(state.annotations) &&
+    typeof state.settledAt === 'number' &&
+    typeof state.invalidatedAt === 'number' &&
+    typeof state.isFulfilled === 'boolean'
+  );
 }
