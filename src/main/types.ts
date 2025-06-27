@@ -118,7 +118,7 @@ export interface ExecutorEvent<Value = any> {
 }
 
 /**
- * The event that can be published by an executor.
+ * The details of an event that can be published by an executor.
  */
 export interface PartialExecutorEvent {
   /**
@@ -380,7 +380,7 @@ export interface Executor<Value = any> extends ReadonlyExecutor<Value> {
   activate(): () => void;
 
   /**
-   * Publishes the {@link event} for subscribers of the executor and its manager.
+   * Publishes the event for subscribers of the executor and its manager.
    *
    * @param event The event to publish.
    */

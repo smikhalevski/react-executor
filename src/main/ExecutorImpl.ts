@@ -22,7 +22,7 @@ export class ExecutorImpl<Value = any> implements Executor {
   settledAt = 0;
   invalidatedAt = 0;
   isFulfilled = false;
-  annotations: ExecutorAnnotations = Object.create(null);
+  annotations: ExecutorAnnotations = {};
   version = 0;
   promise: AbortablePromise<Value> | null = null;
 

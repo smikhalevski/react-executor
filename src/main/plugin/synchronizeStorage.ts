@@ -13,7 +13,8 @@
  */
 
 import type { Executor, ExecutorPlugin, ExecutorState, PluginConfiguredPayload } from '../types.js';
-import { emptyObject, getKeyCount, isObjectLike } from '../utils.js';
+import { emptyObject, isObjectLike, isShallowEqual, throwUnhandled } from '../utils.js';
+import type { ExecutorImpl } from '../ExecutorImpl.js';
 
 /**
  * Serializes and deserializes values.
@@ -48,7 +49,8 @@ export interface SynchronizeStorageOptions<Value> {
   /**
    * A storage key, or a callback that returns the storage key.
    *
-   * By default, a serialized {@link Executor.key} is used as a storage key.
+   * By default, a {@link react-executor!ExecutorManagerOptions.keySerializer serialized} {@link Executor.key} is used
+   * as a storage key.
    */
   storageKey?: string | ((executor: Executor) => string);
 }
@@ -56,8 +58,7 @@ export interface SynchronizeStorageOptions<Value> {
 /**
  * Persists the executor value in the synchronous storage.
  *
- * Synchronization is enabled only for activated executors. If executor is detached, then the corresponding item is
- * removed from the storage.
+ * If executor is detached, then the corresponding item is removed from the storage.
  *
  * @param storage The storage where executor value is persisted, usually a `localStorage` or a `sessionStorage`.
  * @param options Additional options.
@@ -70,24 +71,30 @@ export default function synchronizeStorage<Value = any>(
   const { serializer = JSON, storageKey } = options;
 
   return executor => {
-    const executorStorageKey =
+    const keyStr =
       storageKey === undefined
         ? executor.manager.keySerializer(executor.key)
         : typeof storageKey === 'function'
           ? storageKey(executor)
           : storageKey;
 
-    if (typeof executorStorageKey !== 'string') {
+    if (typeof keyStr !== 'string') {
       throw new Error('Cannot guess a storage key for an executor, the "storageKey" option is required');
     }
 
-    receiveState(executor, storage, executorStorageKey, storage.getItem(executorStorageKey), serializer);
+    const saveState = () => storage.setItem(keyStr, serializer.stringify(executor.toJSON()));
+
+    const readState = () => setExecutorState(executor as ExecutorImpl, saveState, storage.getItem(keyStr), serializer);
+
+    const dropState = () => storage.removeItem(keyStr);
 
     const handleStorage = (event: StorageEvent) => {
-      if (event.storageArea === storage && event.key === executorStorageKey) {
-        receiveState(executor, storage, executorStorageKey, event.newValue, serializer);
+      if (event.storageArea === storage && (event.key === null || event.key === keyStr)) {
+        readState();
       }
     };
+
+    readState();
 
     if (typeof window !== 'undefined') {
       window.addEventListener('storage', handleStorage);
@@ -100,11 +107,15 @@ export default function synchronizeStorage<Value = any>(
         case 'rejected':
         case 'invalidated':
         case 'annotated':
-          storage.setItem(executorStorageKey, serializer.stringify(executor.toJSON()));
+          saveState();
+          break;
+
+        case 'aborted':
+          readState();
           break;
 
         case 'detached':
-          storage.removeItem(executorStorageKey);
+          dropState();
 
           if (typeof window !== 'undefined') {
             window.removeEventListener('storage', handleStorage);
@@ -117,77 +128,88 @@ export default function synchronizeStorage<Value = any>(
       type: 'plugin_configured',
       payload: {
         type: 'synchronizeStorage',
-        options: { storageKey: executorStorageKey },
+        options: { storageKey: keyStr },
       } satisfies PluginConfiguredPayload,
     });
   };
 }
 
-function receiveState(
-  executor: { -readonly [K in keyof Executor]: Executor[K] },
-  storage: Pick<Storage, 'setItem'>,
-  storageKey: string,
+function setExecutorState(
+  executor: ExecutorImpl,
+  saveState: () => void,
   stateStr: string | null,
   serializer: Serializer<ExecutorState>
 ): void {
   if (executor.isPending) {
-    // The executor would overwrite storage item after the settlement
+    // The executor would overwrite storage item when settled
     return;
   }
 
   if (stateStr === null) {
     // No storage item
-    storage.setItem(storageKey, serializer.stringify(executor.toJSON()));
+    saveState();
     return;
   }
 
-  let state: ExecutorState | undefined;
+  const prevState = executor.toJSON();
+
+  if (stateStr === serializer.stringify(prevState)) {
+    // No changes
+    return;
+  }
+
+  let nextState: ExecutorState | undefined;
 
   try {
-    state = serializer.parse(stateStr);
+    nextState = serializer.parse(stateStr);
   } catch (error) {
-    // Cannot parse storage item
-    setTimeout(() => {
-      // Force uncaught exception
-      throw error;
-    }, 0);
+    throwUnhandled(error);
   }
 
-  if (
-    !isObjectLike(state) ||
-    !isObjectLike(state.annotations) ||
-    typeof state.settledAt !== 'number' ||
-    typeof state.invalidatedAt !== 'number' ||
-    state.settledAt < executor.settledAt
-  ) {
-    // Invalid or outdated storage item
-    storage.setItem(storageKey, serializer.stringify(executor.toJSON()));
+  if (!isExecutorState(nextState) || (nextState.settledAt !== 0 && nextState.settledAt < prevState.settledAt)) {
+    // Stored state is malformed or outdated
+    saveState();
     return;
   }
 
-  if (state.settledAt === executor.settledAt) {
-    // Unchanged storage item
-    return;
+  // Update the executor with the stored state
+  executor.value = nextState.value;
+  executor.reason = nextState.reason;
+  executor.annotations = nextState.annotations;
+  executor.settledAt = nextState.settledAt;
+  executor.invalidatedAt = nextState.invalidatedAt;
+  executor.isFulfilled = nextState.isFulfilled;
+  executor.version++;
+
+  if (!isShallowEqual(nextState.annotations, prevState.annotations)) {
+    // Annotations have changed
+    executor.publish({ type: 'annotated' });
   }
 
-  executor.value = state.value;
-  executor.reason = state.reason;
+  if (nextState.settledAt !== prevState.settledAt) {
+    // The executor was resolved, rejected or cleared
 
-  if (getKeyCount(state.annotations) !== 0 || getKeyCount(executor.annotations) !== 0) {
-    // Overwrite annotations instead of patching
-    executor.annotations = {};
-    executor.annotate(state.annotations);
+    if (nextState.isFulfilled) {
+      executor.publish({ type: 'fulfilled' });
+    } else if (nextState.settledAt !== 0) {
+      executor.publish({ type: 'rejected' });
+    } else if (prevState.settledAt !== 0) {
+      executor.publish({ type: 'cleared' });
+    }
   }
 
-  if (state.isFulfilled) {
-    executor.resolve(state.value, state.settledAt);
-  } else if (state.settledAt !== 0) {
-    executor.reject(state.reason, state.settledAt);
-  } else if (executor.isSettled) {
-    executor.clear();
+  if (nextState.invalidatedAt !== 0 && prevState.invalidatedAt === 0) {
+    // The executor was invalidated
+    executor.publish({ type: 'invalidated' });
   }
+}
 
-  if (state.invalidatedAt !== 0) {
-    executor.invalidate(state.invalidatedAt);
-  }
+function isExecutorState(state: ExecutorState | null | undefined): state is ExecutorState {
+  return (
+    isObjectLike(state) &&
+    isObjectLike(state.annotations) &&
+    typeof state.settledAt === 'number' &&
+    typeof state.invalidatedAt === 'number' &&
+    typeof state.isFulfilled === 'boolean'
+  );
 }
