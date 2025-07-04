@@ -11,6 +11,7 @@ npm install --save-prod react-executor
 ```
 
 🔥&ensp;**Live examples**
+
 - [TODO app](https://codesandbox.io/p/sandbox/react-executor-example-ltflgy)
 - [Streaming SSR](https://codesandbox.io/p/devbox/react-executor-ssr-streaming-example-mwrmrs)
 - [Next.js integration](https://codesandbox.io/p/devbox/react-executor-next-example-whsj4v)
@@ -76,6 +77,7 @@ npm install --save-prod react-executor
 - [Invalidate all executors](#invalidate-all-executors)
 - [Prefetching](#prefetching)
 - [Storage state versioning](#storage-state-versioning)
+- [Global loading indicator](#global-loading-indicator)
 
 # Introduction
 
@@ -2127,6 +2129,64 @@ const playerExecutor = useExecutor('player', { health: 0.5 }, [
     });
   })
 ]);
+```
+
+## Global loading indicator
+
+To detect a global pending state we can rely on events published by
+an [`ExecutorManager`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html):
+
+```ts
+function useGlobalPending(predicate = (executor: Executor) => true): boolean {
+  const manager = useExecutorManager();
+  const [isPending, setPending] = useState(false);
+
+  useEffect(() => {
+    const listener = (event: ExecutorEvent) => {
+      setPending(
+        Array.from(manager)
+          .filter(predicate)
+          .some(executor => executor.isPending)
+      );
+    };
+
+    // 1️⃣ Ensure isPending is up-to-date after mount
+    listener();
+
+    // 2️⃣ Sync isPending when any event is published
+    return manager.subscribe(listener);
+  }, [manager]);
+  
+  return isPending;
+}
+```
+
+Now a global pending indicator can be shown when _any_ executor is pending:
+
+```tsx
+const isPending = useGlobalPending();
+
+isPending && <LoadingIndicator />;
+```
+
+You can use a predicate to filter only executors that are actually fetching data. To do this, fetching executors should
+be marked as such, for example with an annotation:
+
+```ts
+const accountExecutor = useExecutor(
+  'account',
+
+  async () => {
+    const response = await fetch('/account');
+    return response.json();
+  },
+
+  // 1️⃣ Annotate an executor once via a plugin
+  [executor => executor.annotate({ isFetching: true })]
+);
+
+// 2️⃣ Get global pending status for executors that are fetching data
+const isPending = useGlobalPending(executor => executor.annotations.isFetching);
 ```
 
 <hr/>
