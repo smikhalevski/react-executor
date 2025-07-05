@@ -32,7 +32,7 @@ jobs:
 
           git push origin :refs/tags/latest
           git tag --force latest
-          git push --tags
+          git push origin tag latest
 
       - name: Create release draft
         run: gh release create ${{ github.ref_name }} --generate-notes --draft
