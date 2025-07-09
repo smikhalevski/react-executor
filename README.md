@@ -8,6 +8,7 @@
 
 <br/>
 
+<!--OVERVIEW-->
 Asynchronous task execution and state management for React.
 
 - TypeScript first;
@@ -21,9 +22,11 @@ Asynchronous task execution and state management for React.
 ```sh
 npm install --save-prod react-executor
 ```
+<!--/OVERVIEW-->
 
 <br>
 
+<!--TOC-->
 🔥&ensp;**Live examples**
 
 - [TODO app](https://stackblitz.com/edit/react-executor-todo-app?file=README.md)
@@ -92,7 +95,9 @@ npm install --save-prod react-executor
 - [Prefetching](#prefetching)
 - [Storage state versioning](#storage-state-versioning)
 - [Global loading indicator](#global-loading-indicator)
+<!--/TOC-->
 
+<!--ARTICLE-->
 # Introduction
 
 An executor executes a task, stores the execution result, and provides access to it. Tasks are callbacks that return a
@@ -2202,6 +2207,7 @@ const accountExecutor = useExecutor(
 // 2️⃣ Get global pending status for executors that are fetching data
 const isPending = useGlobalPending(executor => executor.annotations.isFetching);
 ```
+<!--/ARTICLE-->
 
 <hr/>
 
