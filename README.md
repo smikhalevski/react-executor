@@ -2,17 +2,31 @@
   <a href="#readme"><picture>
     <source media="(prefers-color-scheme: dark)" srcset="./assets/logo-dark.png" />
     <source media="(prefers-color-scheme: light)" srcset="./assets/logo-light.png" />
-    <img alt="React Executor" src="./assets/logo-light.png" width="700" />
+    <img alt="React Executor" src="./assets/logo-light.png" width="500" />
   </picture></a>
 </p>
+
+<br/>
+
+Asynchronous task execution and state management for React.
+
+- TypeScript first;
+- Expressive and concise API with strict typings;
+- Works great with SSR and Suspense;
+- [Extensible with plugins](#plugins);
+- [First class devtools](#devtools);
+- [Just 5 kB gzipped](https://pkg-size.dev/react-executor);
+- Check out the [Cookbook](#cookbook) for real-life examples!
 
 ```sh
 npm install --save-prod react-executor
 ```
 
+<br>
+
 🔥&ensp;**Live examples**
 
-- [TODO app](https://codesandbox.io/p/sandbox/react-executor-example-ltflgy)
+- [TODO app](https://stackblitz.com/edit/react-executor-todo-app?file=README.md)
 - [Streaming SSR](https://codesandbox.io/p/devbox/react-executor-ssr-streaming-example-mwrmrs)
 - [Next.js integration](https://codesandbox.io/p/devbox/react-executor-next-example-whsj4v)
 
@@ -1322,7 +1336,7 @@ const executor = useExecutor('test', 42, [synchronizeStorage(localStorage)]);
 ```
 
 With this plugin, you can synchronize the executor state
-[across multiple browser tabs](https://codesandbox.io/p/sandbox/react-executor-example-ltflgy)
+[across multiple browser tabs](https://stackblitz.com/edit/react-executor-todo-app?file=README.md)
 in just one line.
 
 > [!IMPORTANT]\
@@ -1400,7 +1414,7 @@ method, described in the [Introduction](#introduction) section.
 
 > [!TIP]\
 > Check out the live example
-> of [the TODO app](https://codesandbox.io/p/sandbox/react-executor-example-ltflgy) that employs React Executor.
+> of [the TODO app](https://stackblitz.com/edit/react-executor-todo-app?file=README.md) that employs React Executor.
 
 You can use executors both inside and outside the rendering process. To do this, provide a custom
 [`ExecutorManager`](https://smikhalevski.github.io/react-executor/classes/react_executor.ExecutorManager.html) through
@@ -2191,6 +2205,4 @@ const isPending = useGlobalPending(executor => executor.annotations.isFetching);
 
 <hr/>
 
-<p align="center">
-Illustration by <a href="https://www.slackart.com/">Michael Slack</a>
-</p>
+<p align="center">:octocat: :heart:</p>
