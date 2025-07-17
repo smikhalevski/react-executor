@@ -2,14 +2,14 @@
  * The plugin that persists the executor value in the synchronous storage.
  *
  * ```ts
- * import synchronizeStorage from 'react-executor/plugin/synchronizeStorage';
+ * import syncStorage from 'react-executor/plugin/syncStorage';
  *
  * const executor = useExecutor('test', 42, [
- *   synchronizeStorage(localStorage)
+ *   syncStorage(localStorage)
  * ]);
  * ```
  *
- * @module plugin/synchronizeStorage
+ * @module plugin/syncStorage
  */
 
 import type { Executor, ExecutorPlugin, ExecutorState, PluginConfiguredPayload } from '../types.js';
@@ -38,9 +38,9 @@ export interface Serializer<Value> {
 }
 
 /**
- * Options of the {@link synchronizeStorage} plugin.
+ * Options of the {@link syncStorage} plugin.
  */
-export interface SynchronizeStorageOptions<Value> {
+export interface SyncStorageOptions<Value> {
   /**
    * The storage record serializer.
    */
@@ -64,9 +64,9 @@ export interface SynchronizeStorageOptions<Value> {
  * @param options Additional options.
  * @template Value The value persisted in the storage.
  */
-export default function synchronizeStorage<Value = any>(
+export default function syncStorage<Value = any>(
   storage: Pick<Storage, 'setItem' | 'getItem' | 'removeItem'>,
-  options: SynchronizeStorageOptions<Value> = emptyObject
+  options: SyncStorageOptions<Value> = emptyObject
 ): ExecutorPlugin<Value> {
   const { serializer = JSON, storageKey } = options;
 
@@ -127,7 +127,7 @@ export default function synchronizeStorage<Value = any>(
     executor.publish({
       type: 'plugin_configured',
       payload: {
-        type: 'synchronizeStorage',
+        type: 'syncStorage',
         options: { storageKey: keyStr },
       } satisfies PluginConfiguredPayload,
     });

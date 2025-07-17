@@ -5,7 +5,7 @@
 import { afterEach, beforeEach, expect, Mock, test, vi } from 'vitest';
 import { fireEvent } from '@testing-library/react';
 import { Executor, ExecutorManager } from '../../main/index.js';
-import synchronizeStorage from '../../main/plugin/synchronizeStorage.js';
+import syncStorage from '../../main/plugin/syncStorage.js';
 import { ExecutorImpl } from '../../main/ExecutorImpl.js';
 import { noop } from '../../main/utils.js';
 
@@ -31,7 +31,7 @@ afterEach(() => {
 });
 
 test('does not resolve an executor if there is no storage item', () => {
-  executor = manager.getOrCreate('xxx', undefined, [synchronizeStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', undefined, [syncStorage(localStorage)]);
 
   expect(executor.isSettled).toBe(false);
 
@@ -40,7 +40,7 @@ test('does not resolve an executor if there is no storage item', () => {
     type: 'plugin_configured',
     target: executor,
     version: 0,
-    payload: { type: 'synchronizeStorage', options: { storageKey: '"xxx"' } },
+    payload: { type: 'syncStorage', options: { storageKey: '"xxx"' } },
   });
   expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
 });
@@ -51,7 +51,7 @@ test('resolves an executor if a fulfilled storage item exists', () => {
     '{"key":"xxx","isFulfilled":true,"value":"aaa","settledAt":30,"invalidatedAt":0,"annotations":{}}'
   );
 
-  executor = manager.getOrCreate('xxx', undefined, [synchronizeStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', undefined, [syncStorage(localStorage)]);
 
   expect(executor.isFulfilled).toBe(true);
   expect(executor.isRejected).toBe(false);
@@ -65,7 +65,7 @@ test('resolves an executor if a fulfilled storage item exists', () => {
     type: 'plugin_configured',
     target: executor,
     version: 1,
-    payload: { type: 'synchronizeStorage', options: { storageKey: '"xxx"' } },
+    payload: { type: 'syncStorage', options: { storageKey: '"xxx"' } },
   });
   expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'attached', target: executor, version: 1 });
 });
@@ -76,7 +76,7 @@ test('rejects an executor if a rejected storage item exists', () => {
     '{"key":"xxx","isFulfilled":false,"value":"aaa","reason":"bbb","settledAt":30,"invalidatedAt":0,"annotations":{}}'
   );
 
-  executor = manager.getOrCreate('xxx', undefined, [synchronizeStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', undefined, [syncStorage(localStorage)]);
 
   expect(executor.isFulfilled).toBe(false);
   expect(executor.isRejected).toBe(true);
@@ -90,7 +90,7 @@ test('rejects an executor if a rejected storage item exists', () => {
     type: 'plugin_configured',
     target: executor,
     version: 1,
-    payload: { type: 'synchronizeStorage', options: { storageKey: '"xxx"' } },
+    payload: { type: 'syncStorage', options: { storageKey: '"xxx"' } },
   });
   expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'attached', target: executor, version: 1 });
 });
@@ -108,7 +108,7 @@ test('preserves the initial state if it is newer and sets storage item', () => {
 
   localStorage.setItem('"xxx"', '{"key":"xxx","isFulfilled":true,"value":"bbb","settledAt":30,"invalidatedAt":0}');
 
-  executor = manager.getOrCreate('xxx', undefined, [synchronizeStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', undefined, [syncStorage(localStorage)]);
 
   expect(localStorage.getItem('"xxx"')).toBe(
     '{"key":"xxx","isFulfilled":true,"value":"aaa","annotations":{},"settledAt":100,"invalidatedAt":0}'
@@ -125,7 +125,7 @@ test('preserves the initial state if it is newer and sets storage item', () => {
     type: 'plugin_configured',
     target: executor,
     version: 0,
-    payload: { type: 'synchronizeStorage', options: { storageKey: '"xxx"' } },
+    payload: { type: 'syncStorage', options: { storageKey: '"xxx"' } },
   });
   expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
 });
@@ -136,7 +136,7 @@ test('resolves an executor with an invalidated storage item', () => {
     '{"value":"aaa","isFulfilled":true,"settledAt":20,"invalidatedAt":30,"annotations":{}}'
   );
 
-  executor = manager.getOrCreate('xxx', 'bbb', [synchronizeStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', 'bbb', [syncStorage(localStorage)]);
 
   expect(executor.value).toBe('aaa');
   expect(localStorage.getItem('"xxx"')).toBe(
@@ -150,13 +150,13 @@ test('resolves an executor with an invalidated storage item', () => {
     type: 'plugin_configured',
     target: executor,
     version: 1,
-    payload: { type: 'synchronizeStorage', options: { storageKey: '"xxx"' } },
+    payload: { type: 'syncStorage', options: { storageKey: '"xxx"' } },
   });
   expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'attached', target: executor, version: 1 });
 });
 
 test('does not publish invalidated event if executor is already invalidated', () => {
-  executor = manager.getOrCreate('xxx', 'bbb', [synchronizeStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', 'bbb', [syncStorage(localStorage)]);
 
   executor.invalidate();
 
@@ -172,7 +172,7 @@ test('does not publish invalidated event if executor is already invalidated', ()
     type: 'plugin_configured',
     target: executor,
     version: 0,
-    payload: { type: 'synchronizeStorage', options: { storageKey: '"xxx"' } },
+    payload: { type: 'syncStorage', options: { storageKey: '"xxx"' } },
   });
   expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
   expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor, version: 1 });
@@ -181,7 +181,7 @@ test('does not publish invalidated event if executor is already invalidated', ()
 });
 
 test('sets storage item to the initial value', () => {
-  executor = manager.getOrCreate('xxx', 'aaa', [synchronizeStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', 'aaa', [syncStorage(localStorage)]);
 
   expect(executor.value).toBe('aaa');
 
@@ -194,7 +194,7 @@ test('sets storage item to the initial value', () => {
     type: 'plugin_configured',
     target: executor,
     version: 0,
-    payload: { type: 'synchronizeStorage', options: { storageKey: '"xxx"' } },
+    payload: { type: 'syncStorage', options: { storageKey: '"xxx"' } },
   });
   expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
   expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor, version: 1 });
@@ -205,7 +205,7 @@ test('sets storage item if executor was resolved from a preceding plugin', () =>
     executor => {
       executor.resolve('aaa');
     },
-    synchronizeStorage(localStorage),
+    syncStorage(localStorage),
   ]);
 
   expect(executor.value).toBe('aaa');
@@ -222,7 +222,7 @@ test('initial task is not called if storage item exists', () => {
     '{"value":"aaa","isFulfilled":true,"settledAt":20,"invalidatedAt":30,"annotations":{}}'
   );
 
-  executor = manager.getOrCreate('xxx', taskMock, [synchronizeStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', taskMock, [syncStorage(localStorage)]);
 
   expect(executor.value).toBe('aaa');
   expect(taskMock).not.toHaveBeenCalled();
@@ -233,7 +233,7 @@ test('does not set storage item or resolve an executor if an executor is pending
     executor => {
       executor.execute(() => 'aaa');
     },
-    synchronizeStorage(localStorage),
+    syncStorage(localStorage),
   ]);
 
   expect(executor.isPending).toBe(true);
@@ -250,7 +250,7 @@ test('does not set storage item or resolve an executor if an executor is pending
 });
 
 test('resolves an executor when a storage item is set', () => {
-  executor = manager.getOrCreate('xxx', undefined, [synchronizeStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', undefined, [syncStorage(localStorage)]);
 
   localStorage.setItem('"xxx"', '{"value":"aaa","settledAt":50,"invalidatedAt":0,"annotations":{},"isFulfilled":true}');
 
@@ -260,7 +260,7 @@ test('resolves an executor when a storage item is set', () => {
 });
 
 test('sets storage item if it was removed', () => {
-  executor = manager.getOrCreate('xxx', 'aaa', [synchronizeStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', 'aaa', [syncStorage(localStorage)]);
 
   localStorage.removeItem('"xxx"');
 
@@ -273,7 +273,7 @@ test('sets storage item if it was removed', () => {
 });
 
 test('removes a storage item if an executor was detached', () => {
-  manager.getOrCreate('xxx', 'aaa', [synchronizeStorage(localStorage)]);
+  manager.getOrCreate('xxx', 'aaa', [syncStorage(localStorage)]);
 
   manager.detach('xxx');
 
@@ -283,7 +283,7 @@ test('removes a storage item if an executor was detached', () => {
 test('sets storage item if executor was cleared', () => {
   localStorage.setItem('"xxx"', '{"key":"xxx","isFulfilled":false,"annotations":{},"settledAt":0,"invalidatedAt":0}');
 
-  executor = manager.getOrCreate('xxx', undefined, [synchronizeStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', undefined, [syncStorage(localStorage)]);
 
   expect(executor.value).toBe(undefined);
 
@@ -308,7 +308,7 @@ test('ignores stored empty annotations', () => {
     '{"key":"xxx","isFulfilled":true,"value":"aaa","settledAt":30,"invalidatedAt":0,"annotations":{}}'
   );
 
-  executor = manager.getOrCreate('xxx', undefined, [synchronizeStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', undefined, [syncStorage(localStorage)]);
 
   expect(executor.annotations).toEqual({});
 
@@ -318,7 +318,7 @@ test('ignores stored empty annotations', () => {
     type: 'plugin_configured',
     target: executor,
     version: 1,
-    payload: { type: 'synchronizeStorage', options: { storageKey: '"xxx"' } },
+    payload: { type: 'syncStorage', options: { storageKey: '"xxx"' } },
   });
   expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'attached', target: executor, version: 1 });
 });
@@ -331,7 +331,7 @@ test('does not publish annotated events if annotations are shallow equal', () =>
 
   executor = manager.getOrCreate('xxx', undefined, [
     executor => executor.annotate({ zzz: 111 }),
-    synchronizeStorage(localStorage),
+    syncStorage(localStorage),
   ]);
 
   expect(executor.annotations).toEqual({ zzz: 111 });
@@ -343,7 +343,7 @@ test('does not publish annotated events if annotations are shallow equal', () =>
     type: 'plugin_configured',
     target: executor,
     version: 2,
-    payload: { type: 'synchronizeStorage', options: { storageKey: '"xxx"' } },
+    payload: { type: 'syncStorage', options: { storageKey: '"xxx"' } },
   });
   expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'attached', target: executor, version: 2 });
 });
@@ -354,7 +354,7 @@ test('restores non-empty annotations', () => {
     '{"key":"xxx","isFulfilled":true,"value":"aaa","settledAt":30,"invalidatedAt":0,"annotations":{"zzz":111}}'
   );
 
-  executor = manager.getOrCreate('xxx', undefined, [synchronizeStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', undefined, [syncStorage(localStorage)]);
 
   expect(executor.annotations).toEqual({ zzz: 111 });
 
@@ -365,7 +365,7 @@ test('restores non-empty annotations', () => {
     type: 'plugin_configured',
     target: executor,
     version: 1,
-    payload: { type: 'synchronizeStorage', options: { storageKey: '"xxx"' } },
+    payload: { type: 'syncStorage', options: { storageKey: '"xxx"' } },
   });
   expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'attached', target: executor, version: 1 });
 });
@@ -378,7 +378,7 @@ test('overwrites annotations', () => {
 
   executor = manager.getOrCreate('xxx', undefined, [
     executor => executor.annotate({ kkk: 222 }),
-    synchronizeStorage(localStorage),
+    syncStorage(localStorage),
   ]);
 
   expect(executor.annotations).toEqual({ zzz: 111 });
@@ -390,7 +390,7 @@ test('sets storage item if annotations are changed', () => {
     '{"key":"xxx","isFulfilled":false,"settledAt":0,"invalidatedAt":0,"annotations":{"zzz":111}}'
   );
 
-  executor = manager.getOrCreate('xxx', undefined, [synchronizeStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', undefined, [syncStorage(localStorage)]);
 
   executor.annotate({ zzz: 222 });
 
@@ -405,7 +405,7 @@ test('overwrites storage item if an error is thrown during parsing', () => {
   localStorage.setItem('"xxx"', 'invalid_state');
 
   executor = manager.getOrCreate('xxx', undefined, [
-    synchronizeStorage(localStorage, {
+    syncStorage(localStorage, {
       serializer: {
         parse() {
           throw new Error('expected');
@@ -427,7 +427,7 @@ test('overwrites storage item if an error is thrown during parsing', () => {
 test('overwrites storage item if it contains a malformed state', () => {
   localStorage.setItem('"xxx"', '{"annotations":"zzz"}');
 
-  executor = manager.getOrCreate('xxx', undefined, [synchronizeStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', undefined, [syncStorage(localStorage)]);
 
   expect(executor).toBeInstanceOf(ExecutorImpl);
 
@@ -439,7 +439,7 @@ test('overwrites storage item if it contains a malformed state', () => {
 });
 
 test('executor is updated with storage item before any events are published', () => {
-  executor = manager.getOrCreate('xxx', 'bbb', [synchronizeStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', 'bbb', [syncStorage(localStorage)]);
 
   const listenerMock = vi.fn();
 
@@ -466,7 +466,7 @@ test('executor is updated with storage item before any events are published', ()
 });
 
 test('syncs state if task is aborted', () => {
-  executor = manager.getOrCreate('xxx', 'bbb', [synchronizeStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', 'bbb', [syncStorage(localStorage)]);
 
   executor.execute(() => new Promise(noop));
 
@@ -482,7 +482,7 @@ test('syncs state if task is aborted', () => {
     type: 'plugin_configured',
     target: executor,
     version: 0,
-    payload: { type: 'synchronizeStorage', options: { storageKey: '"xxx"' } },
+    payload: { type: 'syncStorage', options: { storageKey: '"xxx"' } },
   });
   expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
   expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor, version: 1 });
@@ -499,7 +499,7 @@ test('syncs state if task is aborted', () => {
 });
 
 test('publishes only annotated event', () => {
-  executor = manager.getOrCreate('xxx', 'bbb', [synchronizeStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', 'bbb', [syncStorage(localStorage)]);
 
   localStorage.setItem(
     '"xxx"',
@@ -513,7 +513,7 @@ test('publishes only annotated event', () => {
     type: 'plugin_configured',
     target: executor,
     version: 0,
-    payload: { type: 'synchronizeStorage', options: { storageKey: '"xxx"' } },
+    payload: { type: 'syncStorage', options: { storageKey: '"xxx"' } },
   });
   expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
   expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor, version: 1 });
@@ -521,7 +521,7 @@ test('publishes only annotated event', () => {
 });
 
 test('publishes only fulfilled event', () => {
-  executor = manager.getOrCreate('xxx', 'bbb', [synchronizeStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', 'bbb', [syncStorage(localStorage)]);
 
   localStorage.setItem(
     '"xxx"',
@@ -535,7 +535,7 @@ test('publishes only fulfilled event', () => {
     type: 'plugin_configured',
     target: executor,
     version: 0,
-    payload: { type: 'synchronizeStorage', options: { storageKey: '"xxx"' } },
+    payload: { type: 'syncStorage', options: { storageKey: '"xxx"' } },
   });
   expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
   expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor, version: 1 });
@@ -543,7 +543,7 @@ test('publishes only fulfilled event', () => {
 });
 
 test('publishes only invalidated event', () => {
-  executor = manager.getOrCreate('xxx', 'bbb', [synchronizeStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', 'bbb', [syncStorage(localStorage)]);
 
   localStorage.setItem(
     '"xxx"',
@@ -557,7 +557,7 @@ test('publishes only invalidated event', () => {
     type: 'plugin_configured',
     target: executor,
     version: 0,
-    payload: { type: 'synchronizeStorage', options: { storageKey: '"xxx"' } },
+    payload: { type: 'syncStorage', options: { storageKey: '"xxx"' } },
   });
   expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
   expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor, version: 1 });

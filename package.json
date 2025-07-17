@@ -133,9 +133,14 @@
       "require": "./plugin/retryWhen.js"
     },
     "./plugin/synchronizeStorage": {
-      "types": "./plugin/synchronizeStorage.d.ts",
-      "import": "./plugin/synchronizeStorage.mjs",
-      "require": "./plugin/synchronizeStorage.js"
+      "types": "./plugin/syncStorage.d.ts",
+      "import": "./plugin/syncStorage.mjs",
+      "require": "./plugin/syncStorage.js"
+    },
+    "./plugin/syncStorage": {
+      "types": "./plugin/syncStorage.d.ts",
+      "import": "./plugin/syncStorage.mjs",
+      "require": "./plugin/syncStorage.js"
     },
     "./package.json": "./package.json"
   },

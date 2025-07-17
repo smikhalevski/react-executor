@@ -27,13 +27,13 @@ npm install --save-prod react-executor
 <br>
 
 <!--TOC-->
-🔥&ensp;**Live examples**
+<span class="toc-icon">🔥&ensp;</span>**Live examples**
 
-- [TODO app](https://stackblitz.com/edit/react-executor-todo-app?file=README.md)
-- [Streaming SSR](https://codesandbox.io/p/devbox/react-executor-ssr-streaming-example-mwrmrs)
-- [Next.js integration](https://codesandbox.io/p/devbox/react-executor-next-example-whsj4v)
+- [TODO app ↗](https://stackblitz.com/edit/react-executor-todo-app?file=README.md)
+- [Streaming SSR ↗](https://codesandbox.io/p/devbox/react-executor-ssr-streaming-example-mwrmrs)
+- [Next.js integration ↗](https://codesandbox.io/p/devbox/react-executor-next-example-whsj4v)
 
-🔰&ensp;[**Introduction**](#introduction)
+<span class="toc-icon">🔰&ensp;</span>[**Introduction**](#introduction)
 
 - [Executor keys](#executor-keys)
 - [Execute a task](#execute-a-task)
@@ -44,13 +44,13 @@ npm install --save-prod react-executor
 - [Settle an executor](#settle-an-executor)
 - [Clear an executor](#clear-an-executor)
 
-📢&ensp;[**Events and lifecycle**](#events-and-lifecycle)
+<span class="toc-icon">📢&ensp;</span>[**Events and lifecycle**](#events-and-lifecycle)
 
 - [Activate an executor](#activate-an-executor)
 - [Invalidate results](#invalidate-results)
 - [Detach an executor](#detach-an-executor)
 
-🔌&ensp;[**Plugins**](#plugins)
+<span class="toc-icon">🔌&ensp;</span>[**Plugins**](#plugins)
 
 - [`abortDeactivated`](#abortdeactivated)
 - [`abortPendingAfter`](#abortpendingafter)
@@ -68,14 +68,14 @@ npm install --save-prod react-executor
 - [`retryInvalidated`](#retryinvalidated)
 - [`retryRejected`](#retryrejected)
 - [`retryWhen`](#retrywhen)
-- [`synchronizeStorage`](#synchronizestorage)
+- [`syncStorage`](#syncstorage)
 
-⚛️&ensp;[**React integration**](#react-integration)
+<span class="toc-icon">⚛️&ensp;</span>[**React integration**](#react-integration)
 
 - [Suspense](#suspense)
 - [External executors](#external-executors)
 
-🚀&ensp;[**Server-side rendering**](#server-side-rendering)
+<span class="toc-icon">🚀&ensp;</span>[**Server-side rendering**](#server-side-rendering)
 
 - [Render to string](#render-to-string)
 - [Streaming SSR](#streaming-ssr)
@@ -83,9 +83,9 @@ npm install --save-prod react-executor
 - [Content-Security-Policy support](#content-security-policy-support)
 - [Next.js integration](#nextjs-integration)
 
-⚙️&ensp;[**Devtools**](#devtools)
+<span class="toc-icon">⚙️&ensp;</span>[**Devtools**](#devtools)
 
-🍪&ensp;**Cookbook**
+<span class="toc-icon">🍪&ensp;</span>**Cookbook**
 
 - [Optimistic updates](#optimistic-updates)
 - [Dependent tasks](#dependent-tasks)
@@ -1330,14 +1330,14 @@ useExecutor('test', heavyTask, [
 ]);
 ```
 
-## `synchronizeStorage`
+## `syncStorage`
 
 Persists the executor value in the synchronous storage.
 
 ```ts
-import synchronizeStorage from 'react-executor/plugin/synchronizeStorage';
+import syncStorage from 'react-executor/plugin/syncStorage';
 
-const executor = useExecutor('test', 42, [synchronizeStorage(localStorage)]);
+const executor = useExecutor('test', 42, [syncStorage(localStorage)]);
 ```
 
 With this plugin, you can synchronize the executor state
@@ -1357,7 +1357,7 @@ Here's how you can enable serialization of objects with circular references:
 import JSONMarshal from 'json-marshal';
 
 const executor = useExecutor('test', 42, [
-  synchronizeStorage(localStorage, {
+  syncStorage(localStorage, {
     serializer: JSONMarshal,
   })
 ]);
@@ -1367,14 +1367,14 @@ const executor = useExecutor('test', 42, [
 > With additional configuration, [json-marshal](https://github.com/smikhalevski/json-marshal#readme) can stringify and
 > parse any data structure.
 
-By default, `synchronizeStorage` plugin uses a [serialized executor key](#executor-keys) as a storage key. You can
+By default, `syncStorage` plugin uses a [serialized executor key](#executor-keys) as a storage key. You can
 provide a custom key
-via [`storageKey`](https://smikhalevski.github.io/react-executor/interfaces/plugin_synchronizeStorage.SynchronizeStorageOptions.html#storagekey)
+via [`storageKey`](https://smikhalevski.github.io/react-executor/interfaces/plugin_syncStorage.SyncStorageOptions.html#storagekey)
 option:
 
 ```ts
 useExecutor('test', 42, [
-  synchronizeStorage(localStorage, { storageKey: 'helloBobr' })
+  syncStorage(localStorage, { storageKey: 'helloBobr' })
 ]);
 ```
 
@@ -1383,7 +1383,7 @@ conditionally disable the plugin:
 
 ```ts
 useExecutor('test', 42, [
-  typeof localStorage !== 'undefined' ? synchronizeStorage(localStorage) : null
+  typeof localStorage !== 'undefined' ? syncStorage(localStorage) : null
 ]);
 ```
 
@@ -2052,13 +2052,13 @@ const App = () => (
 
 ## Storage state versioning
 
-You can store an executor state in a `localStorage` using the [`synchronizeStorage`](#synchronizestorage) plugin:
+You can store an executor state in a `localStorage` using the [`syncStorage`](#synchronizestorage) plugin:
 
 ```ts
 import { useExecutor } from 'react-executor';
-import synchronizeStorage from 'react-executor/plugin/synchronizeStorage';
+import syncStorage from 'react-executor/plugin/syncStorage';
 
-const playerExecutor = useExecutor('player', { health: '50%' }, [synchronizeStorage(localStorage)]);
+const playerExecutor = useExecutor('player', { health: '50%' }, [syncStorage(localStorage)]);
 // ⮕ Executor<{ health: string }>
 ```
 
@@ -2066,7 +2066,7 @@ But what if over time you'd like to change the structure of the value stored in 
 make `health` property a number:
 
 ```ts
-const playerExecutor = useExecutor('player', { health: 0.5 }, [synchronizeStorage(localStorage)]);
+const playerExecutor = useExecutor('player', { health: 0.5 }, [syncStorage(localStorage)]);
 ```
 
 After users have used the previous version of the app where `health` was a string, they would still receive a string
@@ -2101,12 +2101,12 @@ Add the plugin to the executor:
 
 ```ts
 const playerExecutor = useExecutor('player', { health: 0.5 }, [
-  synchronizeStorage(localStorage),
+  syncStorage(localStorage),
   requireVersion(1)
 ]);
 ```
 
-After the `synchronizeStorage` plugin reads the data from the `localStorage`, the `requireVersion` plugin ensures that
+After the `syncStorage` plugin reads the data from the `localStorage`, the `requireVersion` plugin ensures that
 the `version` annotation read from the `localStorage` matches the required version. On mismatch the executor is cleared
 and the initial value `{ health: 0.5 }` is written to the storage.
 
@@ -2140,7 +2140,7 @@ Now `requireVersion` would apply the migration on the state version mismatch:
 
 ```ts
 const playerExecutor = useExecutor('player', { health: 0.5 }, [
-  synchronizeStorage(localStorage),
+  syncStorage(localStorage),
   
   requireVersion(1, executor => {
     executor.resolve({ 
