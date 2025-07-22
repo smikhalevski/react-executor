@@ -92,6 +92,11 @@
       "import": "./plugin/invalidatePeers.mjs",
       "require": "./plugin/invalidatePeers.js"
     },
+    "./plugin/lazyTask": {
+      "types": "./plugin/lazyTask.d.ts",
+      "import": "./plugin/lazyTask.mjs",
+      "require": "./plugin/lazyTask.js"
+    },
     "./plugin/rejectPendingAfter": {
       "types": "./plugin/rejectPendingAfter.d.ts",
       "import": "./plugin/rejectPendingAfter.mjs",

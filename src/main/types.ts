@@ -311,6 +311,11 @@ export interface ReadonlyExecutor<Value = any> extends ExecutorState<Value>, Obs
  */
 export interface Executor<Value = any> extends ReadonlyExecutor<Value> {
   /**
+   * The latest task that was {@link Executor.execute executed}, or `null` if the executor didn't execute any tasks.
+   */
+  task: ExecutorTask<Value> | null;
+
+  /**
    * Executes a task and populates the executor with the returned result.
    *
    * Instantly aborts pending execution (if any), marks the executor as {@link isPending pending} and then invokes the
