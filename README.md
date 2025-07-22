@@ -9,6 +9,7 @@
 <br/>
 
 <!--OVERVIEW-->
+
 Asynchronous task execution and state management for React.
 
 - TypeScript first;
@@ -22,11 +23,13 @@ Asynchronous task execution and state management for React.
 ```sh
 npm install --save-prod react-executor
 ```
+
 <!--/OVERVIEW-->
 
 <br>
 
 <!--TOC-->
+
 <span class="toc-icon">🔥&ensp;</span>**Live examples**
 
 - [TODO app&#8239;<sup>↗</sup>](https://stackblitz.com/edit/react-executor-todo-app?file=README.md)
@@ -60,6 +63,7 @@ npm install --save-prod react-executor
 - [`invalidateAfter`](#invalidateafter)
 - [`invalidateByPeers`](#invalidatebypeers)
 - [`invalidatePeers`](#invalidatepeers)
+- [`lazyTask`](#lazytask)
 - [`rejectPendingAfter`](#rejectpendingafter)
 - [`resolveBy`](#resolveby)
 - [`retryActivated`](#retryactivated)
@@ -94,18 +98,20 @@ npm install --save-prod react-executor
 - [Prefetching](#prefetching)
 - [Storage state versioning](#storage-state-versioning)
 - [Global loading indicator](#global-loading-indicator)
+
 <!--/TOC-->
 
 <!--ARTICLE-->
+
 # Introduction
 
 An executor executes a task, stores the execution result, and provides access to it. Tasks are callbacks that return a
 value or throw an error.
 
-An [`Executor`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html) is created and
-managed by
-an [`ExecutorManager`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html) which
-controls the executor lifecycle:
+An [`Executor`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html)
+is created and managed by
+an [`ExecutorManager`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html)
+which controls the executor lifecycle:
 
 ```ts
 import { ExecutorManager } from 'react-executor';
@@ -173,8 +179,8 @@ plugins in the [Plugins](#plugins) section.
 ## Executor keys
 
 Anything can be an executor key: a string, a number, an object, etc. By default, keys are considered identical if
-their [`JSON`&#8239;<sup>↗</sup>](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON)-serialized form is
-identical:
+their [`JSON`&#8239;<sup>↗</sup>](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON)
+-serialized form is identical:
 
 ```ts
 const manager = new ExecutorManager();
@@ -197,7 +203,7 @@ alphabetically during serialization). In this case use any library that supports
 import { stringify } from 'json-marshal';
 
 const manager = new ExecutorManager({
-  keySerializer: key => stringify(key, { isStable: true })
+  keySerializer: key => stringify(key, { isStable: true }),
 });
 
 const bobrExecutor = manager.getOrCreate({ id: 123, name: 'Woody' });
@@ -209,14 +215,14 @@ manager.get({ name: 'Woody', id: 123 });
 ```
 
 > [!TIP]\
-> With additional configuration, [json-marshal&#8239;<sup>↗</sup>](https://github.com/smikhalevski/json-marshal#readme) can stringify and
-> parse any data structure.
+> With additional configuration, [json-marshal&#8239;<sup>↗</sup>](https://github.com/smikhalevski/json-marshal#readme)
+> can stringify and parse any data structure.
 
 If you want to use object references as executor keys, provide an identity function as a serializer:
 
 ```ts
 const manager = new ExecutorManager({
-  keySerializer: key => key
+  keySerializer: key => key,
 });
 
 const bobrKey = { id: 123 };
@@ -251,14 +257,16 @@ const helloPromise = rookyExecutor.execute(task);
 // ⮕ AbortablePromise<any>
 ```
 
-`helloTask` receives an [`AbortSignal`&#8239;<sup>↗</sup>](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal) and
-`rookyExecutor` as arguments. The signal is aborted if the task is [aborted](#abort-a-task) or
+`helloTask` receives an [`AbortSignal`&#8239;<sup>↗</sup>](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal)
+and `rookyExecutor` as arguments. The signal is aborted if the task is [aborted](#abort-a-task) or
 [replaced](#replace-a-task).
 
 While tasks can be synchronous or asynchronous, executors always handle them in an asynchronous fashion. The executor is
-marked as [pending&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#ispending)
+marked
+as [pending&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#ispending)
 immediately after
-[`execute`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#execute) is called:
+[`execute`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#execute)
+is called:
 
 ```ts
 // The executor is waiting for the task to complete
@@ -284,8 +292,8 @@ rookyExecutor.value;
 ```
 
 The executor keeps track of
-the [latest task&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#task) it
-has executed:
+the [latest task&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#task)
+it has executed:
 
 ```ts
 rookyExecutor.task;
@@ -317,12 +325,13 @@ rookyExecutor.reason;
 ```
 
 Executors always preserve the latest value and the latest reason. So even when the executor
-[`isPending`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#ispending), you can
-access the previous value or failure reason. Use
-[`isFulfilled`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#isfulfilled) and
-[`isRejected`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#isrejected) to 
-detect with what result the executor has settled the last time. An executor cannot be both fulfilled and rejected at the
-same time.
+[`isPending`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#ispending),
+you can access the previous value or failure reason. Use
+[`isFulfilled`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#isfulfilled)
+and
+[`isRejected`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#isrejected)
+to detect with what result the executor has settled the last time. An executor cannot be both fulfilled and rejected at
+the same time.
 
 ```ts
 // Execute a new task
@@ -363,8 +372,8 @@ rookyExecutor.value;
 
 The promise returned by
 the [`execute`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#execute)
-method is [abortable&#8239;<sup>↗</sup>](https://smikhalevski.github.io/parallel-universe/classes/AbortablePromise.html) so
-the task can be prematurely aborted. Results of the aborted task are discarded:
+method is [abortable&#8239;<sup>↗</sup>](https://smikhalevski.github.io/parallel-universe/classes/AbortablePromise.html)
+so the task can be prematurely aborted. Results of the aborted task are discarded:
 
 ```ts
 const helloPromise = rookyExecutor.execute(async () => 'Hello');
@@ -388,8 +397,8 @@ rookyExecutor.abort();
 If there's no pending task, then aborting an executor is a no-op.
 
 When a task is aborted, the signal it received as an argument is aborted as well. Check
-the [signal status&#8239;<sup>↗</sup>](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal/aborted) to ensure that computation
-should be concluded.
+the [signal status&#8239;<sup>↗</sup>](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal/aborted) to ensure
+that computation should be concluded.
 
 For example, if you're fetching data from the server inside a task, you can pass signal as
 a [`fetch`&#8239;<sup>↗</sup>](https://developer.mozilla.org/en-US/docs/Web/API/fetch#signal) option:
@@ -397,7 +406,7 @@ a [`fetch`&#8239;<sup>↗</sup>](https://developer.mozilla.org/en-US/docs/Web/AP
 ```ts
 const byeTask: ExecutorTask = async (signal, executor) => {
   const response = await fetch('/bye', { signal });
-  
+
   return response.json();
 };
 ```
@@ -419,8 +428,8 @@ executor.value;
 ## Wait for a task to complete
 
 In the [Execute a task](#execute-a-task) section we used a promise that is returned from
-[`Executor.execute`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#execute) to
-wait for a task execution to complete. While this approach allows to wait for a given task execution to settle, it is
+[`Executor.execute`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#execute)
+to wait for a task execution to complete. While this approach allows to wait for a given task execution to settle, it is
 usually required to wait for an executor itself become settled. The main point here is that the executor remains
 pending while multiple tasks [replace one another](#replace-a-task).
 
@@ -549,13 +558,14 @@ executor.clear();
 ```
 
 Clearing an executor removes the stored value and reason, but _doesn't_ affect the pending task execution and preserves
-the [latest task&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#task) that
-was executed.
+the [latest task&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#task)
+that was executed.
 
 # Events and lifecycle
 
 Executors publish various events when their state changes. To subscribe to executor events use the
-[`subscribe`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#subscribe) method:
+[`subscribe`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#subscribe)
+method:
 
 ```ts
 const manager = new ExecutorManager();
@@ -583,8 +593,8 @@ manager.subscribe(event => {
 ```
 
 Both executors and managers may have multiple subscribers and each subscriber receives
-[events&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.ExecutorEvent.html) with following
-types:
+[events&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.ExecutorEvent.html)
+with following types:
 
 <dl>
 <dt>attached</dt>
@@ -648,12 +658,14 @@ The executor was rejected with a reason.
 The [task was aborted](#abort-a-task).
 
 If executor is
-still [pending&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#ispending) when
-an `'aborted'` event is published then the currently pending task is being [replaced](#replace-a-task) with a new task.
+still [pending&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#ispending)
+when an `'aborted'` event is published then the currently pending task is being [replaced](#replace-a-task) with a new
+task.
 
 Calling [`Executor.execute`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#execute)
 when handling an abort event may lead to stack overflow. If you need to do this anyway, execute a new task from async
-context using [`queueMicrotask`&#8239;<sup>↗</sup>](https://developer.mozilla.org/en-US/docs/Web/API/queueMicrotask) or a similar API.
+context using [`queueMicrotask`&#8239;<sup>↗</sup>](https://developer.mozilla.org/en-US/docs/Web/API/queueMicrotask) or
+a similar API.
 
 </dd>
 
@@ -686,8 +698,8 @@ The configuration of the plugin associated with the executor was updated.
 ## Activate an executor
 
 Executors have
-an [active&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#isactive) status that
-tells whether executor is actively used by a consumer.
+an [active&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#isactive)
+status that tells whether executor is actively used by a consumer.
 
 ```ts
 const deactivate = executor.activate();
@@ -712,9 +724,8 @@ that [retries the latest task](#retry-the-latest-task) if an active executor bec
 const retryPlugin: ExecutorPlugin = executor => {
   executor.subscribe(event => {
     switch (event.type) {
-
       case 'rejected':
-      case 'activated': 
+      case 'activated':
         if (executor.isActive && executor.isRejected) {
           executor.retry();
         }
@@ -757,10 +768,10 @@ as [invalidated&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-execu
 ## Detach an executor
 
 By default, executors that a manager has created are preserved indefinitely and are always available though
-[`get`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html#get). This isn't
-always optimal, and you may want to detach an executor when it isn't needed anymore.
-Use [`detach`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html#detach) in
-such case:
+[`get`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html#get).
+This isn't always optimal, and you may want to detach an executor when it isn't needed anymore.
+Use [`detach`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html#detach)
+in such case:
 
 ```ts
 const executor = manager.getOrCreate('test');
@@ -796,7 +807,9 @@ const detachPlugin: ExecutorPlugin = executor => {
 
 To apply a plugin, pass it to the
 [`ExecutorManager.getOrCreate`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html#getorcreate)
-or to the [`useExecutor`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/functions/react-executor.useExecutor.html) hook:
+or to
+the [`useExecutor`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/functions/react-executor.useExecutor.html)
+hook:
 
 ```ts
 const executor = manager.getOrCreate('test', undefined, [detachPlugin]);
@@ -814,7 +827,7 @@ Make the manager apply a plugin to all executors by default:
 
 ```ts
 const manager = new ExecutorManager({
-  plugins: [detachPlugin]
+  plugins: [detachPlugin],
 });
 ```
 
@@ -822,11 +835,12 @@ const manager = new ExecutorManager({
 
 [Aborts the pending task](#abort-a-task) after the delay if the executor is deactivated.
 
+<!-- prettier-ignore -->
 ```ts
 import abortDeactivated from 'react-executor/plugin/abortDeactivated';
 
 const executor = useExecutor('test', heavyTask, [
-  abortDeactivated({ delay: 2_000 })
+  abortDeactivated({ delay: 2_000 }),
 ]);
 
 const deactivate = executor.activate();
@@ -841,30 +855,33 @@ once for this plugin to have an effect.
 ## `abortPendingAfter`
 
 [Aborts the pending task](#abort-a-task)
-with [`TimeoutError`&#8239;<sup>↗</sup>](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#timeouterror) if the task execution
-took longer then the given delay.
+with [`TimeoutError`&#8239;<sup>↗</sup>](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#timeouterror) if
+the task execution took longer then the given delay.
 
+<!-- prettier-ignore -->
 ```ts
 import abortPendingAfter from 'react-executor/plugin/abortPendingAfter';
 
 const executor = useExecutor('test', heavyTask, [
-  abortPendingAfter(10_000)
+  abortPendingAfter(10_000),
 ]);
 ```
 
 ## `abortWhen`
 
 [Aborts the pending task](#abort-a-task) if the
-[observable&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Observable.html) emits `true`.
+[observable&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Observable.html)
+emits `true`.
 
 For example, abort the current task if the device is disconnected from the network for more then 5 seconds:
 
+<!-- prettier-ignore -->
 ```ts
 import abortWhen from 'react-executor/plugin/abortWhen';
 import navigatorOffline from 'react-executor/observable/navigatorOffline';
 
 const executor = useExecutor('test', heavyTask, [
-  abortWhen(navigatorOffline, { delay: 5_000 })
+  abortWhen(navigatorOffline, { delay: 5_000 }),
 ]);
 ```
 
@@ -878,11 +895,12 @@ Read more about observables in the [`retryWhen`](#retrywhen) section.
 
 [Detaches the executor](#detach-an-executor) after the timeout if the executor is deactivated.
 
+<!-- prettier-ignore -->
 ```ts
 import detachDeactivated from 'react-executor/plugin/detachDeactivated';
 
 const executor = useExecutor('test', heavyTask, [
-  detachDeactivated({ delay: 2_000 })
+  detachDeactivated({ delay: 2_000 }),
 ]);
 
 const deactivate = executor.activate();
@@ -902,7 +920,7 @@ import detachDeactivated from 'react-executor/plugin/detachDeactivated';
 
 const executor = useExecutor('test', heavyTask, [
   abortDeactivated({ delay: 2_000 }),
-  detachDeactivated({ delay: 2_000 })
+  detachDeactivated({ delay: 2_000 }),
 ]);
 
 const deactivate = executor.activate();
@@ -915,19 +933,21 @@ deactivate();
 
 Detach an executor if it wasn't activated during first 5 seconds after being created:
 
+<!-- prettier-ignore -->
 ```ts
 import detachInactive from 'react-executor/plugin/detachInactive';
 
 const executor = useExecutor('test', 42, [
-  detachInactive({ delayBeforeActivation: 5_000 })
+  detachInactive({ delayBeforeActivation: 5_000 }),
 ]);
 ```
 
 Detach an executor if it was inactive for 5 seconds:
 
+<!-- prettier-ignore -->
 ```ts
 const executor = useExecutor('test', 42, [
-  detachInactive({ delayAfterActivation: 5_000 })
+  detachInactive({ delayAfterActivation: 5_000 }),
 ]);
 
 const deactivate = executor.activate();
@@ -940,10 +960,13 @@ deactivate();
 
 Invalidates the executor result after a delay.
 
+<!-- prettier-ignore -->
 ```ts
 import invalidateAfter from 'react-executor/plugin/invalidateAfter';
 
-const executor = useExecutor('test', 42, [invalidateAfter(2_000)]);
+const executor = useExecutor('test', 42, [
+  invalidateAfter(2_000),
+]);
 
 // The executor is invalidated in 2 seconds
 executor.activate();
@@ -955,11 +978,12 @@ If the executor is settled then the timeout is restarted.
 
 Invalidates the executor result if another executor with a matching key is fulfilled or invalidated.
 
+<!-- prettier-ignore -->
 ```ts
 import invalidateByPeers from 'react-executor/plugin/invalidateByPeers';
 
 const cheeseExecutor = useExecutor('cheese', 'Burrata', [
-  invalidateByPeers(executor => executor.key === 'bread')
+  invalidateByPeers(executor => executor.key === 'bread'),
 ]);
 
 const breadExecutor = useExecutor('bread');
@@ -970,11 +994,12 @@ breadExecutor.resolve('Ciabatta');
 
 Provide an array of executors as peers:
 
+<!-- prettier-ignore -->
 ```ts
 const breadExecutor = useExecutor('bread');
 
 const cheeseExecutor = useExecutor('cheese', 'Burrata', [
-  invalidateByPeers([breadExecutor])
+  invalidateByPeers([breadExecutor]),
 ]);
 
 // cheeseExecutor is invalidated
@@ -985,11 +1010,12 @@ breadExecutor.resolve('Ciabatta');
 
 Invalidates peer executors with matching keys if the executor is fulfilled or invalidated.
 
+<!-- prettier-ignore -->
 ```ts
 import invalidatePeers from 'react-executor/plugin/invalidatePeers';
 
 const cheeseExecutor = useExecutor('cheese', 'Burrata', [
-  invalidatePeers(executor => executor.key === 'bread')
+  invalidatePeers(executor => executor.key === 'bread'),
 ]);
 
 const breadExecutor = useExecutor('bread', 'Focaccia');
@@ -1000,28 +1026,54 @@ cheeseExecutor.resolve('Mozzarella');
 
 Provide an array of executors as peers:
 
+<!-- prettier-ignore -->
 ```ts
 const breadExecutor = useExecutor('bread', 'Focaccia');
 
 const cheeseExecutor = useExecutor('cheese', 'Burrata', [
-  invalidatePeers([breadExecutor])
+  invalidatePeers([breadExecutor]),
 ]);
 
 // breadExecutor is invalidated
 cheeseExecutor.resolve('Mozzarella');
 ```
 
+## `lazyTask`
+
+Sets [an executor task](#execute-a-task) but doesn't execute it.
+
+This plugin is useful when you have an static initial value and a task that can update this value later:
+
+```ts
+import lazyTask from 'react-executor/plugin/lazyTask';
+import retryInvalidated from 'react-executor/plugin/retryInvalidated';
+
+const executor = useExecutor('meaningOfLife', 42, [
+  lazyTask(async () => await getTheMeaningOfLife()),
+  retryInvalidated(),
+]);
+```
+
+`executor` is created with the `value` set to 42. `getTheMeaningOfLife` task isn't executed and would be called only if
+executor is invalidated (tanks to [`retryInvalidated`](#retryinvalidated) plugin):
+
+```ts
+executor.invalidate();
+```
+
 ## `rejectPendingAfter`
 
 [Aborts the pending task](#abort-a-task) and [rejects the executor](#settle-an-executor)
-with [`TimeoutError`&#8239;<sup>↗</sup>](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#timeouterror) if the task execution
+with [`TimeoutError`&#8239;<sup>↗</sup>](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#timeouterror) if
+the task execution
 took longer then the given timeout.
 
+<!-- prettier-ignore -->
 ```ts
 import rejectPendingAfter from 'react-executor/plugin/rejectPendingAfter';
 
 const executor = useExecutor('test', heavyTask, [
-  rejectPendingAfter(10_000)
+  rejectPendingAfter(10_000),
 ]);
 ```
 
@@ -1030,6 +1082,7 @@ const executor = useExecutor('test', heavyTask, [
 [Resolves the executor](#settle-an-executor) with values pushed by an
 [`Observable`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Observable.html).
 
+<!-- prettier-ignore -->
 ```ts
 import { Observable } from 'react-executor';
 import resolveBy from 'react-executor/plugin/resolveBy';
@@ -1043,39 +1096,43 @@ const observable: Observable<string> = {
       // Unsubscribe the listener
       clearTimeout(timer);
     };
-  }
+  },
 };
 
 const executor = useExecutor('planet', 'Mars', [
-  resolveBy(observable)
+  resolveBy(observable),
 ]);
 ```
 
-[`PubSub`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/parallel-universe/classes/PubSub.html) can be used do decouple the lazy data source from the executor:
+[`PubSub`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/parallel-universe/classes/PubSub.html) can be used do
+decouple the lazy data source from the executor:
 
+<!-- prettier-ignore -->
 ```ts
 import { PubSub } from 'parallel-universe';
 
 const pubSub = new PubSub<string>();
 
 const executor = useExecutor('planet', 'Mars', [
-  resolveBy(pubSub)
+  resolveBy(pubSub),
 ]);
 
 pubSub.publish('Venus');
 
-executor.value;
-// ⮕ 'Venus'
+executor.value; // ⮕ 'Venus'
 ```
 
 ## `retryActivated`
 
 [Retries the latest task](#retry-the-latest-task) if the executor is activated.
 
+<!-- prettier-ignore -->
 ```ts
 import retryActivated from 'react-executor/plugin/retryActivated';
 
-const executor = useExecutor('test', heavyTask, [retryActivated()]);
+const executor = useExecutor('test', heavyTask, [
+  retryActivated(),
+]);
 
 // Retries the task
 executor.activate();
@@ -1084,9 +1141,10 @@ executor.activate();
 Set the minimum delay in milliseconds that should pass between the activation and the moment the executor was last
 settled:
 
+<!-- prettier-ignore -->
 ```ts
 const executor = useExecutor('test', heavyTask, [
-  retryActivated({ staleDelay: 5_000 })
+  retryActivated({ staleDelay: 5_000 }),
 ]);
 
 // Doesn't retry the task if 5 seconds didn't pass
@@ -1097,10 +1155,13 @@ executor.activate();
 
 [Retries the latest task](#retry-the-latest-task) after the execution was fulfilled.
 
+<!-- prettier-ignore -->
 ```ts
 import retryFulfilled from 'react-executor/plugin/retryFulfilled';
 
-const executor = useExecutor('test', heavyTask, [retryFulfilled()]);
+const executor = useExecutor('test', heavyTask, [
+  retryFulfilled(),
+]);
 
 executor.activate();
 ```
@@ -1114,7 +1175,7 @@ executor.
 Specify the number of times the task should be re-executed if it succeeds:
 
 ```ts
-retryFulfilled({ count: 3 })
+retryFulfilled({ count: 3 });
 ```
 
 Specify the delay in milliseconds between retries:
@@ -1128,7 +1189,7 @@ Provide a function that returns the delay depending on the number of retries:
 ```ts
 retryFulfilled({
   count: 5,
-  delay: (index, executor) => 1000 * index
+  delay: (index, executor) => 1000 * index,
 });
 ```
 
@@ -1144,10 +1205,13 @@ retryFulfilled({ isEager: true });
 
 Retries the latest task of the active executor if it was invalidated.
 
+<!-- prettier-ignore -->
 ```ts
 import retryInvalidated from 'react-executor/plugin/retryInvalidated';
 
-const executor = useExecutor('test', 42, [retryInvalidated()]);
+const executor = useExecutor('test', 42, [
+  retryInvalidated(),
+]);
 
 executor.activate();
 ```
@@ -1160,13 +1224,12 @@ import { ExecutorTask, useExecutor } from 'react-executor';
 import invalidateByPeers from 'react-executor/plugin/invalidateByPeers';
 
 const fetchCheese: ExecutorTask = async (signal, executor) => {
-  
   // Wait for the breadExecutor to be created
   const breadExecutor = await executor.manager.getOrAwait('bread');
 
   // Wait for the breadExecutor to be settled
   const bread = await breadExecutor.getOrAwait();
-  
+
   // Choose the best cheese for this bread
   return bread === 'Ciabatta' ? 'Mozzarella' : 'Burrata';
 };
@@ -1196,10 +1259,13 @@ retryInvalidated({ isEager: true });
 
 Retries the last task after the execution has failed.
 
+<!-- prettier-ignore -->
 ```ts
 import retryRejected from 'react-executor/plugin/retryRejected';
 
-const executor = useExecutor('test', heavyTask, [retryRejected()]);
+const executor = useExecutor('test', heavyTask, [
+  retryRejected(),
+]);
 
 executor.activate();
 ```
@@ -1211,7 +1277,7 @@ With the default configuration, the plugin would retry the task 3 times with an 
 Specify the number of times the task should be re-executed if it fails:
 
 ```ts
-retryRejected({ count: 3 })
+retryRejected({ count: 3 });
 ```
 
 Specify the delay in milliseconds between retries:
@@ -1225,7 +1291,7 @@ Provide a function that returns the delay depending on the number of retries:
 ```ts
 retryRejected({
   count: 5,
-  delay: (index, executor) => 1000 * 1.8 ** index
+  delay: (index, executor) => 1000 * 1.8 ** index,
 });
 ```
 
@@ -1240,17 +1306,19 @@ retryRejected({ isEager: true });
 ## `retryWhen`
 
 [Retries the latest task](#abort-a-task) if the
-[observable&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Observable.html) emits `true`.
+[observable&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Observable.html)
+emits `true`.
 
 For example, if the window was offline for more than 5 seconds, the executor would retry the `heavyTask` after
 the window is back online:
 
+<!-- prettier-ignore -->
 ```ts
 import retryWhen from 'react-executor/plugin/retryWhen';
 import navigatorOnline from 'react-executor/observable/navigatorOnline';
 
 const executor = useExecutor('test', heavyTask, [
-  retryWhen(navigatorOnline, { delay: 5_000 })
+  retryWhen(navigatorOnline, { delay: 5_000 }),
 ]);
 ```
 
@@ -1273,22 +1341,21 @@ import navigatorOnline from 'react-executor/observable/navigatorOnline';
 import navigatorOffline from 'react-executor/observable/navigatorOffline';
 
 useExecutor('test', heavyTask, [
-
   // Execute the task every 5 seconds
   retryFulfilled({ delay: 5_000 }),
-  
+
   // Abort the task and prevent future executions
   // if the window looses focus for at least 10 seconds
   abortWhen(windowBlurred, { delay: 10_000 }),
 
   // Retry the latest task when the window gains focus
   retryWhen(windowFocused),
-  
+
   // Instantly abort the pending task if the device is disconnected from the network
   abortWhen(navigatorOffline),
 
   // Retry the latest task if the window goes online
-  retryWhen(navigatorOnline)
+  retryWhen(navigatorOnline),
 ]);
 ```
 
@@ -1296,10 +1363,13 @@ useExecutor('test', heavyTask, [
 
 Persists the executor value in the synchronous storage.
 
+<!-- prettier-ignore -->
 ```ts
 import syncStorage from 'react-executor/plugin/syncStorage';
 
-const executor = useExecutor('test', 42, [syncStorage(localStorage)]);
+const executor = useExecutor('test', 42, [
+  syncStorage(localStorage),
+]);
 ```
 
 With this plugin, you can synchronize the executor state
@@ -1310,8 +1380,9 @@ in just one line.
 > If executor is [detached](#detach-an-executor), then the corresponding item is removed from the storage.
 
 By default, an executor state is serialized using
-[`JSON`&#8239;<sup>↗</sup>](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON). If your executor
-stores a value that may contain circular references, or non-serializable data like `BigInt`, use a custom serializer.
+[`JSON`&#8239;<sup>↗</sup>](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON). If
+your executor stores a value that may contain circular references, or non-serializable data like `BigInt`, use a custom
+serializer.
 
 Here's how you can enable serialization of objects with circular references:
 
@@ -1321,55 +1392,50 @@ import JSONMarshal from 'json-marshal';
 const executor = useExecutor('test', 42, [
   syncStorage(localStorage, {
     serializer: JSONMarshal,
-  })
+  }),
 ]);
 ```
 
 > [!TIP]\
-> With additional configuration, [json-marshal&#8239;<sup>↗</sup>](https://github.com/smikhalevski/json-marshal#readme) can stringify and
-> parse any data structure.
+> With additional configuration, [json-marshal&#8239;<sup>↗</sup>](https://github.com/smikhalevski/json-marshal#readme)
+> can stringify and parse any data structure.
 
-By default, `syncStorage` plugin uses a [serialized executor key](#executor-keys) as a storage key. You can
-provide a custom key
+By default, `syncStorage` plugin uses a [serialized executor key](#executor-keys) as a storage key. You can provide a
+custom key
 via [`storageKey`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/plugin_syncStorage.SyncStorageOptions.html#storagekey)
 option:
 
 ```ts
-useExecutor('test', 42, [
-  syncStorage(localStorage, { storageKey: 'helloBobr' })
-]);
+useExecutor('test', 42, [syncStorage(localStorage, { storageKey: 'helloBobr' })]);
 ```
 
 In the environment where storage is unavailable (for example, [during SSR](#server-side-rendering)), you can
 conditionally disable the plugin:
 
 ```ts
-useExecutor('test', 42, [
-  typeof localStorage !== 'undefined' ? syncStorage(localStorage) : null
-]);
+useExecutor('test', 42, [typeof localStorage !== 'undefined' ? syncStorage(localStorage) : null]);
 ```
 
 # React integration
 
 In the basic scenario, to use executors in your React app, you don't need any additional configuration, just use
-the [`useExecutor`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/functions/react-executor.useExecutor.html) hook right
-away:
+the [`useExecutor`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/functions/react-executor.useExecutor.html)
+hook right away:
 
 ```tsx
 import { useExecutor } from 'react-executor';
 
-const User = (props: { userId: string }) => {
-
+function User(props: { userId: string }) {
   const executor = useExecutor(['user', props.userId], async signal => {
     // Fetch the user from the server
   });
-  
+
   if (executor.isPending) {
     return 'Loading';
   }
-  
+
   // Render the user from the executor.value
-};
+}
 ```
 
 Every time the executor's state is changed, the component is re-rendered. The executor returned from the hook is
@@ -1381,11 +1447,12 @@ method, described in the [Introduction](#introduction) section.
 
 > [!TIP]\
 > Check out the live example
-> of [the TODO app&#8239;<sup>↗</sup>](https://stackblitz.com/edit/react-executor-todo-app?file=README.md) that employs React Executor.
+> of [the TODO app&#8239;<sup>↗</sup>](https://stackblitz.com/edit/react-executor-todo-app?file=README.md) that employs
+> React Executor.
 
 You can use executors both inside and outside the rendering process. To do this, provide a custom
-[`ExecutorManager`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html) through
-the context:
+[`ExecutorManager`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html)
+through the context:
 
 ```tsx
 import { ExecutorManager, ExecutorManagerProvider } from 'react-executor';
@@ -1394,9 +1461,9 @@ const manager = new ExecutorManager();
 
 const App = () => (
   <ExecutorManagerProvider value={manager}>
-    <User userId={'28'}/>
+    <User userId={'28'} />
   </ExecutorManagerProvider>
-)
+);
 ```
 
 Now you can use `manager` to access all the same executors that are available through the `useExecutor` hook:
@@ -1452,7 +1519,7 @@ const Account = () => {
   const accountExecutor = useExecutor('account', signal => {
     // Fetch an account from a server
   });
-  
+
   // Suspend rendering if accountExecutor is pending and isn't fulfilled
   const account = useExecutorSuspense(accountExecutor).get();
 };
@@ -1465,7 +1532,7 @@ import { Suspense } from 'react';
 
 const App = () => (
   <Suspense fallback={'Loading'}>
-    <Account/>
+    <Account />
   </Suspense>
 );
 ```
@@ -1506,7 +1573,8 @@ function Account() {
 
 > [!TIP]\
 > Check out the live example
-> of [streaming SSR&#8239;<sup>↗</sup>](https://codesandbox.io/p/devbox/react-executor-ssr-streaming-example-mwrmrs) with React Executor.
+> of [streaming SSR&#8239;<sup>↗</sup>](https://codesandbox.io/p/devbox/react-executor-ssr-streaming-example-mwrmrs)
+> with React Executor.
 
 Executors can be hydrated on the client after being settled on the server.
 
@@ -1525,7 +1593,7 @@ enableSSRHydration(manager);
 hydrateRoot(
   document,
   <ExecutorManagerProvider value={manager}>
-    <App/>
+    <App />
   </ExecutorManagerProvider>
 );
 ```
@@ -1551,7 +1619,6 @@ import { ExecutorManagerProvider } from 'react-executor';
 import { SSRExecutorManager } from 'react-executor/ssr';
 
 const server = createServer(async (request, response) => {
-
   // 1️⃣ Create a new manager for each request
   const manager = new SSRExecutorManager();
 
@@ -1559,7 +1626,7 @@ const server = createServer(async (request, response) => {
   do {
     html = renderToString(
       <ExecutorManagerProvider value={manager}>
-        <App/>
+        <App />
       </ExecutorManagerProvider>
     );
 
@@ -1586,8 +1653,8 @@ html += '<script src="/client.js" async></script>';
 A new executor manager must be created for each request, so the results that are stored in executors are served in
 response to a particular request.
 
-[`hasChanges`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/ssr.SSRExecutorManager.html#haschanges) would
-resolve with `true` if state of some executors have changed during rendering.
+[`hasChanges`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/ssr.SSRExecutorManager.html#haschanges)
+would resolve with `true` if state of some executors have changed during rendering.
 
 The hydration chunk returned
 by [`nextHydrationChunk`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/ssr.SSRExecutorManager.html#nexthydrationchunk)
@@ -1611,19 +1678,18 @@ import { ExecutorManagerProvider } from 'react-executor';
 import { PipeableSSRExecutorManager } from 'react-executor/ssr/node';
 
 const server = createServer((request, response) => {
-
   // 1️⃣ Create a new manager for each request
   const manager = new PipeableSSRExecutorManager(response);
 
   const stream = renderToPipeableStream(
     <ExecutorManagerProvider value={manager}>
-      <App/>
+      <App />
     </ExecutorManagerProvider>,
     {
       bootstrapScripts: ['/client.js'],
 
       onShellReady() {
-        // 2️⃣ Pipe the rendering output to the manager's stream 
+        // 2️⃣ Pipe the rendering output to the manager's stream
         stream.pipe(manager.stream);
       },
     }
@@ -1635,18 +1701,20 @@ server.listen(8080);
 
 State of executors is streamed to the client along with the chunks rendered by React.
 
-In the `App` component, use the combination of [`<Suspense>`&#8239;<sup>↗</sup>](https://react.dev/reference/react/Suspense),
-[`useExecutor`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/functions/react-executor.useExecutor.html) and
+In the `App` component, use the combination
+of [`<Suspense>`&#8239;<sup>↗</sup>](https://react.dev/reference/react/Suspense),
+[`useExecutor`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/functions/react-executor.useExecutor.html)
+and
 [`useExecutorSuspence`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/functions/react-executor.useExecutorSuspense.html)
 to suspend rendering while executors process their tasks:
 
 ```tsx
 export const App = () => (
   <html>
-    <head/>
+    <head />
     <body>
       <Suspense fallback={'Loading'}>
-        <Hello/>
+        <Hello />
       </Suspense>
     </body>
   </html>
@@ -1679,7 +1747,6 @@ import { ExecutorManagerProvider } from 'react-executor';
 import { ReadableSSRExecutorManager } from 'react-executor/ssr';
 
 async function handler(request) {
-
   // 1️⃣ Create a new manager for each request
   const manager = new ReadableSSRExecutorManager();
 
@@ -1704,9 +1771,9 @@ State of executors is streamed to the client along with the chunks rendered by R
 ## State serialization
 
 By default, an executor state is serialized using
-[`JSON.stringify`&#8239;<sup>↗</sup>](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify) that
-has quite a few limitations. If your executor stores a value that may contain circular references, or non-serializable
-data like `BigInt`, use a custom state serialization.
+[`JSON.stringify`&#8239;<sup>↗</sup>](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify)
+that has quite a few limitations. If your executor stores a value that may contain circular references, or
+non-serializable data like `BigInt`, use a custom state serialization.
 
 On the client, pass
 a [`stateParser`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.SSRHydrationOptions.html#stateparser)
@@ -1726,7 +1793,7 @@ enableSSRHydration(manager, { stateParser: JSONMarshal.parse });
 hydrateRoot(
   document,
   <ExecutorManagerProvider value={manager}>
-    <App/>
+    <App />
   </ExecutorManagerProvider>
 );
 ```
@@ -1745,8 +1812,8 @@ const manager = new SSRExecutorManager({ stateStringifier: JSONMarshal.stringify
 ```
 
 > [!TIP]\
-> With additional configuration, [json-marshal&#8239;<sup>↗</sup>](https://github.com/smikhalevski/json-marshal#readme) can stringify and
-> parse any data structure.
+> With additional configuration, [json-marshal&#8239;<sup>↗</sup>](https://github.com/smikhalevski/json-marshal#readme)
+> can stringify and parse any data structure.
 
 ## Content-Security-Policy support
 
@@ -1755,8 +1822,8 @@ By default,
 renders an inline `<script>` tag without any attributes. To enable the support of
 the [`script-src`&#8239;<sup>↗</sup>](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src)
 directive of the `Content-Security-Policy` header, provide
-the [`nonce`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/ssr.SSRExecutorManagerOptions.html#nonce) option
-to `SSRExecutorManager` or any of its subclasses:
+the [`nonce`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/ssr.SSRExecutorManagerOptions.html#nonce)
+option to `SSRExecutorManager` or any of its subclasses:
 
 ```ts
 const manager = new PipeableSSRExecutorManager(response, { nonce: '2726c7f26c' });
@@ -1772,14 +1839,14 @@ Content-Security-Policy: script-src 'nonce-2726c7f26c'
 
 > [!TIP]\
 > Check out the live example
-> of [the Next.js app&#8239;<sup>↗</sup>](https://codesandbox.io/p/devbox/react-executor-next-example-whsj4v) that showcases
-> streaming SSR with React Executor.
+> of [the Next.js app&#8239;<sup>↗</sup>](https://codesandbox.io/p/devbox/react-executor-next-example-whsj4v) that
+> showcases streaming SSR with React Executor.
 
-To enable client hydration in Next.js, use [`@react-executor/next`&#8239;<sup>↗</sup>](https://github.com/smikhalevski/react-executor-next)
-package.
+To enable client hydration in Next.js,
+use [`@react-executor/next`&#8239;<sup>↗</sup>](https://github.com/smikhalevski/react-executor-next) package.
 
 First, provide
-an [`ExecutorManager`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html): 
+an [`ExecutorManager`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html):
 
 ```tsx
 // providers.tsx
@@ -1848,14 +1915,15 @@ To disable devtools, create a custom
 import { ExecutorManager } from 'react-executor';
 
 const opaqueExecutorManager = new ExecutorManager({
-  devtools: false
+  devtools: false,
 });
 ```
 
 Executors created by the `opaqueExecutorManager` won't be visible in the React Executor Devtools extension. It is
 recommended to use this setting in production.
 
-The extension source can be found in the [react-executor-devtools&#8239;<sup>↗</sup>](https://github.com/smikhalevski/react-executor-devtools)
+The extension source can be found in
+the [react-executor-devtools&#8239;<sup>↗</sup>](https://github.com/smikhalevski/react-executor-devtools)
 repo.
 
 # Cookbook
@@ -1877,9 +1945,9 @@ const handleEnableClick = () => {
   // 2️⃣ Synchronize state with the server
   executor.execute(async signal => {
     const response = await fetch('/flag', { signal });
-    
+
     const data = await response.json();
-    
+
     return data.isEnabled;
   });
 };
@@ -1887,7 +1955,7 @@ const handleEnableClick = () => {
 
 ## Dependent tasks
 
-Pause a task until another executor is settled: 
+Pause a task until another executor is settled:
 
 ```ts
 const accountExecutor = useExecutor('account', async signal => {
@@ -1896,7 +1964,7 @@ const accountExecutor = useExecutor('account', async signal => {
 
 const shoppingCartExecutor = useExecutor('shoppingCart', async signal => {
   const account = await accountExecutor.getOrAwait();
-  
+
   // Fetch shopping cart for an account
 });
 ```
@@ -1906,10 +1974,9 @@ state is changed. To avoid unnecessary re-renders, you can acquire an executor t
 
 ```tsx
 const shoppingCartExecutor = useExecutor('shoppingCart', async (signal, executor) => {
-  
   // 1️⃣ Wait for the account executor to be created
   const accountExecutor = await executor.manager.getOrAwait('account');
-  
+
   // 2️⃣ Wait for the account executor to be settled
   const account = await accountExecutor.getOrAwait();
 
@@ -1934,7 +2001,7 @@ const handleGoToPageClick = (pageIndex: number) => {
 ```
 
 The executor preserves the latest value it was resolved with, so you can render page contents using `executor.value`,
-and render a spinner when `executor.isPending`. 
+and render a spinner when `executor.isPending`.
 
 ## Infinite scroll
 
@@ -1981,8 +2048,8 @@ for (const executor of manager) {
 ```
 
 It isn't optimal to retry all executors even if they aren't [actively used](#activate-an-executor). Use the
-[`retryInvalidated`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/modules/plugin_retryInvalidated.html) to retry active
-executors when they are invalidated.
+[`retryInvalidated`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/modules/plugin_retryInvalidated.html)
+to retry active executors when they are invalidated.
 
 ## Prefetching
 
@@ -2005,11 +2072,7 @@ const manager = new ExecutorManager();
 // Prefetch the shopping cart
 manager.getOrCreate('shoppingCart', fetchShoppingCart);
 
-const App = () => (
-  <ExecutorManagerProvider value={manager}>
-    {/* Render you app here */}
-  </ExecutorManagerProvider>
-);
+const App = () => <ExecutorManagerProvider value={manager}>{/* Render you app here */}</ExecutorManagerProvider>;
 ```
 
 ## Storage state versioning
@@ -2035,7 +2098,7 @@ After users have used the previous version of the app where `health` was a strin
 value since the `playerExecutor` state is read from the `localStorage`:
 
 ```ts
-playerExecutor.value.health
+playerExecutor.value.health;
 // ⮕ '50%'
 ```
 
@@ -2062,10 +2125,7 @@ export function requireVersion(version: number): ExecutorPlugin {
 Add the plugin to the executor:
 
 ```ts
-const playerExecutor = useExecutor('player', { health: 0.5 }, [
-  syncStorage(localStorage),
-  requireVersion(1)
-]);
+const playerExecutor = useExecutor('player', { health: 0.5 }, [syncStorage(localStorage), requireVersion(1)]);
 ```
 
 After the `syncStorage` plugin reads the data from the `localStorage`, the `requireVersion` plugin ensures that
@@ -2073,7 +2133,7 @@ the `version` annotation read from the `localStorage` matches the required versi
 and the initial value `{ health: 0.5 }` is written to the storage.
 
 ```ts
-playerExecutor.value.health
+playerExecutor.value.health;
 // ⮕ 0.5
 ```
 
@@ -2092,23 +2152,23 @@ export function requireVersion<T>(version: number, migrate: (executor: Executor<
     if (executor.isSettled) {
       migrate(executor);
     }
-    
+
     executor.annotate({ version });
   };
 }
 ```
 
-Now `requireVersion` would apply the migration on the state version mismatch: 
+Now `requireVersion` would apply the migration on the state version mismatch:
 
 ```ts
 const playerExecutor = useExecutor('player', { health: 0.5 }, [
   syncStorage(localStorage),
-  
+
   requireVersion(1, executor => {
-    executor.resolve({ 
-      health: parseInt(executor.get().health) / 100
+    executor.resolve({
+      health: parseInt(executor.get().health) / 100,
     });
-  })
+  }),
 ]);
 ```
 
@@ -2137,7 +2197,7 @@ function useGlobalPending(predicate = (executor: Executor) => true): boolean {
     // 2️⃣ Sync isPending when any event is published
     return manager.subscribe(listener);
   }, [manager]);
-  
+
   return isPending;
 }
 ```
@@ -2169,6 +2229,7 @@ const accountExecutor = useExecutor(
 // 2️⃣ Get global pending status for executors that are fetching data
 const isPending = useGlobalPending(executor => executor.annotations.isFetching);
 ```
+
 <!--/ARTICLE-->
 
 <hr/>
