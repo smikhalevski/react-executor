@@ -61,18 +61,18 @@ export class ExecutorImpl<Value = any> implements Executor {
     readonly manager: ExecutorManager
   ) {}
 
-  get(): Value {
+  get = (): Value => {
     if (this.isFulfilled) {
       return this.value!;
     }
     throw this.isSettled ? this.reason : new Error('The executor is not settled');
-  }
+  };
 
-  getOrDefault<DefaultValue>(defaultValue?: DefaultValue): Value | DefaultValue | undefined {
+  getOrDefault = <DefaultValue>(defaultValue?: DefaultValue): Value | DefaultValue | undefined => {
     return this.isFulfilled ? this.value : defaultValue;
-  }
+  };
 
-  getOrAwait(): AbortablePromise<Value> {
+  getOrAwait = (): AbortablePromise<Value> => {
     return new AbortablePromise((resolve, reject, signal) => {
       if (this.isSettled && !this.isPending) {
         if (this.isFulfilled) {
@@ -103,9 +103,9 @@ export class ExecutorImpl<Value = any> implements Executor {
 
       signal.addEventListener('abort', unsubscribe);
     });
-  }
+  };
 
-  execute(task: ExecutorTask<Value>): AbortablePromise<Value> {
+  execute = (task: ExecutorTask<Value>): AbortablePromise<Value> => {
     const handleAbort = (): void => {
       if (this.promise === promise) {
         this.promise = null;
@@ -162,15 +162,15 @@ export class ExecutorImpl<Value = any> implements Executor {
     }
 
     return promise;
-  }
+  };
 
-  retry(): void {
+  retry = (): void => {
     if (this.task !== null && !this.isPending) {
       this.execute(this.task);
     }
-  }
+  };
 
-  clear(): void {
+  clear = (): void => {
     if (this.isSettled) {
       this.isFulfilled = false;
       this.value = this.reason = undefined;
@@ -178,21 +178,21 @@ export class ExecutorImpl<Value = any> implements Executor {
       this.version++;
       this.publish({ type: 'cleared' });
     }
-  }
+  };
 
-  abort(reason: unknown = AbortError('The executor was aborted')): void {
+  abort = (reason: unknown = AbortError('The executor was aborted')): void => {
     this.promise?.abort(reason);
-  }
+  };
 
-  invalidate(invalidatedAt = Date.now()): void {
+  invalidate = (invalidatedAt = Date.now()): void => {
     if (!this.isInvalidated && this.isSettled) {
       this.invalidatedAt = invalidatedAt;
       this.version++;
       this.publish({ type: 'invalidated' });
     }
-  }
+  };
 
-  resolve(value: PromiseLike<Value> | Value, settledAt = Date.now()): void {
+  resolve = (value: PromiseLike<Value> | Value, settledAt = Date.now()): void => {
     if (isObjectLike(value) && 'then' in value) {
       this.execute(() => value);
       return;
@@ -210,9 +210,9 @@ export class ExecutorImpl<Value = any> implements Executor {
 
     this.version++;
     this.publish({ type: 'fulfilled' });
-  }
+  };
 
-  reject(reason: any, settledAt = Date.now()): void {
+  reject = (reason: any, settledAt = Date.now()): void => {
     const prevPromise = this.promise;
     this.promise = null;
 
@@ -225,9 +225,9 @@ export class ExecutorImpl<Value = any> implements Executor {
 
     this.version++;
     this.publish({ type: 'rejected' });
-  }
+  };
 
-  activate(): () => void {
+  activate = (): (() => void) => {
     let isActive = true;
 
     if (this._activationCount++ === 0) {
@@ -239,28 +239,28 @@ export class ExecutorImpl<Value = any> implements Executor {
         this.publish({ type: 'deactivated' });
       }
     };
-  }
+  };
 
-  subscribe(listener: (event: ExecutorEvent<Value>) => void): () => void {
+  subscribe = (listener: (event: ExecutorEvent<Value>) => void): (() => void) => {
     return this._pubSub.subscribe(listener);
-  }
+  };
 
-  publish(event: PartialExecutorEvent): void {
+  publish = (event: PartialExecutorEvent): void => {
     this._pubSub.publish({
       type: event.type,
       target: this,
       version: this.version,
       payload: event.payload,
     });
-  }
+  };
 
-  annotate(patch: ExecutorAnnotations): void {
+  annotate = (patch: ExecutorAnnotations): void => {
     this.version++;
     Object.assign(this.annotations, patch);
     this.publish({ type: 'annotated' });
-  }
+  };
 
-  toJSON(): ExecutorState<Value> {
+  toJSON = (): ExecutorState<Value> => {
     return {
       key: this.key,
       isFulfilled: this.isFulfilled,
@@ -270,5 +270,5 @@ export class ExecutorImpl<Value = any> implements Executor {
       settledAt: this.settledAt,
       invalidatedAt: this.invalidatedAt,
     };
-  }
+  };
 }

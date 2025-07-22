@@ -55,7 +55,6 @@ npm install --save-prod react-executor
 - [`abortDeactivated`](#abortdeactivated)
 - [`abortPendingAfter`](#abortpendingafter)
 - [`abortWhen`](#abortwhen)
-- [`bindAll`](#bindall)
 - [`detachDeactivated`](#detachdeactivated)
 - [`detachInactive`](#detachinactive)
 - [`invalidateAfter`](#invalidateafter)
@@ -811,17 +810,12 @@ manager.get('test');
 // ⮕ undefined
 ```
 
-You can define plugins that are applied to all executors that are created by a manager:
+Make the manager apply a plugin to all executors by default:
 
 ```ts
 const manager = new ExecutorManager({
-  plugins: [bindAll()]
+  plugins: [detachPlugin]
 });
-
-const { execute } = manager.getOrCreate('test');
-
-// Methods can be detached because bindAll plugin was applied
-execute(heavyTask)
 ```
 
 ## `abortDeactivated`
@@ -879,38 +873,6 @@ If a new task is passed to the
 method after the delay has run out then the task is instantly aborted.
 
 Read more about observables in the [`retryWhen`](#retrywhen) section.
-
-## `bindAll`
-
-Binds all executor methods to the instance.
-
-```ts
-import bindAll from 'react-executor/plugin/bindAll';
-
-// Methods can now be detached from the executor instance
-const { resolve } = useExecutor('test', 'Bye', [bindAll()]);
-
-resolve('Hello');
-```
-
-It is handy to enable this plugin for all executors created by the execution manager:
-
-```ts
-import { ExecutorManager } from 'react-executor';
-import bindAll from 'react-executor/plugin/bindAll';
-
-const manager = new ExecutorManager({
-  plugins: [bindAll()]
-});
-```
-
-Provide the manager so the `useExecutor` hook would employ it to create new executors:
-
-```tsx
-<ExecutorManagerProvider value={manager}>
-  <App/>
-</ExecutorManagerProvider>
-```
 
 ## `detachDeactivated`
 
