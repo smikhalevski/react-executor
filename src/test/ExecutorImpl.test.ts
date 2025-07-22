@@ -708,3 +708,9 @@ describe('toJSON', () => {
     );
   });
 });
+
+test('methods are bound to an executor instance', () => {
+  (0, executor.resolve)('aaa');
+
+  expect(executor.value).toBe('aaa');
+});

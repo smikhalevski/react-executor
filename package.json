@@ -67,11 +67,6 @@
       "import": "./plugin/abortWhen.mjs",
       "require": "./plugin/abortWhen.js"
     },
-    "./plugin/bindAll": {
-      "types": "./plugin/bindAll.d.ts",
-      "import": "./plugin/bindAll.mjs",
-      "require": "./plugin/bindAll.js"
-    },
     "./plugin/detachDeactivated": {
       "types": "./plugin/detachDeactivated.d.ts",
       "import": "./plugin/detachDeactivated.mjs",
