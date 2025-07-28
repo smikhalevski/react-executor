@@ -30,7 +30,9 @@ npm install --save-prod react-executor
 
 <!--TOC-->
 
-<span class="toc-icon">🔥&ensp;</span>**Live examples**
+<span class="toc-icon">&emsp;&ensp;</span>[API docs&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/)
+
+<span class="toc-icon">💡&ensp;</span>**Live examples**
 
 - [TODO app&#8239;<sup>↗</sup>](https://stackblitz.com/edit/react-executor-todo-app?file=README.md)
 - [Streaming SSR&#8239;<sup>↗</sup>](https://codesandbox.io/p/devbox/react-executor-ssr-streaming-example-mwrmrs)
