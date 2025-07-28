@@ -20,23 +20,22 @@ Asynchronous task execution and state management for React.
 - [Just 5&#8239;kB gzipped&#8239;<sup>↗</sup>](https://pkg-size.dev/react-executor);
 - Check out the [Cookbook](#cookbook) for real-life examples!
 
+<!--/OVERVIEW-->
+
+<br>
+
 ```sh
 npm install --save-prod react-executor
 ```
-
-<!--/OVERVIEW-->
 
 <br>
 
 <!--TOC-->
 
-<span class="toc-icon">&emsp;&ensp;</span>[API docs&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/)
-
-<span class="toc-icon">💡&ensp;</span>**Live examples**
-
-- [TODO app&#8239;<sup>↗</sup>](https://stackblitz.com/edit/react-executor-todo-app?file=README.md)
-- [Streaming SSR&#8239;<sup>↗</sup>](https://codesandbox.io/p/devbox/react-executor-ssr-streaming-example-mwrmrs)
-- [Next.js integration&#8239;<sup>↗</sup>](https://codesandbox.io/p/devbox/react-executor-next-example-whsj4v)
+- [API docs&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/)
+- [TODO app example&#8239;<sup>↗</sup>](https://stackblitz.com/edit/react-executor-todo-app?file=README.md)
+- [Streaming SSR example&#8239;<sup>↗</sup>](https://codesandbox.io/p/devbox/react-executor-ssr-streaming-example-mwrmrs)
+- [Next.js integration example&#8239;<sup>↗</sup>](https://codesandbox.io/p/devbox/react-executor-next-example-whsj4v)
 
 <span class="toc-icon">🔰&ensp;</span>[**Introduction**](#introduction)
 
