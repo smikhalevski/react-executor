@@ -12,12 +12,12 @@
 
 Asynchronous task execution and state management for React.
 
-- TypeScript first;
-- Expressive and concise API with strict typings;
-- Works great with SSR and Suspense;
-- [Extensible with plugins](#plugins);
-- [First class devtools](#devtools);
-- [Just 5&#8239;kB gzipped&#8239;<sup>↗</sup>](https://pkg-size.dev/react-executor);
+- TypeScript first.
+- Expressive and concise API with strict typings.
+- Works great with SSR and Suspense.
+- [Extensible with plugins.](#plugins)
+- [First class devtools.](#devtools)
+- [Just 5&#8239;kB gzipped.&#8239;<sup>↗</sup>](https://pkg-size.dev/react-executor)
 - Check out the [Cookbook](#cookbook) for real-life examples!
 
 <!--/OVERVIEW-->
