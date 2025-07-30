@@ -8,7 +8,7 @@
  * import windowBlurred from 'react-executor/observable/windowBlurred';
  *
  * const executor = useExecutor('test', heavyTask, [
- *   abortWhen(windowBlurred)
+ *   abortWhen(windowBlurred),
  * ]);
  * ```
  *

@@ -5,7 +5,7 @@
  * import invalidatePeers from 'react-executor/plugin/invalidatePeers';
  *
  * const executor = useExecutor('test', 42, [
- *   invalidatePeers(executor => executor.key === 'exact_executor_key')
+ *   invalidatePeers(executor => executor.key === 'exact_executor_key'),
  * ]);
  * ```
  *

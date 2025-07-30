@@ -5,7 +5,7 @@
  * import syncStorage from 'react-executor/plugin/syncStorage';
  *
  * const executor = useExecutor('test', 42, [
- *   syncStorage(localStorage)
+ *   syncStorage(localStorage),
  * ]);
  * ```
  *

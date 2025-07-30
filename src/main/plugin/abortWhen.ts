@@ -6,7 +6,7 @@
  * import navigatorOffline from 'react-executor/observable/navigatorOffline';
  *
  * const executor = useExecutor('test', heavyTask, [
- *   abortWhen(navigatorOffline)
+ *   abortWhen(navigatorOffline),
  * ]);
  * ```
  *

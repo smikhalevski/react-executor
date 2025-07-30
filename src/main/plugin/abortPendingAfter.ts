@@ -6,7 +6,7 @@
  * import abortPendingAfter from 'react-executor/plugin/abortPendingAfter';
  *
  * const executor = useExecutor('test', heavyTask, [
- *   abortPendingAfter(10_000)
+ *   abortPendingAfter(10_000),
  * ]);
  * ```
  *
