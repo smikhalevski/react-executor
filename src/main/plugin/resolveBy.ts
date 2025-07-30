@@ -5,7 +5,7 @@
  * import resolveBy from 'react-executor/plugin/resolveBy';
  *
  * const executor = useExecutor('test', heavyTask, [
- *   resolveBy(observable)
+ *   resolveBy(observable),
  * ]);
  * ```
  *

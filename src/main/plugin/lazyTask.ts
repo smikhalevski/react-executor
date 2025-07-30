@@ -5,7 +5,7 @@
  * import lazyTask from 'react-executor/plugin/lazyTask';
  *
  * const executor = useExecutor('test', 42, [
- *   lazyTask(async () => await getTheMeaningOfLife())
+ *   lazyTask(async () => await getTheMeaningOfLife()),
  * ]);
  * ```
  *

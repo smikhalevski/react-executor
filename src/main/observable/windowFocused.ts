@@ -8,7 +8,7 @@
  * import windowFocused from 'react-executor/observable/windowFocused';
  *
  * const executor = useExecutor('test', heavyTask, [
- *   retryWhen(windowFocused)
+ *   retryWhen(windowFocused),
  * ]);
  * ```
  *

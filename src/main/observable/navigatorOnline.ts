@@ -8,7 +8,7 @@
  * import navigatorOnline from 'react-executor/observable/navigatorOnline';
  *
  * const executor = useExecutor('test', heavyTask, [
- *   retryWhen(navigatorOnline)
+ *   retryWhen(navigatorOnline),
  * ]);
  * ```
  *

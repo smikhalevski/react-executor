@@ -5,7 +5,7 @@
  * import detachInactive from 'react-executor/plugin/detachInactive';
  *
  * const executor = useExecutor('test', 42, [
- *   detachInactive({ delayBeforeActivation: 5_000 })
+ *   detachInactive({ delayBeforeActivation: 5_000 }),
  * ]);
  * ```
  *

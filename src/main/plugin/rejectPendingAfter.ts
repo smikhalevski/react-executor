@@ -6,7 +6,7 @@
  * import rejectPendingAfter from 'react-executor/plugin/rejectPendingAfter';
  *
  * const executor = useExecutor('test', heavyTask, [
- *   rejectPendingAfter(10_000)
+ *   rejectPendingAfter(10_000),
  * ]);
  * ```
  *

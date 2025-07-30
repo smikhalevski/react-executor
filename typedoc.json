@@ -10,19 +10,16 @@
     "inherited": true,
     "protected": false
   },
-  "navigation": {
-    "includeFolders": false
-  },
   "sortEntryPoints": false,
   "readme": "none",
   "tsconfig": "./tsconfig.json",
   "entryPoints": [
     "./src/main/index.ts",
+    "./src/main/core.ts",
     "./src/main/ssr/index.ts",
     "./src/main/ssr/node/index.ts",
-    "./src/main/observable/*.ts",
     "./src/main/plugin/*.ts",
-    "./src/main/core.ts"
+    "./src/main/observable/*.ts"
   ],
   "intentionallyNotExported": ["ExecutorImpl", "NoInfer"],
   "plugin": ["typedoc-plugin-mdn-links"],
