@@ -2,146 +2,40 @@
   "name": "react-executor",
   "version": "0.0.25",
   "description": "Asynchronous task execution and state management for React.",
-  "main": "./index.js",
-  "module": "./index.mjs",
-  "types": "./index.d.ts",
   "type": "module",
+  "main": "./index.js",
+  "types": "./index.d.ts",
   "exports": {
-    ".": {
-      "types": "./index.d.ts",
-      "import": "./index.mjs",
-      "require": "./index.js"
-    },
-    "./core": {
-      "types": "./core.d.ts",
-      "import": "./core.mjs",
-      "require": "./core.js"
-    },
-    "./ssr": {
-      "types": "./ssr/index.d.ts",
-      "import": "./ssr/index.mjs",
-      "require": "./ssr/index.js"
-    },
-    "./ssr/node": {
-      "types": "./ssr/node/index.d.ts",
-      "import": "./ssr/node/index.mjs",
-      "require": "./ssr/node/index.js"
-    },
-    "./observable/navigatorOffline": {
-      "types": "./observable/navigatorOffline.d.ts",
-      "import": "./observable/navigatorOffline.mjs",
-      "require": "./observable/navigatorOffline.js"
-    },
-    "./observable/navigatorOnline": {
-      "types": "./observable/navigatorOnline.d.ts",
-      "import": "./observable/navigatorOnline.mjs",
-      "require": "./observable/navigatorOnline.js"
-    },
-    "./observable/not": {
-      "types": "./observable/not.d.ts",
-      "import": "./observable/not.mjs",
-      "require": "./observable/not.js"
-    },
-    "./observable/windowBlurred": {
-      "types": "./observable/windowBlurred.d.ts",
-      "import": "./observable/windowBlurred.mjs",
-      "require": "./observable/windowBlurred.js"
-    },
-    "./observable/windowFocused": {
-      "types": "./observable/windowFocused.d.ts",
-      "import": "./observable/windowFocused.mjs",
-      "require": "./observable/windowFocused.js"
-    },
-    "./plugin/abortDeactivated": {
-      "types": "./plugin/abortDeactivated.d.ts",
-      "import": "./plugin/abortDeactivated.mjs",
-      "require": "./plugin/abortDeactivated.js"
-    },
-    "./plugin/abortPendingAfter": {
-      "types": "./plugin/abortPendingAfter.d.ts",
-      "import": "./plugin/abortPendingAfter.mjs",
-      "require": "./plugin/abortPendingAfter.js"
-    },
-    "./plugin/abortWhen": {
-      "types": "./plugin/abortWhen.d.ts",
-      "import": "./plugin/abortWhen.mjs",
-      "require": "./plugin/abortWhen.js"
-    },
-    "./plugin/detachDeactivated": {
-      "types": "./plugin/detachDeactivated.d.ts",
-      "import": "./plugin/detachDeactivated.mjs",
-      "require": "./plugin/detachDeactivated.js"
-    },
-    "./plugin/detachInactive": {
-      "types": "./plugin/detachInactive.d.ts",
-      "import": "./plugin/detachInactive.mjs",
-      "require": "./plugin/detachInactive.js"
-    },
-    "./plugin/invalidateAfter": {
-      "types": "./plugin/invalidateAfter.d.ts",
-      "import": "./plugin/invalidateAfter.mjs",
-      "require": "./plugin/invalidateAfter.js"
-    },
-    "./plugin/invalidateByPeers": {
-      "types": "./plugin/invalidateByPeers.d.ts",
-      "import": "./plugin/invalidateByPeers.mjs",
-      "require": "./plugin/invalidateByPeers.js"
-    },
-    "./plugin/invalidatePeers": {
-      "types": "./plugin/invalidatePeers.d.ts",
-      "import": "./plugin/invalidatePeers.mjs",
-      "require": "./plugin/invalidatePeers.js"
-    },
-    "./plugin/rejectPendingAfter": {
-      "types": "./plugin/rejectPendingAfter.d.ts",
-      "import": "./plugin/rejectPendingAfter.mjs",
-      "require": "./plugin/rejectPendingAfter.js"
-    },
-    "./plugin/resolveBy": {
-      "types": "./plugin/resolveBy.d.ts",
-      "import": "./plugin/resolveBy.mjs",
-      "require": "./plugin/resolveBy.js"
-    },
-    "./plugin/retryActivated": {
-      "types": "./plugin/retryActivated.d.ts",
-      "import": "./plugin/retryActivated.mjs",
-      "require": "./plugin/retryActivated.js"
-    },
-    "./plugin/retryFulfilled": {
-      "types": "./plugin/retryFulfilled.d.ts",
-      "import": "./plugin/retryFulfilled.mjs",
-      "require": "./plugin/retryFulfilled.js"
-    },
-    "./plugin/retryInvalidated": {
-      "types": "./plugin/retryInvalidated.d.ts",
-      "import": "./plugin/retryInvalidated.mjs",
-      "require": "./plugin/retryInvalidated.js"
-    },
-    "./plugin/retryRejected": {
-      "types": "./plugin/retryRejected.d.ts",
-      "import": "./plugin/retryRejected.mjs",
-      "require": "./plugin/retryRejected.js"
-    },
-    "./plugin/retryWhen": {
-      "types": "./plugin/retryWhen.d.ts",
-      "import": "./plugin/retryWhen.mjs",
-      "require": "./plugin/retryWhen.js"
-    },
-    "./plugin/synchronizeStorage": {
-      "types": "./plugin/syncStorage.d.ts",
-      "import": "./plugin/syncStorage.mjs",
-      "require": "./plugin/syncStorage.js"
-    },
-    "./plugin/syncStorage": {
-      "types": "./plugin/syncStorage.d.ts",
-      "import": "./plugin/syncStorage.mjs",
-      "require": "./plugin/syncStorage.js"
-    },
+    ".": "./index.js",
+    "./core": "./core.js",
+    "./ssr": "./ssr/index.js",
+    "./ssr/node": "./ssr/node/index.js",
+    "./observable/navigatorOffline": "./observable/navigatorOffline.js",
+    "./observable/navigatorOnline": "./observable/navigatorOnline.js",
+    "./observable/not": "./observable/not.js",
+    "./observable/windowBlurred": "./observable/windowBlurred.js",
+    "./observable/windowFocused": "./observable/windowFocused.js",
+    "./plugin/abortDeactivated": "./plugin/abortDeactivated.js",
+    "./plugin/abortPendingAfter": "./plugin/abortPendingAfter.js",
+    "./plugin/abortWhen": "./plugin/abortWhen.js",
+    "./plugin/detachDeactivated": "./plugin/detachDeactivated.js",
+    "./plugin/detachInactive": "./plugin/detachInactive.js",
+    "./plugin/invalidateAfter": "./plugin/invalidateAfter.js",
+    "./plugin/invalidateByPeers": "./plugin/invalidateByPeers.js",
+    "./plugin/invalidatePeers": "./plugin/invalidatePeers.js",
+    "./plugin/rejectPendingAfter": "./plugin/rejectPendingAfter.js",
+    "./plugin/resolveBy": "./plugin/resolveBy.js",
+    "./plugin/retryActivated": "./plugin/retryActivated.js",
+    "./plugin/retryFulfilled": "./plugin/retryFulfilled.js",
+    "./plugin/retryInvalidated": "./plugin/retryInvalidated.js",
+    "./plugin/retryRejected": "./plugin/retryRejected.js",
+    "./plugin/retryWhen": "./plugin/retryWhen.js",
+    "./plugin/syncStorage": "./plugin/syncStorage.js",
     "./package.json": "./package.json"
   },
   "sideEffects": false,
   "scripts": {
-    "build": "tsc --project tsconfig.build.json && node rewrite.mjs lib && tsc --project tsconfig.build.json --module CommonJS && cp package.json README.md LICENSE.txt lib/ && cd lib && npm pkg delete type scripts devDependencies",
+    "build": "tsc --project tsconfig.build.json && cp package.json README.md LICENSE.txt lib/ && cd lib && npm pkg delete scripts devDependencies",
     "clean": "rimraf lib docs coverage",
     "test": "vitest run",
     "docs": "typedoc"
@@ -162,18 +56,18 @@
   },
   "homepage": "https://github.com/smikhalevski/react-executor#readme",
   "devDependencies": {
-    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/jest-dom": "^6.6.4",
     "@testing-library/react": "^16.3.0",
-    "@types/node": "^22.15.17",
+    "@types/node": "^24.1.0",
     "@types/react": "^18.3.1",
     "jsdom": "^26.1.0",
-    "prettier": "^3.5.3",
+    "prettier": "^3.6.2",
     "rimraf": "^6.0.1",
     "tslib": "^2.8.1",
-    "typedoc": "^0.28.4",
-    "typedoc-plugin-mdn-links": "^5.0.2",
+    "typedoc": "^0.28.8",
+    "typedoc-plugin-mdn-links": "^5.0.6",
     "typescript": "^5.8.3",
-    "vitest": "^3.1.3"
+    "vitest": "^3.2.4"
   },
   "optionalDependencies": {
     "react": ">=16.8.0"
