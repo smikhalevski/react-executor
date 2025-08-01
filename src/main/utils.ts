@@ -42,12 +42,6 @@ export function isShallowEqual(a: any, b: any): boolean {
   return true;
 }
 
-export function throwUnhandled(error: unknown): void {
-  setTimeout(() => {
-    throw error;
-  }, 0);
-}
-
 /**
  * Returns the observable that inverses boolean values emitted by another observable.
  *
