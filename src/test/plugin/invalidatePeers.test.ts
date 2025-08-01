@@ -1,5 +1,5 @@
 import { beforeEach, expect, Mock, test, vi } from 'vitest';
-import { ExecutorManager } from '../../main/index.js';
+import { ExecutorEvent, ExecutorManager } from '../../main/index.js';
 import invalidatePeers from '../../main/plugin/invalidatePeers.js';
 
 vi.useFakeTimers();
@@ -105,29 +105,49 @@ test('removes peer after peer is detached', () => {
     target: executor1,
     version: 0,
     payload: { type: 'invalidatePeers', options: { peerExecutors: [] } },
-  });
-  expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor1, version: 0 });
-  expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor1, version: 1 });
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(2, {
+    type: 'attached',
+    target: executor1,
+    version: 0,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(3, {
+    type: 'fulfilled',
+    target: executor1,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
 
   const executor2 = manager.getOrCreate('yyy');
 
   expect(listenerMock).toHaveBeenCalledTimes(5);
-  expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'attached', target: executor2, version: 0 });
+  expect(listenerMock).toHaveBeenNthCalledWith(4, {
+    type: 'attached',
+    target: executor2,
+    version: 0,
+    payload: undefined,
+  } satisfies ExecutorEvent);
   expect(listenerMock).toHaveBeenNthCalledWith(5, {
     type: 'plugin_configured',
     target: executor1,
     version: 1,
     payload: { type: 'invalidatePeers', options: { peerExecutors: [executor2] } },
-  });
+  } satisfies ExecutorEvent);
 
   executor2.manager.detach(executor2.key);
 
   expect(listenerMock).toHaveBeenCalledTimes(7);
-  expect(listenerMock).toHaveBeenNthCalledWith(6, { type: 'detached', target: executor2, version: 0 });
+  expect(listenerMock).toHaveBeenNthCalledWith(6, {
+    type: 'detached',
+    target: executor2,
+    version: 0,
+    payload: undefined,
+  } satisfies ExecutorEvent);
   expect(listenerMock).toHaveBeenNthCalledWith(7, {
     type: 'plugin_configured',
     target: executor1,
     version: 1,
     payload: { type: 'invalidatePeers', options: { peerExecutors: [] } },
-  });
+  } satisfies ExecutorEvent);
 });

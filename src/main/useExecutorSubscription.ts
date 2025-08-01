@@ -9,7 +9,7 @@ import type { Executor } from './types.js';
  * @param executor The executor to subscribe to.
  */
 export function useExecutorSubscription<Value>(executor: Executor<Value>): Executor<Value> {
-  React.useDebugValue(executor, toJSON);
+  React.useDebugValue(executor, getExecutorStateSnapshot);
 
   if (typeof React.useSyncExternalStore === 'function') {
     const subscribe = React.useCallback(executor.subscribe.bind(executor), [executor]);
@@ -46,6 +46,6 @@ export function useExecutorSubscription<Value>(executor: Executor<Value>): Execu
   return executor;
 }
 
-function toJSON(executor: Executor) {
-  return executor.toJSON();
+function getExecutorStateSnapshot(executor: Executor) {
+  return executor.getStateSnapshot();
 }

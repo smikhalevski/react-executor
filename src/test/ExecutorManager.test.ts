@@ -183,7 +183,7 @@ describe('getOrCreate', () => {
 
   test('creates an executor with an object key', () => {
     const manager = new ExecutorManager({
-      keySerializer: JSON.stringify,
+      keyIdGenerator: JSON.stringify,
     });
 
     const expectedKey = ['aaa'];
@@ -269,37 +269,10 @@ describe('Symbol.iterator', () => {
   });
 });
 
-describe('toJSON', () => {
-  test('returns an executor manager state', () => {
-    manager.getOrCreate('xxx', 111);
-
-    expect(manager.toJSON()).toEqual([
-      {
-        key: 'xxx',
-        isFulfilled: true,
-        value: 111,
-        reason: undefined,
-        settledAt: 50,
-        invalidatedAt: 0,
-        annotations: {},
-      },
-    ]);
-  });
-
-  test('used by JSON.stringify', () => {
-    manager.getOrCreate('xxx', 111);
-
-    expect(JSON.stringify(manager)).toBe(
-      '[{"key":"xxx","isFulfilled":true,"value":111,"annotations":{},"settledAt":50,"invalidatedAt":0}]'
-    );
-  });
-});
-
 describe('hydrate', () => {
   test('hydrates the non-existent executor', () => {
     expect(
-      manager.hydrate({
-        key: 'xxx',
+      manager.hydrate('xxx', {
         isFulfilled: true,
         value: 111,
         reason: undefined,
@@ -318,8 +291,7 @@ describe('hydrate', () => {
   });
 
   test('overwrites the previous hydration state', () => {
-    manager.hydrate({
-      key: 'xxx',
+    manager.hydrate('xxx', {
       isFulfilled: true,
       value: 111,
       reason: undefined,
@@ -329,8 +301,7 @@ describe('hydrate', () => {
     });
 
     expect(
-      manager.hydrate({
-        key: 'xxx',
+      manager.hydrate('xxx', {
         isFulfilled: true,
         value: 222,
         reason: undefined,
@@ -352,8 +323,7 @@ describe('hydrate', () => {
     const executor = manager.getOrCreate('xxx');
 
     expect(
-      manager.hydrate({
-        key: 'xxx',
+      manager.hydrate('xxx', {
         isFulfilled: true,
         value: 111,
         reason: undefined,
@@ -369,8 +339,7 @@ describe('hydrate', () => {
 
   test('preserves initial task of the hydrated executor', () => {
     expect(
-      manager.hydrate({
-        key: 'xxx',
+      manager.hydrate('xxx', {
         isFulfilled: true,
         value: 111,
         reason: undefined,

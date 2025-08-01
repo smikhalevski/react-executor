@@ -1,16 +1,16 @@
 import type { ExecutorManager } from './ExecutorManager.js';
-import type { ExecutorState } from './types.js';
+import type { Serializer } from './types.js';
 
 /**
  * Options provided to {@link enableSSRHydration}.
  */
 export interface SSRHydrationOptions {
   /**
-   * Parses the executor state that was captured during SSR.
+   * Parses executor keys and state snapshots that were captured during SSR.
    *
-   * @param stateStr The state to parse.
+   * @default JSON
    */
-  stateParser?: (stateStr: string) => ExecutorState;
+  serializer?: Serializer;
 }
 
 /**
@@ -24,7 +24,7 @@ export interface SSRHydrationOptions {
  * @template T The executor manager.
  */
 export function enableSSRHydration<T extends ExecutorManager>(manager: T, options: SSRHydrationOptions = {}): T {
-  const { stateParser = JSON.parse } = options;
+  const { serializer = JSON } = options;
 
   const ssrState =
     typeof window.__REACT_EXECUTOR_SSR_STATE__ !== 'undefined' ? window.__REACT_EXECUTOR_SSR_STATE__ : undefined;
@@ -35,16 +35,14 @@ export function enableSSRHydration<T extends ExecutorManager>(manager: T, option
 
   window.__REACT_EXECUTOR_SSR_STATE__ = {
     push() {
-      for (let i = 0; i < arguments.length; ++i) {
-        manager.hydrate(stateParser(arguments[i]));
+      for (let i = 0; i < arguments.length; i += 2) {
+        manager.hydrate(serializer.parse(arguments[i]), serializer.parse(arguments[i + 1]));
       }
     },
   };
 
   if (ssrState !== undefined) {
-    for (const stateStr of ssrState) {
-      manager.hydrate(stateParser(stateStr));
-    }
+    window.__REACT_EXECUTOR_SSR_STATE__.push.apply(undefined, ssrState);
   }
 
   return manager;

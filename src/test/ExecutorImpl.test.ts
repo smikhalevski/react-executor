@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, Mock, test, vi } from 'vitest';
 import { AbortablePromise } from 'parallel-universe';
 import { ExecutorImpl } from '../main/ExecutorImpl.js';
 import { AbortError, noop } from '../main/utils.js';
+import { ExecutorEvent, ExecutorState } from '../main/index.js';
 
 Date.now = () => 50;
 
@@ -25,6 +26,12 @@ describe('new', () => {
     expect(executor.value).toBeUndefined();
     expect(executor.reason).toBeUndefined();
     expect(executor.promise).toBeNull();
+  });
+
+  test('methods are bound to an executor instance', () => {
+    (0, executor.resolve)('aaa');
+
+    expect(executor.value).toBe('aaa');
   });
 });
 
@@ -76,14 +83,24 @@ describe('execute', () => {
     expect(taskMock.mock.calls[0][1]).toBe(executor);
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'pending', target: executor, version: 1 });
+    expect(listenerMock).toHaveBeenNthCalledWith(1, {
+      type: 'pending',
+      target: executor,
+      version: 1,
+      payload: undefined,
+    } satisfies ExecutorEvent);
 
     expect(executor.promise).toBe(promise);
 
     await expect(promise).resolves.toEqual('aaa');
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
-    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'fulfilled', target: executor, version: 2 });
+    expect(listenerMock).toHaveBeenNthCalledWith(2, {
+      type: 'fulfilled',
+      target: executor,
+      version: 2,
+      payload: undefined,
+    } satisfies ExecutorEvent);
 
     expect(executor.isFulfilled).toBe(true);
     expect(executor.isRejected).toBe(false);
@@ -104,9 +121,24 @@ describe('execute', () => {
     expect(taskMock2.mock.calls[0][0].aborted).toBe(false);
 
     expect(listenerMock).toHaveBeenCalledTimes(3);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'pending', target: executor, version: 1 });
-    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'aborted', target: executor, version: 1 });
-    expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'pending', target: executor, version: 1 });
+    expect(listenerMock).toHaveBeenNthCalledWith(1, {
+      type: 'pending',
+      target: executor,
+      version: 1,
+      payload: undefined,
+    } satisfies ExecutorEvent);
+    expect(listenerMock).toHaveBeenNthCalledWith(2, {
+      type: 'aborted',
+      target: executor,
+      version: 1,
+      payload: undefined,
+    } satisfies ExecutorEvent);
+    expect(listenerMock).toHaveBeenNthCalledWith(3, {
+      type: 'pending',
+      target: executor,
+      version: 1,
+      payload: undefined,
+    } satisfies ExecutorEvent);
 
     expect(executor.isFulfilled).toBe(false);
     expect(executor.isRejected).toBe(false);
@@ -118,7 +150,12 @@ describe('execute', () => {
     await expect(promise1).rejects.toEqual(AbortError('The task was replaced'));
 
     expect(listenerMock).toHaveBeenCalledTimes(4);
-    expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'fulfilled', target: executor, version: 2 });
+    expect(listenerMock).toHaveBeenNthCalledWith(4, {
+      type: 'fulfilled',
+      target: executor,
+      version: 2,
+      payload: undefined,
+    } satisfies ExecutorEvent);
 
     expect(executor.isFulfilled).toBe(true);
     expect(executor.isRejected).toBe(false);
@@ -133,14 +170,24 @@ describe('execute', () => {
     const promise = executor.execute(taskMock);
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'pending', target: executor, version: 1 });
+    expect(listenerMock).toHaveBeenNthCalledWith(1, {
+      type: 'pending',
+      target: executor,
+      version: 1,
+      payload: undefined,
+    } satisfies ExecutorEvent);
 
     expect(executor.promise).toBe(promise);
 
     await expect(promise).rejects.toBe(expectedReason);
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
-    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'rejected', target: executor, version: 2 });
+    expect(listenerMock).toHaveBeenNthCalledWith(2, {
+      type: 'rejected',
+      target: executor,
+      version: 2,
+      payload: undefined,
+    } satisfies ExecutorEvent);
 
     expect(executor.isFulfilled).toBe(false);
     expect(executor.isRejected).toBe(true);
@@ -164,8 +211,18 @@ describe('execute', () => {
     expect(taskMock.mock.calls[0][1]).toBe(executor);
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'pending', target: executor, version: 1 });
-    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'aborted', target: executor, version: 2 });
+    expect(listenerMock).toHaveBeenNthCalledWith(1, {
+      type: 'pending',
+      target: executor,
+      version: 1,
+      payload: undefined,
+    } satisfies ExecutorEvent);
+    expect(listenerMock).toHaveBeenNthCalledWith(2, {
+      type: 'aborted',
+      target: executor,
+      version: 2,
+      payload: undefined,
+    } satisfies ExecutorEvent);
 
     expect(executor.isFulfilled).toBe(false);
     expect(executor.isRejected).toBe(false);
@@ -197,9 +254,24 @@ describe('execute', () => {
     expect(taskMock1.mock.calls[0][0].aborted).toBe(true);
 
     expect(listenerMock).toHaveBeenCalledTimes(3);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'pending', target: executor, version: 1 });
-    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'aborted', target: executor, version: 2 });
-    expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'pending', target: executor, version: 3 });
+    expect(listenerMock).toHaveBeenNthCalledWith(1, {
+      type: 'pending',
+      target: executor,
+      version: 1,
+      payload: undefined,
+    } satisfies ExecutorEvent);
+    expect(listenerMock).toHaveBeenNthCalledWith(2, {
+      type: 'aborted',
+      target: executor,
+      version: 2,
+      payload: undefined,
+    } satisfies ExecutorEvent);
+    expect(listenerMock).toHaveBeenNthCalledWith(3, {
+      type: 'pending',
+      target: executor,
+      version: 3,
+      payload: undefined,
+    } satisfies ExecutorEvent);
 
     await expect(executor.promise).resolves.toBe('bbb');
 
@@ -237,10 +309,30 @@ describe('execute', () => {
     expect(taskMock2.mock.calls[0][0].aborted).toBe(true);
 
     expect(listenerMock).toHaveBeenCalledTimes(4);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'pending', target: executor, version: 1 });
-    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'aborted', target: executor, version: 1 });
-    expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'aborted', target: executor, version: 1 });
-    expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'pending', target: executor, version: 1 });
+    expect(listenerMock).toHaveBeenNthCalledWith(1, {
+      type: 'pending',
+      target: executor,
+      version: 1,
+      payload: undefined,
+    } satisfies ExecutorEvent);
+    expect(listenerMock).toHaveBeenNthCalledWith(2, {
+      type: 'aborted',
+      target: executor,
+      version: 1,
+      payload: undefined,
+    } satisfies ExecutorEvent);
+    expect(listenerMock).toHaveBeenNthCalledWith(3, {
+      type: 'aborted',
+      target: executor,
+      version: 1,
+      payload: undefined,
+    } satisfies ExecutorEvent);
+    expect(listenerMock).toHaveBeenNthCalledWith(4, {
+      type: 'pending',
+      target: executor,
+      version: 1,
+      payload: undefined,
+    } satisfies ExecutorEvent);
 
     await expect(executor.promise).resolves.toBe('ccc');
 
@@ -327,7 +419,12 @@ describe('resolve', () => {
     expect(executor.promise).toBeNull();
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'fulfilled', target: executor, version: 1 });
+    expect(listenerMock).toHaveBeenNthCalledWith(1, {
+      type: 'fulfilled',
+      target: executor,
+      version: 1,
+      payload: undefined,
+    } satisfies ExecutorEvent);
   });
 
   test('aborts pending task and preserves it as the latest task', () => {
@@ -349,9 +446,24 @@ describe('resolve', () => {
     expect(executor.promise).toBeNull();
 
     expect(listenerMock).toHaveBeenCalledTimes(3);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'pending', target: executor, version: 1 });
-    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'aborted', target: executor, version: 1 });
-    expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor, version: 2 });
+    expect(listenerMock).toHaveBeenNthCalledWith(1, {
+      type: 'pending',
+      target: executor,
+      version: 1,
+      payload: undefined,
+    } satisfies ExecutorEvent);
+    expect(listenerMock).toHaveBeenNthCalledWith(2, {
+      type: 'aborted',
+      target: executor,
+      version: 1,
+      payload: undefined,
+    } satisfies ExecutorEvent);
+    expect(listenerMock).toHaveBeenNthCalledWith(3, {
+      type: 'fulfilled',
+      target: executor,
+      version: 2,
+      payload: undefined,
+    } satisfies ExecutorEvent);
   });
 
   test('resets invalidated', () => {
@@ -369,7 +481,12 @@ describe('resolve', () => {
     executor.resolve(Promise.resolve('aaa'));
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'pending', target: executor, version: 1 });
+    expect(listenerMock).toHaveBeenNthCalledWith(1, {
+      type: 'pending',
+      target: executor,
+      version: 1,
+      payload: undefined,
+    } satisfies ExecutorEvent);
 
     expect(executor.isFulfilled).toBe(false);
     expect(executor.isRejected).toBe(false);
@@ -382,7 +499,12 @@ describe('resolve', () => {
     await executor.promise;
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
-    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'fulfilled', target: executor, version: 2 });
+    expect(listenerMock).toHaveBeenNthCalledWith(2, {
+      type: 'fulfilled',
+      target: executor,
+      version: 2,
+      payload: undefined,
+    } satisfies ExecutorEvent);
 
     expect(executor.value).toBe('aaa');
     expect(executor.reason).toBeUndefined();
@@ -403,7 +525,12 @@ describe('reject', () => {
     expect(executor.promise).toBeNull();
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'rejected', target: executor, version: 1 });
+    expect(listenerMock).toHaveBeenNthCalledWith(1, {
+      type: 'rejected',
+      target: executor,
+      version: 1,
+      payload: undefined,
+    } satisfies ExecutorEvent);
   });
 
   test('aborts pending task and preserves it as the latest task', () => {
@@ -425,9 +552,24 @@ describe('reject', () => {
     expect(executor.promise).toBeNull();
 
     expect(listenerMock).toHaveBeenCalledTimes(3);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'pending', target: executor, version: 1 });
-    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'aborted', target: executor, version: 1 });
-    expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'rejected', target: executor, version: 2 });
+    expect(listenerMock).toHaveBeenNthCalledWith(1, {
+      type: 'pending',
+      target: executor,
+      version: 1,
+      payload: undefined,
+    } satisfies ExecutorEvent);
+    expect(listenerMock).toHaveBeenNthCalledWith(2, {
+      type: 'aborted',
+      target: executor,
+      version: 1,
+      payload: undefined,
+    } satisfies ExecutorEvent);
+    expect(listenerMock).toHaveBeenNthCalledWith(3, {
+      type: 'rejected',
+      target: executor,
+      version: 2,
+      payload: undefined,
+    } satisfies ExecutorEvent);
   });
 
   test('resets invalidated', () => {
@@ -492,9 +634,24 @@ describe('clear', () => {
     expect(executor.promise).toBeNull();
 
     expect(listenerMock).toHaveBeenCalledTimes(3);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'fulfilled', target: executor, version: 1 });
-    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'invalidated', target: executor, version: 2 });
-    expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'cleared', target: executor, version: 3 });
+    expect(listenerMock).toHaveBeenNthCalledWith(1, {
+      type: 'fulfilled',
+      target: executor,
+      version: 1,
+      payload: undefined,
+    } satisfies ExecutorEvent);
+    expect(listenerMock).toHaveBeenNthCalledWith(2, {
+      type: 'invalidated',
+      target: executor,
+      version: 2,
+      payload: undefined,
+    } satisfies ExecutorEvent);
+    expect(listenerMock).toHaveBeenNthCalledWith(3, {
+      type: 'cleared',
+      target: executor,
+      version: 3,
+      payload: undefined,
+    } satisfies ExecutorEvent);
   });
 
   test('preserves the pending task intact', () => {
@@ -534,8 +691,18 @@ describe('invalidate', () => {
     expect(executor.promise).toBeNull();
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'fulfilled', target: executor, version: 1 });
-    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'invalidated', target: executor, version: 2 });
+    expect(listenerMock).toHaveBeenNthCalledWith(1, {
+      type: 'fulfilled',
+      target: executor,
+      version: 1,
+      payload: undefined,
+    } satisfies ExecutorEvent);
+    expect(listenerMock).toHaveBeenNthCalledWith(2, {
+      type: 'invalidated',
+      target: executor,
+      version: 2,
+      payload: undefined,
+    } satisfies ExecutorEvent);
   });
 });
 
@@ -554,8 +721,18 @@ describe('abort', () => {
     promise.abort();
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'pending', target: executor, version: 1 });
-    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'fulfilled', target: executor, version: 2 });
+    expect(listenerMock).toHaveBeenNthCalledWith(1, {
+      type: 'pending',
+      target: executor,
+      version: 1,
+      payload: undefined,
+    } satisfies ExecutorEvent);
+    expect(listenerMock).toHaveBeenNthCalledWith(2, {
+      type: 'fulfilled',
+      target: executor,
+      version: 2,
+      payload: undefined,
+    } satisfies ExecutorEvent);
   });
 
   test('no-op after task has failed', async () => {
@@ -568,8 +745,18 @@ describe('abort', () => {
     promise.abort();
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'pending', target: executor, version: 1 });
-    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'rejected', target: executor, version: 2 });
+    expect(listenerMock).toHaveBeenNthCalledWith(1, {
+      type: 'pending',
+      target: executor,
+      version: 1,
+      payload: undefined,
+    } satisfies ExecutorEvent);
+    expect(listenerMock).toHaveBeenNthCalledWith(2, {
+      type: 'rejected',
+      target: executor,
+      version: 2,
+      payload: undefined,
+    } satisfies ExecutorEvent);
   });
 
   test('aborts the pending task', async () => {
@@ -584,8 +771,18 @@ describe('abort', () => {
     expect(taskMock.mock.calls[0][0].aborted).toBe(true);
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'pending', target: executor, version: 1 });
-    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'aborted', target: executor, version: 2 });
+    expect(listenerMock).toHaveBeenNthCalledWith(1, {
+      type: 'pending',
+      target: executor,
+      version: 1,
+      payload: undefined,
+    } satisfies ExecutorEvent);
+    expect(listenerMock).toHaveBeenNthCalledWith(2, {
+      type: 'aborted',
+      target: executor,
+      version: 2,
+      payload: undefined,
+    } satisfies ExecutorEvent);
 
     expect(executor.promise).toBeNull();
   });
@@ -626,7 +823,12 @@ describe('activate', () => {
     expect(executor._activationCount).toBe(3);
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'activated', target: executor, version: 0 });
+    expect(listenerMock).toHaveBeenNthCalledWith(1, {
+      type: 'activated',
+      target: executor,
+      version: 0,
+      payload: undefined,
+    } satisfies ExecutorEvent);
   });
 
   test('marks executor as deactivated', () => {
@@ -639,8 +841,18 @@ describe('activate', () => {
     expect(executor._activationCount).toBe(0);
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'activated', target: executor, version: 0 });
-    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'deactivated', target: executor, version: 0 });
+    expect(listenerMock).toHaveBeenNthCalledWith(1, {
+      type: 'activated',
+      target: executor,
+      version: 0,
+      payload: undefined,
+    } satisfies ExecutorEvent);
+    expect(listenerMock).toHaveBeenNthCalledWith(2, {
+      type: 'deactivated',
+      target: executor,
+      version: 0,
+      payload: undefined,
+    } satisfies ExecutorEvent);
   });
 });
 
@@ -685,32 +897,17 @@ describe('getOrAwait', () => {
   });
 });
 
-describe('toJSON', () => {
+describe('getStateSnapshot', () => {
   test('returns an executor state', () => {
     executor.resolve(111);
 
-    expect(executor.toJSON()).toEqual({
-      key: 'xxx',
+    expect(executor.getStateSnapshot()).toEqual({
       isFulfilled: true,
       value: 111,
       reason: undefined,
       settledAt: 50,
       invalidatedAt: 0,
       annotations: {},
-    });
+    } satisfies ExecutorState);
   });
-
-  test('used by JSON.stringify', () => {
-    executor.resolve(111);
-
-    expect(JSON.stringify(executor)).toBe(
-      '{"key":"xxx","isFulfilled":true,"value":111,"annotations":{},"settledAt":50,"invalidatedAt":0}'
-    );
-  });
-});
-
-test('methods are bound to an executor instance', () => {
-  (0, executor.resolve)('aaa');
-
-  expect(executor.value).toBe('aaa');
 });

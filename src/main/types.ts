@@ -159,11 +159,6 @@ export type ExecutorTask<Value = any> = (signal: AbortSignal, executor: Executor
  */
 export interface ExecutorState<Value = any> {
   /**
-   * The key of this executor, unique in scope of the {@link Executor.manager}.
-   */
-  readonly key: any;
-
-  /**
    * The value of the latest fulfillment.
    */
   readonly value: Value | undefined;
@@ -200,6 +195,11 @@ export interface ExecutorState<Value = any> {
  * @template Value The value stored by the executor.
  */
 export interface ReadonlyExecutor<Value = any> extends ExecutorState<Value>, Observable<ExecutorEvent<Value>> {
+  /**
+   * The key of this executor, unique in scope of the {@link manager}.
+   */
+  readonly key: any;
+
   /**
    * The value of the latest fulfillment.
    *
@@ -298,9 +298,9 @@ export interface ReadonlyExecutor<Value = any> extends ExecutorState<Value>, Obs
   getOrAwait(): AbortablePromise<Value>;
 
   /**
-   * Returns the serializable executor state.
+   * Captures the snapshot of the current executor state.
    */
-  toJSON(): ExecutorState<Value>;
+  getStateSnapshot(): ExecutorState<Value>;
 }
 
 /**
@@ -437,4 +437,23 @@ export interface PluginConfiguredPayload {
    * The options that the plugin now uses.
    */
   options?: object;
+}
+
+/**
+ * Parses and serializes values.
+ */
+export interface Serializer {
+  /**
+   * Parses serialized value.
+   *
+   * @param text The serialized value.
+   */
+  parse(text: string): any;
+
+  /**
+   * Serializes value as a string.
+   *
+   * @param value The value to serialize.
+   */
+  stringify(value: any): string;
 }

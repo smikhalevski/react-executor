@@ -27,7 +27,7 @@ test('sends hydration chunk after the content chunk', async () => {
   expect(writeMock).toHaveBeenNthCalledWith(1, 'aaa</script>');
   expect(writeMock).toHaveBeenNthCalledWith(
     2,
-    '<script>(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("{\\"key\\":\\"xxx\\",\\"isFulfilled\\":true,\\"value\\":111,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);</script>'
+    '<script>(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("\\"xxx\\"","{\\"isFulfilled\\":true,\\"value\\":111,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);</script>'
   );
 });
 
@@ -55,7 +55,7 @@ test('does not send hydration chunk if nothing has changed', async () => {
   expect(writeMock).toHaveBeenNthCalledWith(1, 'aaa</script>');
   expect(writeMock).toHaveBeenNthCalledWith(
     2,
-    '<script>(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("{\\"key\\":\\"xxx\\",\\"isFulfilled\\":true,\\"value\\":111,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);</script>'
+    '<script>(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("\\"xxx\\"","{\\"isFulfilled\\":true,\\"value\\":111,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);</script>'
   );
   expect(writeMock).toHaveBeenNthCalledWith(3, 'bbb');
   expect(writeMock).toHaveBeenNthCalledWith(4, 'ccc</script>');

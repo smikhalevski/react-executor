@@ -8,7 +8,7 @@ import type {
   ExecutorTask,
   PartialExecutorEvent,
 } from './types.js';
-import { AbortError, isObjectLike, noop } from './utils.js';
+import { AbortError, isPromiseLike, noop } from './utils.js';
 
 /**
  * The {@link Executor} implementation returned by the {@link ExecutorManager}.
@@ -193,7 +193,7 @@ export class ExecutorImpl<Value = any> implements Executor {
   };
 
   resolve = (value: PromiseLike<Value> | Value, settledAt = Date.now()): void => {
-    if (isObjectLike(value) && 'then' in value) {
+    if (isPromiseLike(value)) {
       this.execute(() => value);
       return;
     }
@@ -260,9 +260,8 @@ export class ExecutorImpl<Value = any> implements Executor {
     this.publish({ type: 'annotated' });
   };
 
-  toJSON = (): ExecutorState<Value> => {
+  getStateSnapshot = (): ExecutorState<Value> => {
     return {
-      key: this.key,
       isFulfilled: this.isFulfilled,
       value: this.value,
       reason: this.reason,

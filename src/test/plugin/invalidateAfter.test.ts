@@ -1,5 +1,5 @@
 import { beforeEach, expect, Mock, test, vi } from 'vitest';
-import { ExecutorManager } from '../../main/index.js';
+import { ExecutorEvent, ExecutorManager } from '../../main/index.js';
 import invalidateAfter from '../../main/plugin/invalidateAfter.js';
 
 vi.useFakeTimers();
@@ -15,8 +15,7 @@ beforeEach(() => {
 });
 
 test('invalidates the initial value', async () => {
-  manager.hydrate({
-    key: 'xxx',
+  manager.hydrate('xxx', {
     isFulfilled: true,
     value: 111,
     reason: undefined,
@@ -45,11 +44,31 @@ test('invalidates an executor after a timeout', async () => {
     target: executor,
     version: 0,
     payload: { type: 'invalidateAfter', options: { delay: 100 } },
-  });
-  expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
-  expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'activated', target: executor, version: 0 });
-  expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'fulfilled', target: executor, version: 1 });
-  expect(listenerMock).toHaveBeenNthCalledWith(5, { type: 'invalidated', target: executor, version: 2 });
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(2, {
+    type: 'attached',
+    target: executor,
+    version: 0,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(3, {
+    type: 'activated',
+    target: executor,
+    version: 0,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(4, {
+    type: 'fulfilled',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(5, {
+    type: 'invalidated',
+    target: executor,
+    version: 2,
+    payload: undefined,
+  } satisfies ExecutorEvent);
 });
 
 test('delays invalidation every time an executor is fulfilled', async () => {
@@ -69,9 +88,29 @@ test('delays invalidation every time an executor is fulfilled', async () => {
     target: executor,
     version: 0,
     payload: { type: 'invalidateAfter', options: { delay: 100 } },
-  });
-  expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
-  expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'activated', target: executor, version: 0 });
-  expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'fulfilled', target: executor, version: 1 });
-  expect(listenerMock).toHaveBeenNthCalledWith(5, { type: 'fulfilled', target: executor, version: 2 });
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(2, {
+    type: 'attached',
+    target: executor,
+    version: 0,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(3, {
+    type: 'activated',
+    target: executor,
+    version: 0,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(4, {
+    type: 'fulfilled',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(5, {
+    type: 'fulfilled',
+    target: executor,
+    version: 2,
+    payload: undefined,
+  } satisfies ExecutorEvent);
 });

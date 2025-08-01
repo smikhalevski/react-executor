@@ -27,7 +27,7 @@ test('returns the same executor on every render', () => {
 
 test('returns the same executor for an object key on every render', () => {
   const manager = new ExecutorManager({
-    keySerializer: JSON.stringify,
+    keyIdGenerator: JSON.stringify,
   });
 
   const hook = renderHook(() => useExecutor({ aaa: 111 }), {

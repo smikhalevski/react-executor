@@ -1,5 +1,5 @@
 import { beforeEach, expect, Mock, test, vi } from 'vitest';
-import { ExecutorManager } from '../../main/index.js';
+import { ExecutorEvent, ExecutorManager } from '../../main/index.js';
 import retryInvalidated from '../../main/plugin/retryInvalidated.js';
 
 let listenerMock: Mock;
@@ -41,14 +41,49 @@ test('retries the invalidated active executor', async () => {
     target: executor,
     version: 0,
     payload: { type: 'retryInvalidated', options: { isEager: false } },
-  });
-  expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
-  expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'pending', target: executor, version: 1 });
-  expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'activated', target: executor, version: 1 });
-  expect(listenerMock).toHaveBeenNthCalledWith(5, { type: 'fulfilled', target: executor, version: 2 });
-  expect(listenerMock).toHaveBeenNthCalledWith(6, { type: 'invalidated', target: executor, version: 3 });
-  expect(listenerMock).toHaveBeenNthCalledWith(7, { type: 'pending', target: executor, version: 4 });
-  expect(listenerMock).toHaveBeenNthCalledWith(8, { type: 'fulfilled', target: executor, version: 5 });
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(2, {
+    type: 'attached',
+    target: executor,
+    version: 0,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(3, {
+    type: 'pending',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(4, {
+    type: 'activated',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(5, {
+    type: 'fulfilled',
+    target: executor,
+    version: 2,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(6, {
+    type: 'invalidated',
+    target: executor,
+    version: 3,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(7, {
+    type: 'pending',
+    target: executor,
+    version: 4,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(8, {
+    type: 'fulfilled',
+    target: executor,
+    version: 5,
+    payload: undefined,
+  } satisfies ExecutorEvent);
 });
 
 test('retries the activated and invalidated executor', async () => {
@@ -80,12 +115,47 @@ test('retries the activated and invalidated executor', async () => {
     target: executor,
     version: 0,
     payload: { type: 'retryInvalidated', options: { isEager: false } },
-  });
-  expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
-  expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'pending', target: executor, version: 1 });
-  expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'fulfilled', target: executor, version: 2 });
-  expect(listenerMock).toHaveBeenNthCalledWith(5, { type: 'invalidated', target: executor, version: 3 });
-  expect(listenerMock).toHaveBeenNthCalledWith(6, { type: 'activated', target: executor, version: 3 });
-  expect(listenerMock).toHaveBeenNthCalledWith(7, { type: 'pending', target: executor, version: 4 });
-  expect(listenerMock).toHaveBeenNthCalledWith(8, { type: 'fulfilled', target: executor, version: 5 });
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(2, {
+    type: 'attached',
+    target: executor,
+    version: 0,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(3, {
+    type: 'pending',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(4, {
+    type: 'fulfilled',
+    target: executor,
+    version: 2,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(5, {
+    type: 'invalidated',
+    target: executor,
+    version: 3,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(6, {
+    type: 'activated',
+    target: executor,
+    version: 3,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(7, {
+    type: 'pending',
+    target: executor,
+    version: 4,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(8, {
+    type: 'fulfilled',
+    target: executor,
+    version: 5,
+    payload: undefined,
+  } satisfies ExecutorEvent);
 });
