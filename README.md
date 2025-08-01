@@ -879,9 +879,19 @@ const executor = useExecutor('test', heavyTask, [
 ]);
 ```
 
-If a new task is passed to the
-[`Executor.execute`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#execute)
-method after the delay has run out then the task is instantly aborted.
+By default, `abortWhen` only aborts the currently pending task. Here's how every newly executed task can be instantly
+aborted if the last value emitted by the observable was `true` and a delay has ran out:
+
+```ts
+const executor = useExecutor('test', heavyTask, [
+  abortWhen(navigatorOffline, {
+    delay: 5_000,
+
+    // 🟡 Abort every newly executed task
+    isContinuous: true,
+  }),
+]);
+```
 
 Read more about observables in the [`retryWhen`](#retrywhen) section.
 

@@ -27,11 +27,18 @@ export interface AbortWhenOptions {
    * @default 0
    */
   delay?: number;
+
+  /**
+   * If `true` then a new task is instantly aborted when executed after the last value emitted by the observable was
+   * `true`.
+   *
+   * @default false
+   */
+  isContinuous?: boolean;
 }
 
 /**
- * Aborts the pending task if the observable emits `true`. If a new task is executed after the observable emitted
- * `true`, then it is instantly aborted.
+ * Aborts the pending task if the observable emits `true`.
  *
  * @param observable The observable that trigger the abort of the executor.
  * @param options Abort options.
@@ -40,7 +47,7 @@ export default function abortWhen(
   observable: Observable<boolean>,
   options: AbortWhenOptions = emptyObject
 ): ExecutorPlugin {
-  const { delay = 0 } = options;
+  const { delay = 0, isContinuous = false } = options;
 
   return executor => {
     let timer: NodeJS.Timeout | undefined;
@@ -60,7 +67,7 @@ export default function abortWhen(
 
       timer = setTimeout(() => {
         timer = undefined;
-        shouldAbort = true;
+        shouldAbort = isContinuous;
         executor.abort();
       }, delay);
     });
@@ -84,7 +91,7 @@ export default function abortWhen(
       type: 'plugin_configured',
       payload: {
         type: 'abortWhen',
-        options: { observable, delay },
+        options: { observable, delay, isContinuous },
       } satisfies PluginConfiguredPayload,
     });
   };
