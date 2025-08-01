@@ -46,10 +46,7 @@ test('does not resolve an executor if there is no storage item', () => {
 });
 
 test('resolves an executor if a fulfilled storage item exists', () => {
-  localStorage.setItem(
-    '"xxx"',
-    '{"key":"xxx","isFulfilled":true,"value":"aaa","settledAt":30,"invalidatedAt":0,"annotations":{}}'
-  );
+  localStorage.setItem('"xxx"', '{"isFulfilled":true,"value":"aaa","settledAt":30,"invalidatedAt":0,"annotations":{}}');
 
   executor = manager.getOrCreate('xxx', undefined, [syncStorage(localStorage)]);
 
@@ -73,7 +70,7 @@ test('resolves an executor if a fulfilled storage item exists', () => {
 test('rejects an executor if a rejected storage item exists', () => {
   localStorage.setItem(
     '"xxx"',
-    '{"key":"xxx","isFulfilled":false,"value":"aaa","reason":"bbb","settledAt":30,"invalidatedAt":0,"annotations":{}}'
+    '{"isFulfilled":false,"value":"aaa","reason":"bbb","settledAt":30,"invalidatedAt":0,"annotations":{}}'
   );
 
   executor = manager.getOrCreate('xxx', undefined, [syncStorage(localStorage)]);
@@ -96,8 +93,7 @@ test('rejects an executor if a rejected storage item exists', () => {
 });
 
 test('preserves the initial state if it is newer and sets storage item', () => {
-  manager.hydrate({
-    key: 'xxx',
+  manager.hydrate('xxx', {
     isFulfilled: true,
     value: 'aaa',
     reason: undefined,
@@ -106,12 +102,12 @@ test('preserves the initial state if it is newer and sets storage item', () => {
     invalidatedAt: 0,
   });
 
-  localStorage.setItem('"xxx"', '{"key":"xxx","isFulfilled":true,"value":"bbb","settledAt":30,"invalidatedAt":0}');
+  localStorage.setItem('"xxx"', '{"isFulfilled":true,"value":"bbb","settledAt":30,"invalidatedAt":0}');
 
   executor = manager.getOrCreate('xxx', undefined, [syncStorage(localStorage)]);
 
   expect(localStorage.getItem('"xxx"')).toBe(
-    '{"key":"xxx","isFulfilled":true,"value":"aaa","annotations":{},"settledAt":100,"invalidatedAt":0}'
+    '{"isFulfilled":true,"value":"aaa","annotations":{},"settledAt":100,"invalidatedAt":0}'
   );
 
   expect(executor.isFulfilled).toBe(true);
@@ -186,7 +182,7 @@ test('sets storage item to the initial value', () => {
   expect(executor.value).toBe('aaa');
 
   expect(localStorage.getItem('"xxx"')).toBe(
-    '{"key":"xxx","isFulfilled":true,"value":"aaa","annotations":{},"settledAt":50,"invalidatedAt":0}'
+    '{"isFulfilled":true,"value":"aaa","annotations":{},"settledAt":50,"invalidatedAt":0}'
   );
 
   expect(listenerMock).toHaveBeenCalledTimes(3);
@@ -210,7 +206,7 @@ test('sets storage item if executor was resolved from a preceding plugin', () =>
 
   expect(executor.value).toBe('aaa');
   expect(localStorage.getItem('"xxx"')).toBe(
-    '{"key":"xxx","isFulfilled":true,"value":"aaa","annotations":{},"settledAt":50,"invalidatedAt":0}'
+    '{"isFulfilled":true,"value":"aaa","annotations":{},"settledAt":50,"invalidatedAt":0}'
   );
 });
 
@@ -245,7 +241,7 @@ test('does not set storage item or resolve an executor if an executor is pending
   expect(executor.isPending).toBe(false);
   expect(executor.value).toBe('aaa');
   expect(localStorage.getItem('"xxx"')).toBe(
-    '{"key":"xxx","isFulfilled":true,"value":"aaa","annotations":{},"settledAt":50,"invalidatedAt":0}'
+    '{"isFulfilled":true,"value":"aaa","annotations":{},"settledAt":50,"invalidatedAt":0}'
   );
 });
 
@@ -268,7 +264,7 @@ test('sets storage item if it was removed', () => {
 
   expect(executor.value).toBe('aaa');
   expect(localStorage.getItem('"xxx"')).toBe(
-    '{"key":"xxx","isFulfilled":true,"value":"aaa","annotations":{},"settledAt":50,"invalidatedAt":0}'
+    '{"isFulfilled":true,"value":"aaa","annotations":{},"settledAt":50,"invalidatedAt":0}'
   );
 });
 
@@ -281,7 +277,7 @@ test('removes a storage item if an executor was detached', () => {
 });
 
 test('sets storage item if executor was cleared', () => {
-  localStorage.setItem('"xxx"', '{"key":"xxx","isFulfilled":false,"annotations":{},"settledAt":0,"invalidatedAt":0}');
+  localStorage.setItem('"xxx"', '{"isFulfilled":false,"annotations":{},"settledAt":0,"invalidatedAt":0}');
 
   executor = manager.getOrCreate('xxx', undefined, [syncStorage(localStorage)]);
 
@@ -291,22 +287,17 @@ test('sets storage item if executor was cleared', () => {
 
   expect(executor.value).toBe('aaa');
   expect(localStorage.getItem('"xxx"')).toBe(
-    '{"key":"xxx","isFulfilled":true,"value":"aaa","annotations":{},"settledAt":50,"invalidatedAt":0}'
+    '{"isFulfilled":true,"value":"aaa","annotations":{},"settledAt":50,"invalidatedAt":0}'
   );
 
   executor.clear();
 
   expect(executor.value).toBe(undefined);
-  expect(localStorage.getItem('"xxx"')).toBe(
-    '{"key":"xxx","isFulfilled":false,"annotations":{},"settledAt":0,"invalidatedAt":0}'
-  );
+  expect(localStorage.getItem('"xxx"')).toBe('{"isFulfilled":false,"annotations":{},"settledAt":0,"invalidatedAt":0}');
 });
 
 test('ignores stored empty annotations', () => {
-  localStorage.setItem(
-    '"xxx"',
-    '{"key":"xxx","isFulfilled":true,"value":"aaa","settledAt":30,"invalidatedAt":0,"annotations":{}}'
-  );
+  localStorage.setItem('"xxx"', '{"isFulfilled":true,"value":"aaa","settledAt":30,"invalidatedAt":0,"annotations":{}}');
 
   executor = manager.getOrCreate('xxx', undefined, [syncStorage(localStorage)]);
 
@@ -326,7 +317,7 @@ test('ignores stored empty annotations', () => {
 test('does not publish annotated events if annotations are shallow equal', () => {
   localStorage.setItem(
     '"xxx"',
-    '{"key":"xxx","isFulfilled":true,"value":"aaa","settledAt":30,"invalidatedAt":0,"annotations":{"zzz":111}}'
+    '{"isFulfilled":true,"value":"aaa","settledAt":30,"invalidatedAt":0,"annotations":{"zzz":111}}'
   );
 
   executor = manager.getOrCreate('xxx', undefined, [
@@ -351,7 +342,7 @@ test('does not publish annotated events if annotations are shallow equal', () =>
 test('restores non-empty annotations', () => {
   localStorage.setItem(
     '"xxx"',
-    '{"key":"xxx","isFulfilled":true,"value":"aaa","settledAt":30,"invalidatedAt":0,"annotations":{"zzz":111}}'
+    '{"isFulfilled":true,"value":"aaa","settledAt":30,"invalidatedAt":0,"annotations":{"zzz":111}}'
   );
 
   executor = manager.getOrCreate('xxx', undefined, [syncStorage(localStorage)]);
@@ -373,7 +364,7 @@ test('restores non-empty annotations', () => {
 test('overwrites annotations', () => {
   localStorage.setItem(
     '"xxx"',
-    '{"key":"xxx","isFulfilled":true,"value":"aaa","settledAt":30,"invalidatedAt":0,"annotations":{"zzz":111}}'
+    '{"isFulfilled":true,"value":"aaa","settledAt":30,"invalidatedAt":0,"annotations":{"zzz":111}}'
   );
 
   executor = manager.getOrCreate('xxx', undefined, [
@@ -385,10 +376,7 @@ test('overwrites annotations', () => {
 });
 
 test('sets storage item if annotations are changed', () => {
-  localStorage.setItem(
-    '"xxx"',
-    '{"key":"xxx","isFulfilled":false,"settledAt":0,"invalidatedAt":0,"annotations":{"zzz":111}}'
-  );
+  localStorage.setItem('"xxx"', '{"isFulfilled":false,"settledAt":0,"invalidatedAt":0,"annotations":{"zzz":111}}');
 
   executor = manager.getOrCreate('xxx', undefined, [syncStorage(localStorage)]);
 
@@ -397,7 +385,7 @@ test('sets storage item if annotations are changed', () => {
   expect(executor.annotations).toEqual({ zzz: 222 });
 
   expect(localStorage.getItem('"xxx"')).toBe(
-    '{"key":"xxx","isFulfilled":false,"annotations":{"zzz":222},"settledAt":0,"invalidatedAt":0}'
+    '{"isFulfilled":false,"annotations":{"zzz":222},"settledAt":0,"invalidatedAt":0}'
   );
 });
 
@@ -417,9 +405,7 @@ test('overwrites storage item if an error is thrown during parsing', () => {
 
   expect(executor).toBeInstanceOf(ExecutorImpl);
 
-  expect(localStorage.getItem('"xxx"')).toBe(
-    '{"key":"xxx","isFulfilled":false,"annotations":{},"settledAt":0,"invalidatedAt":0}'
-  );
+  expect(localStorage.getItem('"xxx"')).toBe('{"isFulfilled":false,"annotations":{},"settledAt":0,"invalidatedAt":0}');
 
   expect(() => vi.runAllTimers()).toThrow(new Error('expected'));
 });
@@ -431,9 +417,7 @@ test('overwrites storage item if it contains a malformed state', () => {
 
   expect(executor).toBeInstanceOf(ExecutorImpl);
 
-  expect(localStorage.getItem('"xxx"')).toBe(
-    '{"key":"xxx","isFulfilled":false,"annotations":{},"settledAt":0,"invalidatedAt":0}'
-  );
+  expect(localStorage.getItem('"xxx"')).toBe('{"isFulfilled":false,"annotations":{},"settledAt":0,"invalidatedAt":0}');
 
   expect(() => vi.runAllTimers()).not.toThrow();
 });
@@ -443,7 +427,7 @@ test('executor is updated with storage item before any events are published', ()
 
   const listenerMock = vi.fn();
 
-  executor.subscribe(() => listenerMock(executor.toJSON()));
+  executor.subscribe(() => listenerMock(executor.getStateSnapshot()));
 
   localStorage.setItem(
     '"xxx"',
@@ -455,7 +439,6 @@ test('executor is updated with storage item before any events are published', ()
   expect(executor.value).toBe('aaa');
 
   expect(listenerMock).toHaveBeenNthCalledWith(1, {
-    key: 'xxx',
     value: 'aaa',
     reason: undefined,
     annotations: {},

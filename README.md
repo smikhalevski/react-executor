@@ -192,53 +192,46 @@ manager.get(['user', 123]);
 // ⮕ userExecutor
 ```
 
-To override, how keys are serialized
-pass [`keySerializer`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.ExecutorManagerOptions.html#keyserializer)
-option to the `ExecutorManager` constructor. Key serializer is a function that receives the requested executor key and
-returns its serialized form. The returned serialized key form can be anything, a string, or an object.
+Pass [`keyIdGenerator`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.ExecutorManagerOptions.html#keyidgenerator)
+option to the `ExecutorManager` constructor to change the way key identity is computed. The returned key ID can be
+anything, a string, or an object.
 
-If you're using objects as executor keys, then you may want to enable stable serialization (when keys are sorted
-alphabetically during serialization). In this case use any library that supports stable JSON serialization:
+If you're using objects as executor keys, then you may want to use stable serialized form of executor keys as key IDs
+(when object keys are sorted alphabetically during serialization). In this case use any library that supports stable
+JSON serialization:
 
 ```ts
-import { stringify } from 'json-marshal';
+import JSONMarshal from 'json-marshal';
 
 const manager = new ExecutorManager({
-  keySerializer: key => stringify(key, { isStable: true }),
+  keyIdGenerator: key => JSONMarshal.stringify(key, { isStable: true }),
 });
 
-const bobrExecutor = manager.getOrCreate({ id: 123, name: 'Woody' });
+const rookyExecutor = manager.getOrCreate({ id: 123, name: 'Rooky' });
 // ⮕ Executor<any>
 
 // 🟡 Key properties are listed in a different order
-manager.get({ name: 'Woody', id: 123 });
-// ⮕ bobrExecutor
+manager.get({ name: 'Rooky', id: 123 });
+// ⮕ rookyExecutor
 ```
 
 > [!TIP]\
 > With additional configuration, [json-marshal&#8239;<sup>↗</sup>](https://github.com/smikhalevski/json-marshal#readme)
 > can stringify and parse any data structure.
 
-If you want to use object references as executor keys, provide an identity function as a serializer:
+If you want to use object references as executor key IDs, provide an identity function:
 
 ```ts
 const manager = new ExecutorManager({
-  keySerializer: key => key,
+  keyIdGenerator: key => key,
 });
 
-const bobrKey = { id: 123 };
+const rookyKey = { id: 123 };
 
-const bobrExecutor = manager.getOrCreate(bobrKey);
-
-// The same executor is returned for the same key
-manager.get(bobrKey);
-// ⮕ bobrExecutor
-
-const anotherBobrExecutor = manager.getOrCreate({ id: 123 });
+const rookyExecutor = manager.getOrCreate(rookyKey);
 
 // 🟡 Executors are different because different objects were used as keys
-bobrExecutor === anotherBobrExecutor;
-// ⮕ false
+manager.get(rookyKey) !== manager.getOrCreate({ id: 123 });
 ```
 
 ## Execute a task
@@ -1407,7 +1400,7 @@ via [`storageKey`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-exe
 option:
 
 ```ts
-useExecutor('test', 42, [syncStorage(localStorage, { storageKey: 'helloBobr' })]);
+useExecutor('test', 42, [syncStorage(localStorage, { storageKey: 'hello' })]);
 ```
 
 In the environment where storage is unavailable (for example, [during SSR](#server-side-rendering)), you can
@@ -1772,13 +1765,26 @@ State of executors is streamed to the client along with the chunks rendered by R
 ## State serialization
 
 By default, an executor state is serialized using
-[`JSON.stringify`&#8239;<sup>↗</sup>](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify)
+[`JSON`&#8239;<sup>↗</sup>](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON)
 that has quite a few limitations. If your executor stores a value that may contain circular references, or
-non-serializable data like `BigInt`, use a custom state serialization.
+non-serializable data like `BigInt`, then a custom state serializer must be provided.
 
-On the client, pass
-a [`stateParser`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.SSRHydrationOptions.html#stateparser)
-option to `enableSSRHydration`:
+On the server, pass a
+[`serializer`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/ssr.SSRExecutorManagerOptions.html#serializer)
+option to [`SSRExecutorManager`](#render-to-string),
+[`PipeableSSRExecutorManager`](#streaming-ssr),
+or [`ReadableSSRExecutorManager`](#readable-web-streams-support), depending on your setup:
+
+```ts
+import { SSRExecutorManager } from 'react-executor/ssr';
+import JSONMarshal from 'json-marshal';
+
+const manager = new SSRExecutorManager({ serializer: JSONMarshal });
+```
+
+On the client, pass _the same_
+[`serializer`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.SSRHydrationOptions.html#serializer)
+to `enableSSRHydration`:
 
 ```tsx
 import React from 'react';
@@ -1788,8 +1794,7 @@ import JSONMarshal from 'json-marshal';
 
 const manager = new ExecutorManager();
 
-// 🟡 Pass a custom state parser
-enableSSRHydration(manager, { stateParser: JSONMarshal.parse });
+enableSSRHydration(manager, { serializer: JSONMarshal });
 
 hydrateRoot(
   document,
@@ -1797,19 +1802,6 @@ hydrateRoot(
     <App />
   </ExecutorManagerProvider>
 );
-```
-
-On the server, pass
-a [`stateStringifier`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/ssr.SSRExecutorManagerOptions.html#statestringifier)
-option to [`SSRExecutorManager`](#render-to-string),
-[`PipeableSSRExecutorManager`](#streaming-ssr),
-or [`ReadableSSRExecutorManager`](#readable-web-streams-support), depending on your setup:
-
-```ts
-import { SSRExecutorManager } from 'react-executor/ssr';
-import JSONMarshal from 'json-marshal';
-
-const manager = new SSRExecutorManager({ stateStringifier: JSONMarshal.stringify });
 ```
 
 > [!TIP]\

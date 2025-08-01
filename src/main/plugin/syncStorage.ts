@@ -12,47 +12,26 @@
  * @module plugin/syncStorage
  */
 
-import type { Executor, ExecutorPlugin, ExecutorState, PluginConfiguredPayload } from '../types.js';
+import type { Executor, ExecutorPlugin, ExecutorState, PluginConfiguredPayload, Serializer } from '../types.js';
 import { emptyObject, isObjectLike, isShallowEqual, throwUnhandled } from '../utils.js';
 import type { ExecutorImpl } from '../ExecutorImpl.js';
 
 /**
- * Serializes and deserializes values.
- *
- * @template Value The value to serialize.
- */
-export interface Serializer<Value> {
-  /**
-   * Serializes a value as a string.
-   *
-   * @param value The value to serialize.
-   */
-  stringify(value: Value): string;
-
-  /**
-   * Deserializes a stringified value.
-   *
-   * @param valueStr The stringified value.
-   */
-  parse(valueStr: string): Value;
-}
-
-/**
  * Options of the {@link syncStorage} plugin.
  */
-export interface SyncStorageOptions<Value> {
-  /**
-   * The storage record serializer.
-   */
-  serializer?: Serializer<ExecutorState<Value>>;
-
+export interface SyncStorageOptions {
   /**
    * A storage key, or a callback that returns the storage key.
    *
-   * By default, a {@link react-executor!ExecutorManagerOptions.keySerializer serialized} {@link Executor.key} is used
-   * as a storage key.
+   * By default, a string {@link react-executor!ExecutorManagerOptions.keyIdGenerator executor key ID} is used as
+   * a storage key.
    */
   storageKey?: string | ((executor: Executor) => string);
+
+  /**
+   * The storage record serializer.
+   */
+  serializer?: Serializer;
 }
 
 /**
@@ -66,14 +45,14 @@ export interface SyncStorageOptions<Value> {
  */
 export default function syncStorage<Value = any>(
   storage: Pick<Storage, 'setItem' | 'getItem' | 'removeItem'>,
-  options: SyncStorageOptions<Value> = emptyObject
+  options: SyncStorageOptions = emptyObject
 ): ExecutorPlugin<Value> {
   const { serializer = JSON, storageKey } = options;
 
   return executor => {
     const keyStr =
       storageKey === undefined
-        ? executor.manager.keySerializer(executor.key)
+        ? executor.manager.keyIdGenerator(executor.key)
         : typeof storageKey === 'function'
           ? storageKey(executor)
           : storageKey;
@@ -82,7 +61,7 @@ export default function syncStorage<Value = any>(
       throw new Error('Cannot guess a storage key for an executor, the "storageKey" option is required');
     }
 
-    const saveState = () => storage.setItem(keyStr, serializer.stringify(executor.toJSON()));
+    const saveState = () => storage.setItem(keyStr, serializer.stringify(executor.getStateSnapshot()));
 
     const readState = () => setExecutorState(executor as ExecutorImpl, saveState, storage.getItem(keyStr), serializer);
 
@@ -138,7 +117,7 @@ function setExecutorState(
   executor: ExecutorImpl,
   saveState: () => void,
   stateStr: string | null,
-  serializer: Serializer<ExecutorState>
+  serializer: Serializer
 ): void {
   if (executor.isPending) {
     // The executor would overwrite storage item when settled
@@ -151,7 +130,7 @@ function setExecutorState(
     return;
   }
 
-  const prevState = executor.toJSON();
+  const prevState = executor.getStateSnapshot();
 
   if (stateStr === serializer.stringify(prevState)) {
     // No changes

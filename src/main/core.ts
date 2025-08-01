@@ -24,4 +24,5 @@ export type {
   Observable,
   PartialExecutorEvent,
   ReadonlyExecutor,
+  Serializer,
 } from './types.js';

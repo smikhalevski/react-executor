@@ -9,6 +9,7 @@ import type {
   NoInfer,
   Observable,
 } from './types.js';
+import { emptyObject } from './utils.js';
 
 /**
  * Options provided to the {@link ExecutorManager} constructor.
@@ -20,15 +21,15 @@ export interface ExecutorManagerOptions {
   plugins?: Array<ExecutorPlugin | null | undefined>;
 
   /**
-   * Serializes executor keys.
+   * Returns the unique comparable ID for the executor key.
    *
-   * The serialized key form can be anything. If you want to use object identities as executor keys, provide an identity
-   * function as a serializer.
+   * The key ID can be anything. If you want to use object identities as executor keys, provide an identity function
+   * as an ID generator.
    *
-   * @param key The key to serialize.
+   * @param key The key to get unique ID for.
    * @default JSON.stringify
    */
-  keySerializer?: (key: any) => any;
+  keyIdGenerator?: (key: any) => any;
 
   /**
    * If `true` then executors are registered in the devtools extension.
@@ -53,8 +54,8 @@ export class ExecutorManager implements Iterable<Executor>, Observable<ExecutorE
   protected readonly _pubSub = new PubSub<ExecutorEvent>();
 
   /**
-   * The map from a key to an initial state that must be set to an executor before plugins are applied. Entries from
-   * this map are deleted after the executor is initialized.
+   * The map from a key ID to an initial state that must be set to an executor before plugins are applied.
+   * Entries from this map are deleted after the executor is created.
    */
   protected readonly _initialState = new Map<unknown, ExecutorState>();
 
@@ -64,17 +65,17 @@ export class ExecutorManager implements Iterable<Executor>, Observable<ExecutorE
   protected readonly _plugins: ExecutorPlugin[] = [];
 
   /**
-   * Serializes keys of executors.
+   * Returns the unique comparable ID for the executor key.
    */
-  readonly keySerializer: (key: unknown) => unknown;
+  readonly keyIdGenerator: (key: unknown) => unknown;
 
   /**
    * Creates a new executor manager.
    *
    * @param options Additional options.
    */
-  constructor(options: ExecutorManagerOptions = {}) {
-    this.keySerializer = options.keySerializer || (value => JSON.stringify(value));
+  constructor(options: ExecutorManagerOptions = emptyObject) {
+    this.keyIdGenerator = options.keyIdGenerator || (value => JSON.stringify(value));
 
     if (options.devtools === undefined || options.devtools) {
       const devtools = typeof __REACT_EXECUTOR_DEVTOOLS__ !== 'undefined' ? __REACT_EXECUTOR_DEVTOOLS__ : undefined;
@@ -84,13 +85,34 @@ export class ExecutorManager implements Iterable<Executor>, Observable<ExecutorE
       }
     }
 
-    if (options.plugins !== undefined) {
-      for (const plugin of options.plugins) {
-        if (plugin !== null && plugin !== undefined) {
-          this._plugins.push(plugin);
-        }
+    if (options.plugins === undefined) {
+      return;
+    }
+
+    for (const plugin of options.plugins) {
+      if (plugin !== null && plugin !== undefined) {
+        this._plugins.push(plugin);
       }
     }
+  }
+
+  /**
+   * Injects the initial state for the executor that can be created in the future.
+   *
+   * @param key The unique executor key.
+   * @param initialState The initial state of the hydrated executor that can be created via
+   * {@link ExecutorManager.getOrCreate}.
+   * @returns `true` if the executor has been hydrated, or `false` if the executor has already been created and
+   * therefore cannot be hydrated.
+   */
+  hydrate(key: unknown, initialState: ExecutorState): boolean {
+    const keyId = this.keyIdGenerator(key);
+
+    if (this._executors.has(keyId)) {
+      return false;
+    }
+    this._initialState.set(keyId, initialState);
+    return true;
   }
 
   /**
@@ -99,7 +121,7 @@ export class ExecutorManager implements Iterable<Executor>, Observable<ExecutorE
    * @param key The unique executor key.
    */
   get(key: unknown): Executor | undefined {
-    return this._executors.get(this.keySerializer(key));
+    return this._executors.get(this.keyIdGenerator(key));
   }
 
   /**
@@ -129,16 +151,16 @@ export class ExecutorManager implements Iterable<Executor>, Observable<ExecutorE
   ): Executor<Value>;
 
   getOrCreate(key: unknown, initialValue?: unknown, plugins?: Array<ExecutorPlugin | null | undefined>): Executor {
-    const serializedKey = this.keySerializer(key);
+    const keyId = this.keyIdGenerator(key);
 
-    let executor = this._executors.get(serializedKey);
+    let executor = this._executors.get(keyId);
 
     if (executor !== undefined) {
       // Existing executor
       return executor;
     }
 
-    executor = Object.assign(new ExecutorImpl(key, this), this._initialState.get(serializedKey));
+    executor = Object.assign(new ExecutorImpl(key, this), this._initialState.get(keyId));
 
     if (typeof initialValue === 'function') {
       executor.task = initialValue as ExecutorTask;
@@ -163,8 +185,8 @@ export class ExecutorManager implements Iterable<Executor>, Observable<ExecutorE
       throw error;
     }
 
-    this._initialState.delete(serializedKey);
-    this._executors.set(serializedKey, executor);
+    this._initialState.delete(keyId);
+    this._executors.set(keyId, executor);
 
     executor.publish({ type: 'attached' });
 
@@ -186,8 +208,8 @@ export class ExecutorManager implements Iterable<Executor>, Observable<ExecutorE
    */
   getOrAwait(key: unknown): AbortablePromise<Executor> {
     return new AbortablePromise((resolve, _reject, signal) => {
-      const serializedKey = this.keySerializer(key);
-      const executor = this._executors.get(serializedKey);
+      const keyId = this.keyIdGenerator(key);
+      const executor = this._executors.get(keyId);
 
       if (executor !== undefined) {
         resolve(executor);
@@ -195,7 +217,7 @@ export class ExecutorManager implements Iterable<Executor>, Observable<ExecutorE
       }
 
       const unsubscribe = this.subscribe(event => {
-        if (event.type === 'attached' && this.keySerializer(event.target.key) === serializedKey) {
+        if (event.type === 'attached' && this.keyIdGenerator(event.target.key) === keyId) {
           unsubscribe();
           resolve(event.target);
         }
@@ -215,14 +237,14 @@ export class ExecutorManager implements Iterable<Executor>, Observable<ExecutorE
    * @returns `true` if the executor was detached, or `false` if there's no such executor, or the executor is active.
    */
   detach(key: unknown): boolean {
-    const serializedKey = this.keySerializer(key);
-    const executor = this._executors.get(serializedKey);
+    const keyId = this.keyIdGenerator(key);
+    const executor = this._executors.get(keyId);
 
     if (executor === undefined || executor.isActive) {
       return false;
     }
 
-    this._executors.delete(serializedKey);
+    this._executors.delete(keyId);
 
     executor.publish({ type: 'detached' });
     executor._pubSub.unsubscribeAll();
@@ -245,29 +267,5 @@ export class ExecutorManager implements Iterable<Executor>, Observable<ExecutorE
    */
   [Symbol.iterator](): IterableIterator<Executor> {
     return this._executors.values();
-  }
-
-  /**
-   * Returns serializable executor manager state.
-   */
-  toJSON(): ExecutorState[] {
-    return Array.from(this).map(executor => executor.toJSON());
-  }
-
-  /**
-   * Injects the initial state for the executor that is created in the future.
-   *
-   * @param initialState The initial state of the hydrated executor that can be created via
-   * {@link ExecutorManager.getOrCreate}.
-   * @returns `true` if the executor was hydrated, or `false` if the executor already exists and cannot be hydrated.
-   */
-  hydrate(initialState: ExecutorState): boolean {
-    const serializedKey = this.keySerializer(initialState.key);
-
-    if (this._executors.has(serializedKey)) {
-      return false;
-    }
-    this._initialState.set(serializedKey, initialState);
-    return true;
   }
 }

@@ -10,7 +10,11 @@ export function TimeoutError(message: string): Error {
   return typeof DOMException !== 'undefined' ? new DOMException(message, 'TimeoutError') : Error(message);
 }
 
-export function isObjectLike(value: any): value is object {
+export function isPromiseLike(value: unknown): value is PromiseLike<any> {
+  return isObjectLike(value) && 'then' in value;
+}
+
+export function isObjectLike(value: unknown): value is object {
   return value !== null && typeof value === 'object';
 }
 

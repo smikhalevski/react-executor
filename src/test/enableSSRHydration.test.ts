@@ -3,7 +3,8 @@
  */
 
 import { beforeEach, expect, test, vi } from 'vitest';
-import { enableSSRHydration, ExecutorManager } from '../main/index.js';
+import { enableSSRHydration, ExecutorManager, ExecutorState } from '../main/index.js';
+import { Serializer } from '../main/types.js';
 
 beforeEach(() => {
   window.__REACT_EXECUTOR_SSR_STATE__ = undefined;
@@ -21,15 +22,15 @@ test('hydrates an executor that is added after', () => {
   enableSSRHydration(manager);
 
   window.__REACT_EXECUTOR_SSR_STATE__!.push(
+    '"xxx"',
     JSON.stringify({
-      key: 'xxx',
       isFulfilled: true,
       value: 111,
       reason: undefined,
       settledAt: 50,
       invalidatedAt: 0,
       annotations: {},
-    })
+    } satisfies ExecutorState)
   );
 
   const executor = manager.getOrCreate('xxx');
@@ -44,24 +45,24 @@ test('hydrates multiple executors that are added after', () => {
   enableSSRHydration(manager);
 
   window.__REACT_EXECUTOR_SSR_STATE__!.push(
+    '"xxx"',
     JSON.stringify({
-      key: 'xxx',
       isFulfilled: true,
       value: 111,
       reason: undefined,
       settledAt: 50,
       invalidatedAt: 0,
       annotations: {},
-    }),
+    } satisfies ExecutorState),
+    '"yyy"',
     JSON.stringify({
-      key: 'yyy',
       isFulfilled: true,
       value: 222,
       reason: undefined,
       settledAt: 100,
       invalidatedAt: 0,
       annotations: {},
-    })
+    } satisfies ExecutorState)
   );
 
   const executor1 = manager.getOrCreate('xxx');
@@ -75,15 +76,15 @@ test('hydrates multiple executors that are added after', () => {
 
 test('hydrates an executor that was added before', () => {
   window.__REACT_EXECUTOR_SSR_STATE__ = [
+    '"xxx"',
     JSON.stringify({
-      key: 'xxx',
       isFulfilled: true,
       value: 111,
       reason: undefined,
       settledAt: 50,
       invalidatedAt: 0,
       annotations: {},
-    }),
+    } satisfies ExecutorState),
   ];
 
   const manager = new ExecutorManager();
@@ -98,15 +99,15 @@ test('hydrates an executor that was added before', () => {
 
 test('hydrates executors that are added before and after', () => {
   window.__REACT_EXECUTOR_SSR_STATE__ = [
+    '"xxx"',
     JSON.stringify({
-      key: 'xxx',
       isFulfilled: true,
       value: 111,
       reason: undefined,
       settledAt: 50,
       invalidatedAt: 0,
       annotations: {},
-    }),
+    } satisfies ExecutorState),
   ];
 
   const manager = new ExecutorManager();
@@ -114,15 +115,15 @@ test('hydrates executors that are added before and after', () => {
   enableSSRHydration(manager);
 
   window.__REACT_EXECUTOR_SSR_STATE__!.push(
+    '"yyy"',
     JSON.stringify({
-      key: 'yyy',
       isFulfilled: true,
       value: 222,
       reason: undefined,
       settledAt: 50,
       invalidatedAt: 0,
       annotations: {},
-    })
+    } satisfies ExecutorState)
   );
 
   const executor1 = manager.getOrCreate('xxx');
@@ -140,31 +141,36 @@ test('throws if hydration is enabled twice', () => {
   expect(() => enableSSRHydration(manager)).toThrow();
 });
 
-test('uses custom parser', () => {
+test('uses a custom serializer', () => {
   const manager = new ExecutorManager();
-  const stateParserMock = vi.fn(JSON.parse);
+  const serializerMock: Serializer = {
+    parse: vi.fn(JSON.parse),
+    stringify: vi.fn(JSON.stringify),
+  };
 
-  enableSSRHydration(manager, { stateParser: stateParserMock });
+  enableSSRHydration(manager, { serializer: serializerMock });
 
   window.__REACT_EXECUTOR_SSR_STATE__!.push(
+    '"xxx"',
     JSON.stringify({
-      key: 'xxx',
       isFulfilled: true,
       value: 111,
       reason: undefined,
       settledAt: 50,
       invalidatedAt: 0,
       annotations: {},
-    })
+    } satisfies ExecutorState)
   );
 
   const executor = manager.getOrCreate('xxx');
 
   expect(executor.value).toBe(111);
 
-  expect(stateParserMock).toHaveBeenCalledTimes(1);
-  expect(stateParserMock).toHaveBeenNthCalledWith(
-    1,
-    '{"key":"xxx","isFulfilled":true,"value":111,"settledAt":50,"invalidatedAt":0,"annotations":{}}'
+  expect(serializerMock.stringify).not.toHaveBeenCalled();
+  expect(serializerMock.parse).toHaveBeenCalledTimes(2);
+  expect(serializerMock.parse).toHaveBeenNthCalledWith(1, '"xxx"');
+  expect(serializerMock.parse).toHaveBeenNthCalledWith(
+    2,
+    '{"isFulfilled":true,"value":111,"settledAt":50,"invalidatedAt":0,"annotations":{}}'
   );
 });

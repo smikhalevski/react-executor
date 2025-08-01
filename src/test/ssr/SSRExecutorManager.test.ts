@@ -1,6 +1,8 @@
 import { describe, expect, test, vi } from 'vitest';
 import { SSRExecutorManager } from '../../main/ssr/index.js';
 import { noop } from '../../main/utils.js';
+import { ExecutorState } from '../../main/index.js';
+import { Serializer } from '../../main/types.js';
 
 Date.now = () => 50;
 
@@ -27,7 +29,7 @@ describe('nextHydrationScript', () => {
     await promise;
 
     expect(manager.nextHydrationScript()).toBe(
-      '(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("{\\"key\\":\\"xxx\\",\\"isFulfilled\\":true,\\"value\\":111,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);'
+      '(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("\\"xxx\\"","{\\"isFulfilled\\":true,\\"value\\":111,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);'
     );
   });
 
@@ -48,7 +50,7 @@ describe('nextHydrationScript', () => {
     await promise2;
 
     expect(manager.nextHydrationScript()).toBe(
-      '(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("{\\"key\\":\\"xxx\\",\\"isFulfilled\\":true,\\"value\\":111,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}","{\\"key\\":\\"yyy\\",\\"isFulfilled\\":true,\\"value\\":222,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);'
+      '(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("\\"xxx\\"","{\\"isFulfilled\\":true,\\"value\\":111,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}","\\"yyy\\"","{\\"isFulfilled\\":true,\\"value\\":222,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);'
     );
   });
 
@@ -69,7 +71,7 @@ describe('nextHydrationScript', () => {
     await promise;
 
     expect(manager.nextHydrationScript()).toBe(
-      '(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("{\\"key\\":\\"yyy\\",\\"isFulfilled\\":true,\\"value\\":222,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);'
+      '(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("\\"yyy\\"","{\\"isFulfilled\\":true,\\"value\\":222,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);'
     );
   });
 
@@ -84,9 +86,9 @@ describe('nextHydrationScript', () => {
     expect(manager.nextHydrationScript()).toBe('');
   });
 
-  test('respects executorFilter option', async () => {
+  test('respects executorPredicate option', async () => {
     const manager = new SSRExecutorManager({
-      executorFilter: executor => executor.isSettled,
+      executorPredicate: executor => executor.isSettled,
     });
 
     await manager
@@ -95,31 +97,33 @@ describe('nextHydrationScript', () => {
       .catch(noop);
 
     expect(manager.nextHydrationScript()).toBe(
-      '(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("{\\"key\\":\\"xxx\\",\\"isFulfilled\\":false,\\"reason\\":\\"expected\\",\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);'
+      '(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("\\"xxx\\"","{\\"isFulfilled\\":false,\\"reason\\":\\"expected\\",\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);'
     );
   });
 
-  test('respects stateStringifier option', () => {
-    const stateStringifierMock = vi.fn(JSON.stringify);
+  test('uses a custom serializer', () => {
+    const serializerMock: Serializer = {
+      parse: vi.fn(JSON.parse),
+      stringify: vi.fn(JSON.stringify),
+    };
 
-    const manager = new SSRExecutorManager({
-      stateStringifier: stateStringifierMock,
-    });
+    const manager = new SSRExecutorManager({ serializer: serializerMock });
 
     manager.getOrCreate('xxx', 111);
 
     manager.nextHydrationScript();
 
-    expect(stateStringifierMock).toHaveBeenCalledTimes(1);
-    expect(stateStringifierMock).toHaveBeenNthCalledWith(1, {
+    expect(serializerMock.parse).not.toHaveBeenCalled();
+    expect(serializerMock.stringify).toHaveBeenCalledTimes(2);
+    expect(serializerMock.stringify).toHaveBeenNthCalledWith(1, 'xxx');
+    expect(serializerMock.stringify).toHaveBeenNthCalledWith(2, {
       annotations: {},
       invalidatedAt: 0,
       isFulfilled: true,
-      key: 'xxx',
       reason: undefined,
       settledAt: 50,
       value: 111,
-    });
+    } satisfies ExecutorState);
   });
 
   test('escapes XSS-prone strings', () => {
@@ -130,7 +134,7 @@ describe('nextHydrationScript', () => {
     const source = manager.nextHydrationScript();
 
     expect(source).toBe(
-      '(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("{\\"key\\":\\"xxx\\",\\"isFulfilled\\":true,\\"value\\":\\"\\u003Cscript src=\\\\\\"https://xxx.yyy\\\\\\">\\u003C/script>\\",\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);'
+      '(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("\\"xxx\\"","{\\"isFulfilled\\":true,\\"value\\":\\"\\u003Cscript src=\\\\\\"https://xxx.yyy\\\\\\">\\u003C/script>\\",\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);'
     );
   });
 });
@@ -150,7 +154,7 @@ describe('nextHydrationChunk', () => {
     await manager.getOrCreate('xxx').execute(() => 111);
 
     expect(manager.nextHydrationChunk()).toBe(
-      '<script>(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("{\\"key\\":\\"xxx\\",\\"isFulfilled\\":true,\\"value\\":111,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);</script>'
+      '<script>(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("\\"xxx\\"","{\\"isFulfilled\\":true,\\"value\\":111,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);</script>'
     );
   });
 
@@ -162,7 +166,7 @@ describe('nextHydrationChunk', () => {
     const chunk = manager.nextHydrationChunk();
 
     expect(chunk).toBe(
-      '<script nonce="111">(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("{\\"key\\":\\"xxx\\",\\"isFulfilled\\":true,\\"value\\":111,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);</script>'
+      '<script nonce="111">(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("\\"xxx\\"","{\\"isFulfilled\\":true,\\"value\\":111,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);</script>'
     );
   });
 });

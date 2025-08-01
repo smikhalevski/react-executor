@@ -1,27 +1,26 @@
 import { ExecutorManager, type ExecutorManagerOptions } from '../ExecutorManager.js';
-import type { Executor, ExecutorState } from '../types.js';
+import type { Executor, Serializer } from '../types.js';
 
 /**
  * Options provided to the {@link SSRExecutorManager} constructor.
  */
 export interface SSRExecutorManagerOptions extends ExecutorManagerOptions {
   /**
-   * Stringifies an executor state before it is sent to the client.
+   * Stringifies executor keys and state snapshots before sending them to the client.
    *
-   * @param state The executor state to stringify.
-   * @default JSON.stringify
+   * @default JSON
    */
-  stateStringifier?: (state: ExecutorState) => string;
+  serializer?: Serializer;
 
   /**
-   * Filters executors that must be hydrated on the client with the state that was accumulated during SSR.
+   * Predicate that executors must satisfy to be hydrated on the client with the state accumulated during SSR.
    *
    * By default, only executors that were fulfilled during SSR are hydrated on the client.
    *
    * @param executor The executor to check.
    * @returns `true` if the executor must be hydrated on the client, or `false` otherwise.
    */
-  executorFilter?: (executor: Executor) => boolean;
+  executorPredicate?: (executor: Executor) => boolean;
 
   /**
    * A nonce string to allow hydration scripts under a
@@ -40,14 +39,14 @@ export class SSRExecutorManager extends ExecutorManager {
   protected _hydratedVersions = new WeakMap<Executor, number>();
 
   /**
-   * Stringifies the state of the executor before sending it to the client.
+   * Stringifies executor keys and state snapshots before sending them to the client.
    */
-  protected _stateStringifier;
+  protected _serializer;
 
   /**
-   * Filters executors that must be hydrated on the client with the state that was accumulated during SSR.
+   * Predicate that executors must satisfy to be hydrated on the client with the state accumulated during SSR.
    */
-  protected _executorFilter;
+  protected _executorPredicate;
 
   /**
    * A nonce string to allow hydration scripts under a
@@ -61,12 +60,12 @@ export class SSRExecutorManager extends ExecutorManager {
    * @param options Additional options.
    */
   constructor(options: SSRExecutorManagerOptions = {}) {
-    const { stateStringifier = JSON.stringify, executorFilter = executor => executor.isFulfilled } = options;
+    const { serializer = JSON, executorPredicate = executor => executor.isFulfilled } = options;
 
     super(options);
 
-    this._stateStringifier = stateStringifier;
-    this._executorFilter = executorFilter;
+    this._serializer = serializer;
+    this._executorPredicate = executorPredicate;
 
     this.nonce = options.nonce;
   }
@@ -90,23 +89,26 @@ export class SSRExecutorManager extends ExecutorManager {
    * are no state changes since the last time {@link nextHydrationScript} was called.
    */
   nextHydrationScript(): string {
-    const stateStrs = [];
+    const ssrState = [];
 
     for (const executor of this._executors.values()) {
-      if (this._hydratedVersions.get(executor) !== executor.version && this._executorFilter(executor)) {
-        stateStrs.push(JSON.stringify(this._stateStringifier(executor.toJSON())));
+      if (this._hydratedVersions.get(executor) !== executor.version && this._executorPredicate(executor)) {
+        ssrState.push(
+          JSON.stringify(this._serializer.stringify(executor.key)),
+          JSON.stringify(this._serializer.stringify(executor.getStateSnapshot()))
+        );
 
         this._hydratedVersions.set(executor, executor.version);
       }
     }
 
-    if (stateStrs.length === 0) {
+    if (ssrState.length === 0) {
       return '';
     }
 
     return (
       '(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push(' +
-      stateStrs.join(',').replace(/</g, '\\u003C') +
+      ssrState.join(',').replace(/</g, '\\u003C') +
       ');var e=document.currentScript;e&&e.parentNode.removeChild(e);'
     );
   }

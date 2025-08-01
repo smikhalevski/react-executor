@@ -1,6 +1,6 @@
 import { beforeEach, expect, Mock, test, vi } from 'vitest';
 import { delay } from 'parallel-universe';
-import { ExecutorManager } from '../../main/index.js';
+import { ExecutorEvent, ExecutorManager } from '../../main/index.js';
 import abortDeactivated from '../../main/plugin/abortDeactivated.js';
 import { AbortError } from '../../main/utils.js';
 
@@ -32,12 +32,37 @@ test('aborts a deactivated executor', async () => {
     target: executor,
     version: 0,
     payload: { type: 'abortDeactivated', options: { delay: 0 } },
-  });
-  expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
-  expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'activated', target: executor, version: 0 });
-  expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'pending', target: executor, version: 1 });
-  expect(listenerMock).toHaveBeenNthCalledWith(5, { type: 'deactivated', target: executor, version: 1 });
-  expect(listenerMock).toHaveBeenNthCalledWith(6, { type: 'aborted', target: executor, version: 2 });
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(2, {
+    type: 'attached',
+    target: executor,
+    version: 0,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(3, {
+    type: 'activated',
+    target: executor,
+    version: 0,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(4, {
+    type: 'pending',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(5, {
+    type: 'deactivated',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(6, {
+    type: 'aborted',
+    target: executor,
+    version: 2,
+    payload: undefined,
+  } satisfies ExecutorEvent);
 });
 
 test('cancels abortion of an activated executor', async () => {
@@ -59,11 +84,41 @@ test('cancels abortion of an activated executor', async () => {
     target: executor,
     version: 0,
     payload: { type: 'abortDeactivated', options: { delay: 0 } },
-  });
-  expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
-  expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'activated', target: executor, version: 0 });
-  expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'pending', target: executor, version: 1 });
-  expect(listenerMock).toHaveBeenNthCalledWith(5, { type: 'deactivated', target: executor, version: 1 });
-  expect(listenerMock).toHaveBeenNthCalledWith(6, { type: 'activated', target: executor, version: 1 });
-  expect(listenerMock).toHaveBeenNthCalledWith(7, { type: 'fulfilled', target: executor, version: 2 });
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(2, {
+    type: 'attached',
+    target: executor,
+    version: 0,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(3, {
+    type: 'activated',
+    target: executor,
+    version: 0,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(4, {
+    type: 'pending',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(5, {
+    type: 'deactivated',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(6, {
+    type: 'activated',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(7, {
+    type: 'fulfilled',
+    target: executor,
+    version: 2,
+    payload: undefined,
+  } satisfies ExecutorEvent);
 });

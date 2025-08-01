@@ -1,6 +1,6 @@
 import { beforeEach, expect, Mock, test, vi } from 'vitest';
 import { delay } from 'parallel-universe';
-import { ExecutorManager } from '../../main/index.js';
+import { ExecutorEvent, ExecutorManager } from '../../main/index.js';
 import detachDeactivated from '../../main/plugin/detachDeactivated.js';
 
 let listenerMock: Mock;
@@ -29,12 +29,37 @@ test('detaches a deactivated executor', async () => {
     target: executor,
     version: 0,
     payload: { type: 'detachInactive', options: { delayAfterDeactivation: 0 } },
-  });
-  expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
-  expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'activated', target: executor, version: 0 });
-  expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'pending', target: executor, version: 1 });
-  expect(listenerMock).toHaveBeenNthCalledWith(5, { type: 'deactivated', target: executor, version: 1 });
-  expect(listenerMock).toHaveBeenNthCalledWith(6, { type: 'detached', target: executor, version: 1 });
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(2, {
+    type: 'attached',
+    target: executor,
+    version: 0,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(3, {
+    type: 'activated',
+    target: executor,
+    version: 0,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(4, {
+    type: 'pending',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(5, {
+    type: 'deactivated',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(6, {
+    type: 'detached',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
 });
 
 test('cancels deactivation of an activated executor', async () => {
@@ -54,11 +79,41 @@ test('cancels deactivation of an activated executor', async () => {
     target: executor,
     version: 0,
     payload: { type: 'detachInactive', options: { delayAfterDeactivation: 0 } },
-  });
-  expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
-  expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'activated', target: executor, version: 0 });
-  expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'pending', target: executor, version: 1 });
-  expect(listenerMock).toHaveBeenNthCalledWith(5, { type: 'deactivated', target: executor, version: 1 });
-  expect(listenerMock).toHaveBeenNthCalledWith(6, { type: 'activated', target: executor, version: 1 });
-  expect(listenerMock).toHaveBeenNthCalledWith(7, { type: 'fulfilled', target: executor, version: 2 });
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(2, {
+    type: 'attached',
+    target: executor,
+    version: 0,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(3, {
+    type: 'activated',
+    target: executor,
+    version: 0,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(4, {
+    type: 'pending',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(5, {
+    type: 'deactivated',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(6, {
+    type: 'activated',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(7, {
+    type: 'fulfilled',
+    target: executor,
+    version: 2,
+    payload: undefined,
+  } satisfies ExecutorEvent);
 });
