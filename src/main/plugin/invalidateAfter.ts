@@ -32,7 +32,7 @@ export default function invalidateAfter(delay: number): ExecutorPlugin {
           clearTimeout(timer);
 
           if (!executor.isInvalidated && !executor.isPending && executor.isSettled) {
-            timer = setTimeout(() => executor.invalidate(), delay);
+            timer = setTimeout(executor.invalidate, delay);
           }
           break;
 

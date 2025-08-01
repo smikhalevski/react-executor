@@ -28,12 +28,28 @@ test('aborts the pending task', () => {
   expect(taskMock.mock.calls[0][0].aborted).toBe(true);
 });
 
-test('aborts the executed task', () => {
+test('does not abort the executed task by default', () => {
   const pubSub = new PubSub<boolean>();
 
   const taskMock = vi.fn();
 
   const executor = manager.getOrCreate('xxx', undefined, [abortWhen(pubSub)]);
+
+  pubSub.publish(true);
+
+  vi.runAllTimers();
+
+  executor.execute(taskMock).catch(noop);
+
+  expect(taskMock.mock.calls[0][0].aborted).toBe(false);
+});
+
+test('aborts the executed task if isContinuous is true', () => {
+  const pubSub = new PubSub<boolean>();
+
+  const taskMock = vi.fn();
+
+  const executor = manager.getOrCreate('xxx', undefined, [abortWhen(pubSub, { isContinuous: true })]);
 
   pubSub.publish(true);
 

@@ -22,7 +22,7 @@ import type { ExecutorPlugin, Observable, PluginConfiguredPayload } from '../typ
  */
 export default function resolveBy<Value>(observable: Observable<PromiseLike<Value> | Value>): ExecutorPlugin<Value> {
   return executor => {
-    const unsubscribe = observable.subscribe(value => executor.resolve(value));
+    const unsubscribe = observable.subscribe(executor.resolve);
 
     executor.subscribe(event => {
       if (event.type === 'detached') {

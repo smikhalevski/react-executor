@@ -46,7 +46,7 @@ export default function abortDeactivated(options: AbortDeactivatedOptions = empt
         case 'deactivated':
           clearTimeout(timer);
 
-          timer = setTimeout(() => executor.abort(), delay);
+          timer = setTimeout(executor.abort, delay);
           break;
 
         case 'activated':
