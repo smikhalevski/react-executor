@@ -15,11 +15,9 @@ beforeEach(() => {
 test('aborts the pending task', () => {
   const pubSub = new PubSub<boolean>();
 
-  const taskMock = vi.fn(_signal => delay(10_000));
+  const taskMock = vi.fn(_signal => new Promise(noop));
 
-  const executor = manager.getOrCreate('xxx', undefined, [abortWhen(pubSub)]);
-
-  executor.execute(taskMock).catch(noop);
+  manager.getOrCreate('xxx', taskMock, [abortWhen(pubSub)]);
 
   pubSub.publish(true);
 
@@ -39,23 +37,23 @@ test('does not abort the executed task by default', () => {
 
   vi.runAllTimers();
 
-  executor.execute(taskMock).catch(noop);
+  executor.execute(taskMock);
 
   expect(taskMock.mock.calls[0][0].aborted).toBe(false);
 });
 
-test('aborts the executed task if isContinuous is true', () => {
+test('aborts the executed task if isSustained is true', () => {
   const pubSub = new PubSub<boolean>();
 
   const taskMock = vi.fn();
 
-  const executor = manager.getOrCreate('xxx', undefined, [abortWhen(pubSub, { isContinuous: true })]);
+  const executor = manager.getOrCreate('xxx', undefined, [abortWhen(pubSub, { isSustained: true })]);
 
   pubSub.publish(true);
 
   vi.runAllTimers();
 
-  executor.execute(taskMock).catch(noop);
+  executor.execute(taskMock);
 
   expect(taskMock.mock.calls[0][0].aborted).toBe(true);
 });
@@ -67,7 +65,7 @@ test('does not abort if the observable has pushed false before the timeout', asy
 
   const executor = manager.getOrCreate('xxx', undefined, [abortWhen(pubSub, { delay: 10_000 })]);
 
-  executor.execute(taskMock).catch(noop);
+  executor.execute(taskMock);
 
   pubSub.publish(true);
 
@@ -89,7 +87,7 @@ test('does not abort if true pushed twice', () => {
 
   const executor = manager.getOrCreate('xxx', undefined, [abortWhen(pubSub)]);
 
-  executor.execute(taskMock).catch(noop);
+  executor.execute(taskMock);
 
   pubSub.publish(true);
   pubSub.publish(true);

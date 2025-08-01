@@ -20,14 +20,14 @@ import { emptyObject } from '../utils.js';
  */
 export interface RetryRejectedOptions<Value> {
   /**
-   * The number of times the task must be repeated if it fails.
+   * The number of retries.
    *
    * @default 3
    */
   count?: number;
 
   /**
-   * The delay in milliseconds after which the retry is scheduled.
+   * The delay (in milliseconds) between retries.
    *
    * By default, an exponential backoff is used.
    */
@@ -53,7 +53,7 @@ export default function retryRejected<Value = any>(
   const { count = 3, delay = exponentialBackoff, isEager = false } = options;
 
   return executor => {
-    let timer: NodeJS.Timeout;
+    let timer: ReturnType<typeof setTimeout>;
     let index = 0;
 
     executor.subscribe(event => {
@@ -85,14 +85,11 @@ export default function retryRejected<Value = any>(
 
     executor.publish({
       type: 'plugin_configured',
-      payload: {
-        type: 'retryRejected',
-        options: { count, delay, isEager },
-      } satisfies PluginConfiguredPayload,
+      payload: { type: 'retryRejected', options: { count, delay, isEager } } satisfies PluginConfiguredPayload,
     });
   };
 }
 
 function exponentialBackoff(index: number): number {
-  return 1000 * 1.8 ** index;
+  return 1000 * Math.pow(1.8, index);
 }

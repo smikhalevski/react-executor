@@ -1,7 +1,6 @@
 import { beforeEach, expect, Mock, test, vi } from 'vitest';
 import { ExecutorManager } from '../../main/index.js';
 import retryFulfilled from '../../main/plugin/retryFulfilled.js';
-import { noop } from '../../main/utils.js';
 
 vi.useFakeTimers();
 
@@ -56,7 +55,6 @@ test('stops retrying if an executor is aborted', async () => {
   vi.runAllTimers();
   expect(executor.isPending).toBe(true);
 
-  executor.promise!.catch(noop);
   executor.abort();
 
   // Retry 2
@@ -79,7 +77,6 @@ test('stops retrying if an executor is rejected', async () => {
   vi.runAllTimers();
   expect(executor.isPending).toBe(true);
 
-  executor.promise!.catch(noop);
   executor.reject(undefined);
 
   // Retry 2

@@ -21,8 +21,8 @@ import { emptyObject } from '../utils.js';
  */
 export interface RetryWhenOptions {
   /**
-   * The delay in milliseconds after `true` is emitted by the observer and before the executor is retried. If during
-   * this delay `false` is emitted, then executor isn't retried.
+   * The minimum delay (in milliseconds) after the observable emits `true` and retrying the executor — unless
+   * the observable emits `false`.
    *
    * @default 0
    */
@@ -37,8 +37,10 @@ export interface RetryWhenOptions {
 }
 
 /**
- * Retries the latest task if the observable emits `true`. If executor isn't active and retry isn't
- * {@link RetryWhenOptions.isEager eager} then the task is retried after the executor becomes active.
+ * Retries the latest task if the observable emits `true`.
+ *
+ * **NOte:** If executor isn't active and retry isn't {@link RetryWhenOptions.isEager eager} then the task is retried
+ * after the executor becomes active.
  *
  * @param observable The observable that triggers the retry of the latest task.
  * @param options Retry options.
@@ -50,18 +52,14 @@ export default function retryWhen(
   const { delay = 0, isEager = false } = options;
 
   return executor => {
-    let timer: NodeJS.Timeout | undefined;
+    let timer: ReturnType<typeof setTimeout>;
     let shouldRetry = false;
 
     const unsubscribe = observable.subscribe(isRetried => {
-      if (!isRetried) {
-        clearTimeout(timer);
-        timer = undefined;
-        shouldRetry = false;
-        return;
-      }
+      clearTimeout(timer);
 
-      if (shouldRetry || timer !== undefined || executor.isPending) {
+      if (!isRetried || executor.isPending) {
+        shouldRetry = false;
         return;
       }
 
@@ -70,7 +68,6 @@ export default function retryWhen(
           shouldRetry = false;
           executor.retry();
         } else {
-          timer = undefined;
           shouldRetry = true;
         }
       }, delay);
@@ -89,7 +86,6 @@ export default function retryWhen(
         case 'fulfilled':
         case 'rejected':
           clearTimeout(timer);
-          timer = undefined;
           shouldRetry = false;
           break;
 
@@ -102,10 +98,7 @@ export default function retryWhen(
 
     executor.publish({
       type: 'plugin_configured',
-      payload: {
-        type: 'retryWhen',
-        options: { observable, delay, isEager },
-      } satisfies PluginConfiguredPayload,
+      payload: { type: 'retryWhen', options: { observable, delay, isEager } } satisfies PluginConfiguredPayload,
     });
   };
 }

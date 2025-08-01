@@ -21,20 +21,20 @@ import { emptyObject } from '../utils.js';
  */
 export interface AbortWhenOptions {
   /**
-   * The delay in milliseconds after `true` is emitted by the observer and before the executor is aborted. If `false`
-   * is emitted during this delay, then executor isn't aborted.
+   * The minimum delay (in milliseconds) after the observable emits `true` and aborting the executor — unless
+   * the executor is settled or the observable emits `false`.
    *
    * @default 0
    */
   delay?: number;
 
   /**
-   * If `true` then a new task is instantly aborted when executed after the last value emitted by the observable was
-   * `true`.
+   * If `true`, every new task is immediately aborted if the last value emitted by the observable was `true` and
+   * the {@link delay} has expired.
    *
    * @default false
    */
-  isContinuous?: boolean;
+  isSustained?: boolean;
 }
 
 /**
@@ -47,27 +47,22 @@ export default function abortWhen(
   observable: Observable<boolean>,
   options: AbortWhenOptions = emptyObject
 ): ExecutorPlugin {
-  const { delay = 0, isContinuous = false } = options;
+  const { delay = 0, isSustained = false } = options;
 
   return executor => {
-    let timer: NodeJS.Timeout | undefined;
+    let timer: ReturnType<typeof setTimeout>;
     let shouldAbort = false;
 
     const unsubscribe = observable.subscribe(isAborted => {
+      clearTimeout(timer);
+
       if (!isAborted) {
-        clearTimeout(timer);
-        timer = undefined;
         shouldAbort = false;
         return;
       }
 
-      if (shouldAbort || timer !== undefined) {
-        return;
-      }
-
       timer = setTimeout(() => {
-        timer = undefined;
-        shouldAbort = isContinuous;
+        shouldAbort = true;
         executor.abort();
       }, delay);
     });
@@ -75,7 +70,7 @@ export default function abortWhen(
     executor.subscribe(event => {
       switch (event.type) {
         case 'pending':
-          if (shouldAbort) {
+          if (shouldAbort && isSustained) {
             executor.abort();
           }
           break;
@@ -89,10 +84,7 @@ export default function abortWhen(
 
     executor.publish({
       type: 'plugin_configured',
-      payload: {
-        type: 'abortWhen',
-        options: { observable, delay, isContinuous },
-      } satisfies PluginConfiguredPayload,
+      payload: { type: 'abortWhen', options: { observable, delay, isSustained } } satisfies PluginConfiguredPayload,
     });
   };
 }

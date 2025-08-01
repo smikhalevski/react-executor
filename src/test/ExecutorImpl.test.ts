@@ -201,7 +201,6 @@ describe('execute', () => {
 
     const promise = executor.execute(taskMock);
 
-    promise.catch(noop);
     promise.abort();
 
     expect(executor.task).toBe(taskMock);
@@ -243,7 +242,6 @@ describe('execute', () => {
 
     const promise = executor.execute(taskMock1);
 
-    promise.catch(noop);
     promise.abort();
 
     expect(executor.task).toBe(taskMock2);
@@ -293,10 +291,8 @@ describe('execute', () => {
     });
 
     const promise1 = executor.execute(taskMock1);
-    promise1.catch(noop);
 
     const promise2 = executor.execute(taskMock2);
-    promise2.catch(noop);
 
     expect(executor.task).toBe(taskMock3);
     expect(executor.promise).not.toBeNull();
@@ -430,7 +426,7 @@ describe('resolve', () => {
   test('aborts pending task and preserves it as the latest task', () => {
     const taskMock = vi.fn((_signal, _executor) => 'aaa');
 
-    executor.execute(taskMock).catch(noop);
+    executor.execute(taskMock);
     executor.resolve('bbb');
 
     expect(taskMock).toHaveBeenCalledTimes(1);
@@ -536,7 +532,7 @@ describe('reject', () => {
   test('aborts pending task and preserves it as the latest task', () => {
     const taskMock = vi.fn((_signal, _executor) => 'aaa');
 
-    executor.execute(taskMock).catch(noop);
+    executor.execute(taskMock);
     executor.reject('bbb');
 
     expect(taskMock).toHaveBeenCalledTimes(1);
@@ -762,7 +758,7 @@ describe('abort', () => {
   test('aborts the pending task', async () => {
     const taskMock = vi.fn(_signal => 'aaa');
 
-    executor.execute(taskMock).catch(noop);
+    executor.execute(taskMock);
     executor.abort('bbb');
 
     expect(executor.task).toBe(taskMock);
@@ -789,7 +785,7 @@ describe('abort', () => {
 
   test('abort preserves the value intact', () => {
     executor.resolve('aaa');
-    executor.execute(() => 'bbb').catch(noop);
+    executor.execute(() => 'bbb');
     executor.abort();
 
     expect(executor.isFulfilled).toBe(true);
@@ -801,7 +797,7 @@ describe('abort', () => {
 
   test('abort preserves reason intact', () => {
     executor.reject(expectedReason);
-    executor.execute(() => 'bbb').catch(noop);
+    executor.execute(() => 'bbb');
     executor.abort();
 
     expect(listenerMock).toHaveBeenCalledTimes(3);

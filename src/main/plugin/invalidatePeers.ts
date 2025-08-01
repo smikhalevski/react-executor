@@ -17,46 +17,40 @@ import type { Executor, ExecutorPlugin, PluginConfiguredPayload } from '../types
 /**
  * Invalidates peer executors with matching keys if the executor is fulfilled or invalidated.
  *
- * @param peerMatcher The callback that returns a truthy value for a matching peer executor.
+ * @param predicate The callback that returns a truthy value for a matching peer executor.
  */
-export default function invalidatePeers(
-  peerMatcher: Iterable<Executor> | ((executor: Executor) => any)
-): ExecutorPlugin {
+export default function invalidatePeers(predicate: Iterable<Executor> | ((executor: Executor) => any)): ExecutorPlugin {
   return executor => {
-    const peerExecutors = new Set(
-      typeof peerMatcher === 'function' ? Array.from(executor.manager).filter(peerMatcher) : peerMatcher
-    );
+    const peers = new Set(typeof predicate === 'function' ? Array.from(executor.manager).filter(predicate) : predicate);
 
     const unsubscribe = executor.manager.subscribe(event => {
-      const { type: eventType, target: peerExecutor } = event;
+      const { type: eventType, target: peer } = event;
 
-      if (peerExecutor === executor) {
+      if (peer === executor) {
         switch (eventType) {
           case 'invalidated':
           case 'fulfilled':
-            for (const peerExecutor of peerExecutors) {
-              peerExecutor.invalidate();
+            for (const peer of peers) {
+              peer.invalidate();
             }
             break;
 
           case 'detached':
             unsubscribe();
+            break;
         }
         return;
       }
 
       if (
-        (eventType === 'attached' &&
-          typeof peerMatcher === 'function' &&
-          peerMatcher(peerExecutor) &&
-          (peerExecutors.add(peerExecutor), true)) ||
-        (eventType === 'detached' && peerExecutors.delete(peerExecutor))
+        (eventType === 'attached' && typeof predicate === 'function' && predicate(peer) && peers.add(peer)) ||
+        (eventType === 'detached' && peers.delete(peer))
       ) {
         executor.publish({
           type: 'plugin_configured',
           payload: {
             type: 'invalidatePeers',
-            options: { peerExecutors: Array.from(peerExecutors) },
+            options: { peers: Array.from(peers) },
           } satisfies PluginConfiguredPayload,
         });
       }
@@ -66,7 +60,7 @@ export default function invalidatePeers(
       type: 'plugin_configured',
       payload: {
         type: 'invalidatePeers',
-        options: { peerExecutors: Array.from(peerExecutors) },
+        options: { peers: Array.from(peers) },
       } satisfies PluginConfiguredPayload,
     });
   };

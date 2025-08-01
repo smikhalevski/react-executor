@@ -20,8 +20,8 @@ import { emptyObject } from '../utils.js';
  */
 export interface DetachDeactivatedOptions {
   /**
-   * The delay in milliseconds after which the executor is detached after being deactivated. If an executor is
-   * re-activated during this delay, the executor won't be detached.
+   * The minimum delay (in milliseconds) between executor deactivation and detachment. If the executor is reactivated
+   * during this delay, it won't be detached.
    *
    * @default 5_000
    */
@@ -38,5 +38,5 @@ export interface DetachDeactivatedOptions {
 export default function detachDeactivated(options: DetachDeactivatedOptions = emptyObject): ExecutorPlugin {
   const { delay = 5_000 } = options;
 
-  return detachInactive({ delayAfterDeactivation: delay });
+  return detachInactive({ delayAfterDeactivated: delay });
 }

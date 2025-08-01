@@ -64,6 +64,7 @@ npm install --save-prod react-executor
 - [`invalidateAfter`](#invalidateafter)
 - [`invalidateByPeers`](#invalidatebypeers)
 - [`invalidatePeers`](#invalidatepeers)
+- [`invalidateWhen`](#invalidatewhen)
 - [`lazyTask`](#lazytask)
 - [`rejectPendingAfter`](#rejectpendingafter)
 - [`resolveBy`](#resolveby)
@@ -888,12 +889,12 @@ const executor = useExecutor('test', heavyTask, [
     delay: 5_000,
 
     // 🟡 Abort every newly executed task
-    isContinuous: true,
+    isSustained: true,
   }),
 ]);
 ```
 
-Read more about observables in the [`retryWhen`](#retrywhen) section.
+Read more about observables in the [`InvalidateWhen`](#invalidatewhen) section.
 
 ## `detachDeactivated`
 
@@ -942,7 +943,7 @@ Detach an executor if it wasn't activated during first 5 seconds after being cre
 import detachInactive from 'react-executor/plugin/detachInactive';
 
 const executor = useExecutor('test', 42, [
-  detachInactive({ delayBeforeActivation: 5_000 }),
+  detachInactive({ delayBeforeActivated: 5_000 }),
 ]);
 ```
 
@@ -1040,6 +1041,65 @@ const cheeseExecutor = useExecutor('cheese', 'Burrata', [
 
 // breadExecutor is invalidated
 cheeseExecutor.resolve('Mozzarella');
+```
+
+## `invalidateWhen`
+
+[Invalidates](#invalidate-results) the settled executor result when the
+[observable&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Observable.html)
+emits `true`.
+
+For example, if the window was offline for more than 5 seconds, then the executor would be invalidated when the window
+goes is back online:
+
+<!-- prettier-ignore -->
+```ts
+import invalidateWhen from 'react-executor/plugin/invalidateWhen';
+import navigatorOnline from 'react-executor/observable/navigatorOnline';
+
+const executor = useExecutor('test', heavyTask, [
+  invalidateWhen(navigatorOnline, { delay: 5_000 }),
+]);
+```
+
+Combining multiple plugins, you can set up a complex executor behaviour. For example, let's create an executor that
+follows these requirements:
+
+1. Executes the task every 5 seconds.
+2. Aborts the pending task if the window loses focus for more than 10 seconds.
+3. Aborts instantly if the window goes offline.
+4. Resumes the periodic task execution if window gains focus or goes back online.
+
+```ts
+import { useExecutor } from 'react-executor';
+import abortWhen from 'react-executor/plugin/abortWhen';
+import invalidateWhen from 'react-executor/observable/invalidateWhen';
+import navigatorOffline from 'react-executor/observable/navigatorOffline';
+import navigatorOnline from 'react-executor/observable/navigatorOnline';
+import retryInvalidated from 'react-executor/plugin/retryInvalidated';
+import retryFulfilled from 'react-executor/plugin/retryFulfilled';
+import windowBlurred from 'react-executor/observable/windowBlurred';
+import windowFocused from 'react-executor/observable/windowFocused';
+
+useExecutor('test', heavyTask, [
+  retryInvalidated(),
+
+  // Retry the task every 5 seconds if if succeeds
+  retryFulfilled({ delay: 5_000 }),
+
+  // Abort the task if the window looses focus for at least 10 seconds
+  abortWhen(windowBlurred, { delay: 10_000 }),
+
+  // Abort the pending task if the device is disconnected from the network
+  abortWhen(navigatorOffline),
+
+  // Invalidate results when the window was blurred and then gains focus
+  invalidateWhen(windowFocused),
+
+  // Invalidate results if the device was disconnected from the network
+  // and then connects again
+  invalidateWhen(navigatorOnline),
+]);
 ```
 
 ## `lazyTask`
@@ -1148,7 +1208,7 @@ settled:
 <!-- prettier-ignore -->
 ```ts
 const executor = useExecutor('test', heavyTask, [
-  retryActivated({ staleDelay: 5_000 }),
+  retryActivated({ delay: 5_000 }),
 ]);
 
 // Doesn't retry the task if 5 seconds didn't pass
@@ -1166,15 +1226,13 @@ import retryFulfilled from 'react-executor/plugin/retryFulfilled';
 const executor = useExecutor('test', heavyTask, [
   retryFulfilled(),
 ]);
-
-executor.activate();
 ```
 
 If the task fails, is aborted, or if an executor is deactivated then the plugin stops the retry process.
 
-With the default configuration, the plugin would infinitely retry the task of an active executor with a 5-second delay
-between retries. This is effectively a decent polling strategy that kicks in only if someone is actually using an
-executor.
+With the default configuration, the plugin would infinitely retry the task of an [active](#activate-an-executor)
+executor with a 5-second delay between retries. This is effectively a decent polling strategy that kicks in only if
+someone is actually using an executor.
 
 Specify the number of times the task should be re-executed if it succeeds:
 
@@ -1203,6 +1261,29 @@ To retry the latest task regardless of the executor activation status:
 
 ```ts
 retryFulfilled({ isEager: true });
+```
+
+Use `retryFulfilled` in conjunction with [`retryRejected`](#retryrejected) to create a polling sequence. For example,
+this configuration would infinitely poll the `heavyTask` and would retry failed iterations with an exponential backoff
+and no more then 3 times in a row:
+
+<!-- prettier-ignore -->
+```ts
+const executor = useExecutor('test', heavyTask, [
+  retryFulfilled(),
+  retryRejected({ count: 5 }),
+]);
+```
+
+You can also use a combination of [`invalidateAfter`](#invalidateafter) and [`retryInvalidated`](#retryinvalidated)
+to create an infinite polling regardless of the result of the previous iteration:
+
+<!-- prettier-ignore -->
+```ts
+const executor = useExecutor('test', heavyTask, [
+  invalidateAfter(5_000),
+  retryInvalidated(),
+]);
 ```
 
 ## `retryInvalidated`
@@ -1323,43 +1404,6 @@ import navigatorOnline from 'react-executor/observable/navigatorOnline';
 
 const executor = useExecutor('test', heavyTask, [
   retryWhen(navigatorOnline, { delay: 5_000 }),
-]);
-```
-
-Combining multiple plugins, you can set up a complex executor behaviour. For example, let's create an executor that
-follows these requirements:
-
-1. Executes the task every 5 seconds.
-2. Aborts the pending task if the window loses focus for more than 10 seconds.
-3. Aborts instantly if the window goes offline.
-4. Resumes the periodic task execution if window gains focus or goes back online.
-
-```ts
-import { useExecutor } from 'react-executor';
-import abortWhen from 'react-executor/plugin/abortWhen';
-import retryWhen from 'react-executor/plugin/retryWhen';
-import retryFulfilled from 'react-executor/plugin/retryFulfilled';
-import windowFocused from 'react-executor/observable/windowFocused';
-import windowBlurred from 'react-executor/observable/windowBlurred';
-import navigatorOnline from 'react-executor/observable/navigatorOnline';
-import navigatorOffline from 'react-executor/observable/navigatorOffline';
-
-useExecutor('test', heavyTask, [
-  // Execute the task every 5 seconds
-  retryFulfilled({ delay: 5_000 }),
-
-  // Abort the task and prevent future executions
-  // if the window looses focus for at least 10 seconds
-  abortWhen(windowBlurred, { delay: 10_000 }),
-
-  // Retry the latest task when the window gains focus
-  retryWhen(windowFocused),
-
-  // Instantly abort the pending task if the device is disconnected from the network
-  abortWhen(navigatorOffline),
-
-  // Retry the latest task if the window goes online
-  retryWhen(navigatorOnline),
 ]);
 ```
 

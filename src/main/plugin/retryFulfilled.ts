@@ -20,14 +20,14 @@ import { emptyObject } from '../utils.js';
  */
 export interface RetryFulfilledOptions<Value> {
   /**
-   * The number of repetitions.
+   * The number of retries.
    *
    * @default Infinity
    */
   count?: number;
 
   /**
-   * The delay in milliseconds after which the repetition is scheduled.
+   * The delay (in milliseconds) between retries.
    *
    * @default 5_000
    */
@@ -53,7 +53,7 @@ export default function retryFulfilled<Value = any>(
   const { count = Infinity, delay = 5000, isEager = false } = options;
 
   return executor => {
-    let timer: NodeJS.Timeout;
+    let timer: ReturnType<typeof setTimeout>;
     let index = 0;
 
     executor.subscribe(event => {
@@ -85,10 +85,7 @@ export default function retryFulfilled<Value = any>(
 
     executor.publish({
       type: 'plugin_configured',
-      payload: {
-        type: 'retryFulfilled',
-        options: { count, delay, isEager },
-      } satisfies PluginConfiguredPayload,
+      payload: { type: 'retryFulfilled', options: { count, delay, isEager } } satisfies PluginConfiguredPayload,
     });
   };
 }

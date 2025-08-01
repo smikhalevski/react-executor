@@ -1,3 +1,5 @@
+import { Observable } from './types.js';
+
 export const emptyObject = {};
 
 export function noop() {}
@@ -44,4 +46,15 @@ export function throwUnhandled(error: unknown): void {
   setTimeout(() => {
     throw error;
   }, 0);
+}
+
+/**
+ * Returns the observable that inverses boolean values emitted by another observable.
+ *
+ * @param observable The observable to inverse.
+ */
+export function negate(observable: Observable<any>): Observable<boolean> {
+  return {
+    subscribe: listener => observable.subscribe(value => listener(!value)),
+  };
 }

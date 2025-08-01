@@ -17,21 +17,19 @@ import type { Executor, ExecutorPlugin, PluginConfiguredPayload } from '../types
 /**
  * Invalidates the executor result if another executor is fulfilled or invalidated.
  *
- * @param peerMatcher A collection of peer executors or a callback that returns a truthy value for a matching peer
+ * @param predicate A collection of peer executors or a callback that returns a truthy value for a matching peer
  * executor.
  */
 export default function invalidateByPeers(
-  peerMatcher: Iterable<Executor> | ((executor: Executor) => any)
+  predicate: Iterable<Executor> | ((executor: Executor) => any)
 ): ExecutorPlugin {
   return executor => {
-    const peerExecutors = new Set(
-      typeof peerMatcher === 'function' ? Array.from(executor.manager).filter(peerMatcher) : peerMatcher
-    );
+    const peers = new Set(typeof predicate === 'function' ? Array.from(executor.manager).filter(predicate) : predicate);
 
     const unsubscribe = executor.manager.subscribe(event => {
-      const { type: eventType, target: peerExecutor } = event;
+      const { type: eventType, target: peer } = event;
 
-      if (peerExecutor === executor) {
+      if (peer === executor) {
         if (eventType === 'detached') {
           unsubscribe();
         }
@@ -39,22 +37,19 @@ export default function invalidateByPeers(
       }
 
       if (
-        (eventType === 'attached' &&
-          typeof peerMatcher === 'function' &&
-          peerMatcher(peerExecutor) &&
-          (peerExecutors.add(peerExecutor), true)) ||
-        (eventType === 'detached' && peerExecutors.delete(peerExecutor))
+        (eventType === 'attached' && typeof predicate === 'function' && predicate(peer) && peers.add(peer)) ||
+        (eventType === 'detached' && peers.delete(peer))
       ) {
         executor.publish({
           type: 'plugin_configured',
           payload: {
             type: 'invalidateByPeers',
-            options: { peerExecutors: Array.from(peerExecutors) },
+            options: { peers: Array.from(peers) },
           } satisfies PluginConfiguredPayload,
         });
       }
 
-      if ((eventType === 'invalidated' || eventType === 'fulfilled') && peerExecutors.has(peerExecutor)) {
+      if ((eventType === 'invalidated' || eventType === 'fulfilled') && peers.has(peer)) {
         executor.invalidate();
       }
     });
@@ -63,7 +58,7 @@ export default function invalidateByPeers(
       type: 'plugin_configured',
       payload: {
         type: 'invalidateByPeers',
-        options: { peerExecutors: Array.from(peerExecutors) },
+        options: { peers: Array.from(peers) },
       } satisfies PluginConfiguredPayload,
     });
   };

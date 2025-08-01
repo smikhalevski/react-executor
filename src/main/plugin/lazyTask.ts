@@ -25,10 +25,7 @@ export default function lazyTask<Value>(task: ExecutorTask<Value>): ExecutorPlug
 
     executor.publish({
       type: 'plugin_configured',
-      payload: {
-        type: 'lazyTask',
-        options: { task },
-      } satisfies PluginConfiguredPayload,
+      payload: { type: 'lazyTask', options: { task } } satisfies PluginConfiguredPayload,
     });
   };
 }

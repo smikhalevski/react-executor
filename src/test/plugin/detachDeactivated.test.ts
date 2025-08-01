@@ -28,7 +28,7 @@ test('detaches a deactivated executor', async () => {
     type: 'plugin_configured',
     target: executor,
     version: 0,
-    payload: { type: 'detachInactive', options: { delayAfterDeactivation: 0 } },
+    payload: { type: 'detachInactive', options: { delayAfterDeactivated: 0 } },
   } satisfies ExecutorEvent);
   expect(listenerMock).toHaveBeenNthCalledWith(2, {
     type: 'attached',
@@ -78,7 +78,7 @@ test('cancels deactivation of an activated executor', async () => {
     type: 'plugin_configured',
     target: executor,
     version: 0,
-    payload: { type: 'detachInactive', options: { delayAfterDeactivation: 0 } },
+    payload: { type: 'detachInactive', options: { delayAfterDeactivated: 0 } },
   } satisfies ExecutorEvent);
   expect(listenerMock).toHaveBeenNthCalledWith(2, {
     type: 'attached',

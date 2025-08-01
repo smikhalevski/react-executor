@@ -216,7 +216,7 @@ describe('abort', () => {
 
     const executor = manager.getOrCreate('xxx');
 
-    executor.execute(taskMock).catch(noop);
+    executor.execute(taskMock);
 
     manager.abort();
 
