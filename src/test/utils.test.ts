@@ -1,18 +1,18 @@
 import { expect, test, vi } from 'vitest';
 import { PubSub } from 'parallel-universe';
-import not from '../../main/observable/not.js';
+
+import { negate } from '../main/utils.js';
 
 test('inverses published value', () => {
   const listenerMock = vi.fn();
 
-  const pubSub = new PubSub<boolean>();
+  const pubSub1 = new PubSub<boolean>();
+  const pubSub2 = negate(pubSub1);
 
-  const notPubSub = not(pubSub);
+  pubSub2.subscribe(listenerMock);
 
-  notPubSub.subscribe(listenerMock);
-
-  pubSub.publish(true);
-  pubSub.publish(false);
+  pubSub1.publish(true);
+  pubSub1.publish(false);
 
   expect(listenerMock).toHaveBeenCalledTimes(2);
   expect(listenerMock).toHaveBeenNthCalledWith(1, false);

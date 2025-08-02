@@ -5,7 +5,7 @@
  * import detachInactive from 'react-executor/plugin/detachInactive';
  *
  * const executor = useExecutor('test', 42, [
- *   detachInactive({ delayBeforeActivation: 5_000 }),
+ *   detachInactive({ delayBeforeActivated: 5_000 }),
  * ]);
  * ```
  *
@@ -19,21 +19,21 @@ import type { ExecutorPlugin, PluginConfiguredPayload } from '../types.js';
  */
 export interface DetachInactiveOptions {
   /**
-   * The delay in milliseconds after which the executor is detached if it wasn't activated after being attached.
+   * The maximum delay (in milliseconds) allowed between executor creation and activation before it is detached.
    *
-   * Use this if you create an executor prematurely and not sure whether is will be used or not.
+   * Use this when creating an executor prematurely and unsure if it will be used.
    *
    * By default, executor isn't detached if it wasn't activated.
    */
-  delayBeforeActivation?: number;
+  delayBeforeActivated?: number;
 
   /**
-   * The delay in milliseconds after which the executor is detached after being deactivated. If executor is activated
-   * during this timeout, then detach is prevented.
+   * The minimum delay (in milliseconds) between executor deactivation and detachment. If the executor is reactivated
+   * during this delay, it won't be detached.
    *
    * By default, executor isn't detached if it was deactivated.
    */
-  delayAfterDeactivation?: number;
+  delayAfterDeactivated?: number;
 }
 
 /**
@@ -42,13 +42,15 @@ export interface DetachInactiveOptions {
  * @param options Detach options.
  */
 export default function detachInactive(options: DetachInactiveOptions): ExecutorPlugin {
-  const { delayBeforeActivation, delayAfterDeactivation } = options;
+  const { delayBeforeActivated, delayAfterDeactivated } = options;
 
   return executor => {
-    let timer: NodeJS.Timeout;
+    let timer: ReturnType<typeof setTimeout>;
 
-    if (delayBeforeActivation !== undefined) {
-      timer = setTimeout(() => executor.manager.detach(executor.key), delayBeforeActivation);
+    const detach = () => executor.manager.detach(executor.key);
+
+    if (delayBeforeActivated !== undefined) {
+      timer = setTimeout(detach, delayBeforeActivated);
     }
 
     executor.subscribe(event => {
@@ -56,8 +58,8 @@ export default function detachInactive(options: DetachInactiveOptions): Executor
         case 'deactivated':
           clearTimeout(timer);
 
-          if (delayAfterDeactivation !== undefined) {
-            timer = setTimeout(() => executor.manager.detach(executor.key), delayAfterDeactivation);
+          if (delayAfterDeactivated !== undefined) {
+            timer = setTimeout(detach, delayAfterDeactivated);
           }
           break;
 
@@ -72,7 +74,7 @@ export default function detachInactive(options: DetachInactiveOptions): Executor
       type: 'plugin_configured',
       payload: {
         type: 'detachInactive',
-        options: { delayBeforeActivation, delayAfterDeactivation },
+        options: { delayBeforeActivated, delayAfterDeactivated },
       } satisfies PluginConfiguredPayload,
     });
   };

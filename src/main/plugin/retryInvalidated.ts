@@ -18,7 +18,7 @@ import { emptyObject } from '../utils.js';
  */
 export interface RetryInvalidatedOptions {
   /**
-   * If `true` then executor is retried even if it isn't active.
+   * If `true` then executor is retried even if it isn't {@link react-executor!Executor.isActive active}.
    *
    * @default false
    */
@@ -43,10 +43,7 @@ export default function retryInvalidated(options: RetryInvalidatedOptions = empt
 
     executor.publish({
       type: 'plugin_configured',
-      payload: {
-        type: 'retryInvalidated',
-        options: { isEager },
-      } satisfies PluginConfiguredPayload,
+      payload: { type: 'retryInvalidated', options: { isEager } } satisfies PluginConfiguredPayload,
     });
   };
 }

@@ -26,21 +26,18 @@ test('retries a rejected executor', async () => {
 
   executor.activate();
   expect(executor.isPending).toBe(true);
-  executor.promise!.catch(noop);
   await executor.getOrAwait().then(noop, noop);
   expect(executor.isPending).toBe(false);
 
   // Retry 1
   vi.runAllTimers();
   expect(executor.isPending).toBe(true);
-  executor.promise!.catch(noop);
   await executor.getOrAwait().then(noop, noop);
   expect(executor.isPending).toBe(false);
 
   // Retry 2
   vi.runAllTimers();
   expect(executor.isPending).toBe(true);
-  executor.promise!.catch(noop);
   await executor.getOrAwait().then(noop, noop);
   expect(executor.isPending).toBe(false);
 
@@ -60,7 +57,6 @@ test('stops retrying if an executor is aborted', async () => {
 
   executor.activate();
   expect(executor.isPending).toBe(true);
-  executor.promise!.catch(noop);
   await executor.getOrAwait().then(noop, noop);
   expect(executor.isPending).toBe(false);
 
@@ -68,7 +64,6 @@ test('stops retrying if an executor is aborted', async () => {
   vi.runAllTimers();
   expect(executor.isPending).toBe(true);
 
-  executor.promise!.catch(noop);
   executor.abort();
 
   // Retry 2
@@ -87,7 +82,6 @@ test('stops retrying if an executor is fulfilled', async () => {
 
   executor.activate();
   expect(executor.isPending).toBe(true);
-  executor.promise!.catch(noop);
   await executor.getOrAwait().then(noop, noop);
   expect(executor.isPending).toBe(false);
 
@@ -95,7 +89,6 @@ test('stops retrying if an executor is fulfilled', async () => {
   vi.runAllTimers();
   expect(executor.isPending).toBe(true);
 
-  executor.promise!.catch(noop);
   executor.resolve(undefined);
 
   // Retry 2
@@ -114,7 +107,6 @@ test('stops retrying if an executor is deactivated', async () => {
 
   const deactivate = executor.activate();
   expect(executor.isPending).toBe(true);
-  executor.promise!.catch(noop);
   await executor.getOrAwait().then(noop, noop);
   expect(executor.isPending).toBe(false);
 
@@ -124,7 +116,6 @@ test('stops retrying if an executor is deactivated', async () => {
 
   deactivate();
 
-  executor.promise!.catch(noop);
   await executor.getOrAwait().then(noop, noop);
 
   // Retry 2

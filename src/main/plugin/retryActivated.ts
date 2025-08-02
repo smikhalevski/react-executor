@@ -20,12 +20,12 @@ import { emptyObject } from '../utils.js';
  */
 export interface RetryActivatedOptions {
   /**
-   * The minimum delay in milliseconds that should pass between the activation and the moment the executor was last
-   * settled.
+   * The minimum delay (in milliseconds) between the executor activation and the last settlement before retrying
+   * the latest task.
    *
    * @default 0
    */
-  staleDelay?: number;
+  delayAfterSettled?: number;
 }
 
 /**
@@ -34,21 +34,18 @@ export interface RetryActivatedOptions {
  * @param options Retry options.
  */
 export default function retryActivated(options: RetryActivatedOptions = emptyObject): ExecutorPlugin {
-  const { staleDelay = 0 } = options;
+  const { delayAfterSettled = 0 } = options;
 
   return executor => {
     executor.subscribe(event => {
-      if (event.type === 'activated' && Date.now() - executor.settledAt >= staleDelay) {
+      if (event.type === 'activated' && Date.now() - executor.settledAt >= delayAfterSettled) {
         executor.retry();
       }
     });
 
     executor.publish({
       type: 'plugin_configured',
-      payload: {
-        type: 'retryActivated',
-        options: { staleDelay },
-      } satisfies PluginConfiguredPayload,
+      payload: { type: 'retryActivated', options: { delayAfterSettled } } satisfies PluginConfiguredPayload,
     });
   };
 }

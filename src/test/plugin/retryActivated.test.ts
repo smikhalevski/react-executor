@@ -29,7 +29,7 @@ test('retries an activated executor', async () => {
 
 test('does not retry if executor is not stale yet', async () => {
   const taskMock = vi.fn();
-  const executor = manager.getOrCreate('xxx', taskMock, [retryActivated({ staleDelay: 5_000 })]);
+  const executor = manager.getOrCreate('xxx', taskMock, [retryActivated({ delayAfterSettled: 5_000 })]);
 
   await executor.getOrAwait();
 

@@ -17,14 +17,13 @@ import type { ExecutorPlugin, PluginConfiguredPayload } from '../types.js';
 import { TimeoutError } from '../utils.js';
 
 /**
- * Aborts the pending task with {@link !DOMException TimeoutError} if the task execution took longer then the given
- * delay.
+ * Aborts the pending executor with {@link !DOMException TimeoutError} if the task execution took longer then the delay.
  *
- * @param delay The delay in milliseconds after which the task is aborted.
+ * @param delay The delay (in milliseconds) after which the executor is aborted if not settled.
  */
 export default function abortPendingAfter(delay: number): ExecutorPlugin {
   return executor => {
-    let timer: NodeJS.Timeout;
+    let timer: ReturnType<typeof setTimeout>;
 
     executor.subscribe(event => {
       switch (event.type) {
@@ -45,10 +44,7 @@ export default function abortPendingAfter(delay: number): ExecutorPlugin {
 
     executor.publish({
       type: 'plugin_configured',
-      payload: {
-        type: 'abortPendingAfter',
-        options: { delay },
-      } satisfies PluginConfiguredPayload,
+      payload: { type: 'abortPendingAfter', options: { delay } } satisfies PluginConfiguredPayload,
     });
   };
 }

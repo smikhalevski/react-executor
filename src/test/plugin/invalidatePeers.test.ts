@@ -104,7 +104,7 @@ test('removes peer after peer is detached', () => {
     type: 'plugin_configured',
     target: executor1,
     version: 0,
-    payload: { type: 'invalidatePeers', options: { peerExecutors: [] } },
+    payload: { type: 'invalidatePeers', options: { peers: [] } },
   } satisfies ExecutorEvent);
   expect(listenerMock).toHaveBeenNthCalledWith(2, {
     type: 'attached',
@@ -132,7 +132,7 @@ test('removes peer after peer is detached', () => {
     type: 'plugin_configured',
     target: executor1,
     version: 1,
-    payload: { type: 'invalidatePeers', options: { peerExecutors: [executor2] } },
+    payload: { type: 'invalidatePeers', options: { peers: [executor2] } },
   } satisfies ExecutorEvent);
 
   executor2.manager.detach(executor2.key);
@@ -148,6 +148,6 @@ test('removes peer after peer is detached', () => {
     type: 'plugin_configured',
     target: executor1,
     version: 1,
-    payload: { type: 'invalidatePeers', options: { peerExecutors: [] } },
+    payload: { type: 'invalidatePeers', options: { peers: [] } },
   } satisfies ExecutorEvent);
 });

@@ -15,14 +15,14 @@
  * @module observable/navigatorOffline
  */
 
-import not from './not.js';
 import navigatorOnline from './navigatorOnline.js';
+import { negate } from '../utils.js';
 
 /**
  * The observable that emits `true` if
  * [the device is disconnected from the network](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/onLine),
  * and emits `false` if the device if connected to the network.
  */
-const navigatorOffline = not(navigatorOnline);
+const navigatorOffline = negate(navigatorOnline);
 
 export default navigatorOffline;

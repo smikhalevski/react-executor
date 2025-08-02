@@ -24,16 +24,19 @@ import { TimeoutError } from '../utils.js';
  */
 export default function rejectPendingAfter(delay: number): ExecutorPlugin {
   return executor => {
-    let timer: NodeJS.Timeout;
+    let timer: ReturnType<typeof setTimeout>;
 
     executor.subscribe(event => {
       switch (event.type) {
         case 'pending':
-          timer = setTimeout(() => {
-            const error = TimeoutError('The task execution took too long');
-            executor.abort(error);
-            executor.reject(error);
-          }, delay);
+          timer = setTimeout(
+            error => {
+              executor.abort(error);
+              executor.reject(error);
+            },
+            delay,
+            TimeoutError('The task execution took too long')
+          );
           break;
 
         case 'fulfilled':
@@ -47,10 +50,7 @@ export default function rejectPendingAfter(delay: number): ExecutorPlugin {
 
     executor.publish({
       type: 'plugin_configured',
-      payload: {
-        type: 'rejectPendingAfter',
-        options: { delay },
-      } satisfies PluginConfiguredPayload,
+      payload: { type: 'rejectPendingAfter', options: { delay } } satisfies PluginConfiguredPayload,
     });
   };
 }

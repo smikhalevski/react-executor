@@ -20,8 +20,10 @@ import { emptyObject } from '../utils.js';
  */
 export interface AbortDeactivatedOptions {
   /**
-   * The delay in milliseconds after which the task is aborted. If an executor is re-activated during this delay,
-   * the task won't be aborted. The executor must be activated at least once for this plugin to have an effect.
+   * The minimum delay (in milliseconds) that must pass after an executor is deactivated before it is aborted.
+   * If the executor is reactivated within this delay, it will not be aborted.
+   *
+   * **Note:** The executor must be activated at least once for this plugin to take effect.
    *
    * @default 0
    */
@@ -39,7 +41,7 @@ export default function abortDeactivated(options: AbortDeactivatedOptions = empt
   const { delay = 0 } = options;
 
   return executor => {
-    let timer: NodeJS.Timeout;
+    let timer: ReturnType<typeof setTimeout>;
 
     executor.subscribe(event => {
       switch (event.type) {
@@ -58,10 +60,7 @@ export default function abortDeactivated(options: AbortDeactivatedOptions = empt
 
     executor.publish({
       type: 'plugin_configured',
-      payload: {
-        type: 'abortDeactivated',
-        options: { delay },
-      } satisfies PluginConfiguredPayload,
+      payload: { type: 'abortDeactivated', options: { delay } } satisfies PluginConfiguredPayload,
     });
   };
 }

@@ -32,10 +32,7 @@ export default function resolveBy<Value>(observable: Observable<PromiseLike<Valu
 
     executor.publish({
       type: 'plugin_configured',
-      payload: {
-        type: 'resolveBy',
-        options: { observable },
-      } satisfies PluginConfiguredPayload,
+      payload: { type: 'resolveBy', options: { observable } } satisfies PluginConfiguredPayload,
     });
   };
 }
