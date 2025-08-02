@@ -4,8 +4,8 @@
 
 import { afterEach, beforeEach, expect, Mock, test, vi } from 'vitest';
 import { fireEvent } from '@testing-library/react';
-import { Executor, ExecutorManager } from '../../main/index.js';
-import syncStorage from '../../main/plugin/syncStorage.js';
+import { Executor, ExecutorEvent, ExecutorManager, ExecutorState } from '../../main/index.js';
+import syncBrowserStorage from '../../main/plugin/syncBrowserStorage.js';
 import { ExecutorImpl } from '../../main/ExecutorImpl.js';
 import { noop } from '../../main/utils.js';
 
@@ -31,7 +31,7 @@ afterEach(() => {
 });
 
 test('does not resolve an executor if there is no storage item', () => {
-  executor = manager.getOrCreate('xxx', undefined, [syncStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', undefined, [syncBrowserStorage()]);
 
   expect(executor.isSettled).toBe(false);
 
@@ -40,15 +40,20 @@ test('does not resolve an executor if there is no storage item', () => {
     type: 'plugin_configured',
     target: executor,
     version: 0,
-    payload: { type: 'syncStorage', options: { storageKey: '"xxx"' } },
-  });
-  expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
+    payload: { type: 'syncExternalStore', options: { store: expect.any(Object) } },
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(2, {
+    type: 'attached',
+    target: executor,
+    version: 0,
+    payload: undefined,
+  } satisfies ExecutorEvent);
 });
 
 test('resolves an executor if a fulfilled storage item exists', () => {
   localStorage.setItem('"xxx"', '{"isFulfilled":true,"value":"aaa","settledAt":30,"invalidatedAt":0,"annotations":{}}');
 
-  executor = manager.getOrCreate('xxx', undefined, [syncStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', undefined, [syncBrowserStorage()]);
 
   expect(executor.isFulfilled).toBe(true);
   expect(executor.isRejected).toBe(false);
@@ -57,14 +62,24 @@ test('resolves an executor if a fulfilled storage item exists', () => {
   expect(executor.settledAt).toBe(30);
 
   expect(listenerMock).toHaveBeenCalledTimes(3);
-  expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'fulfilled', target: executor, version: 1 });
+  expect(listenerMock).toHaveBeenNthCalledWith(1, {
+    type: 'fulfilled',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
   expect(listenerMock).toHaveBeenNthCalledWith(2, {
     type: 'plugin_configured',
     target: executor,
     version: 1,
-    payload: { type: 'syncStorage', options: { storageKey: '"xxx"' } },
-  });
-  expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'attached', target: executor, version: 1 });
+    payload: { type: 'syncExternalStore', options: { store: expect.any(Object) } },
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(3, {
+    type: 'attached',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
 });
 
 test('rejects an executor if a rejected storage item exists', () => {
@@ -73,7 +88,7 @@ test('rejects an executor if a rejected storage item exists', () => {
     '{"isFulfilled":false,"value":"aaa","reason":"bbb","settledAt":30,"invalidatedAt":0,"annotations":{}}'
   );
 
-  executor = manager.getOrCreate('xxx', undefined, [syncStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', undefined, [syncBrowserStorage()]);
 
   expect(executor.isFulfilled).toBe(false);
   expect(executor.isRejected).toBe(true);
@@ -82,14 +97,24 @@ test('rejects an executor if a rejected storage item exists', () => {
   expect(executor.settledAt).toBe(30);
 
   expect(listenerMock).toHaveBeenCalledTimes(3);
-  expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'rejected', target: executor, version: 1 });
+  expect(listenerMock).toHaveBeenNthCalledWith(1, {
+    type: 'rejected',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
   expect(listenerMock).toHaveBeenNthCalledWith(2, {
     type: 'plugin_configured',
     target: executor,
     version: 1,
-    payload: { type: 'syncStorage', options: { storageKey: '"xxx"' } },
-  });
-  expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'attached', target: executor, version: 1 });
+    payload: { type: 'syncExternalStore', options: { store: expect.any(Object) } },
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(3, {
+    type: 'attached',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
 });
 
 test('preserves the initial state if it is newer and sets storage item', () => {
@@ -104,7 +129,7 @@ test('preserves the initial state if it is newer and sets storage item', () => {
 
   localStorage.setItem('"xxx"', '{"isFulfilled":true,"value":"bbb","settledAt":30,"invalidatedAt":0}');
 
-  executor = manager.getOrCreate('xxx', undefined, [syncStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', undefined, [syncBrowserStorage()]);
 
   expect(localStorage.getItem('"xxx"')).toBe(
     '{"isFulfilled":true,"value":"aaa","annotations":{},"settledAt":100,"invalidatedAt":0}'
@@ -121,9 +146,14 @@ test('preserves the initial state if it is newer and sets storage item', () => {
     type: 'plugin_configured',
     target: executor,
     version: 0,
-    payload: { type: 'syncStorage', options: { storageKey: '"xxx"' } },
-  });
-  expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
+    payload: { type: 'syncExternalStore', options: { store: expect.any(Object) } },
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(2, {
+    type: 'attached',
+    target: executor,
+    version: 0,
+    payload: undefined,
+  } satisfies ExecutorEvent);
 });
 
 test('resolves an executor with an invalidated storage item', () => {
@@ -132,7 +162,7 @@ test('resolves an executor with an invalidated storage item', () => {
     '{"value":"aaa","isFulfilled":true,"settledAt":20,"invalidatedAt":30,"annotations":{}}'
   );
 
-  executor = manager.getOrCreate('xxx', 'bbb', [syncStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', 'bbb', [syncBrowserStorage()]);
 
   expect(executor.value).toBe('aaa');
   expect(localStorage.getItem('"xxx"')).toBe(
@@ -140,19 +170,34 @@ test('resolves an executor with an invalidated storage item', () => {
   );
 
   expect(listenerMock).toHaveBeenCalledTimes(4);
-  expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'fulfilled', target: executor, version: 1 });
-  expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'invalidated', target: executor, version: 1 });
+  expect(listenerMock).toHaveBeenNthCalledWith(1, {
+    type: 'fulfilled',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(2, {
+    type: 'invalidated',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
   expect(listenerMock).toHaveBeenNthCalledWith(3, {
     type: 'plugin_configured',
     target: executor,
     version: 1,
-    payload: { type: 'syncStorage', options: { storageKey: '"xxx"' } },
-  });
-  expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'attached', target: executor, version: 1 });
+    payload: { type: 'syncExternalStore', options: { store: expect.any(Object) } },
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(4, {
+    type: 'attached',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
 });
 
 test('does not publish invalidated event if executor is already invalidated', () => {
-  executor = manager.getOrCreate('xxx', 'bbb', [syncStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', 'bbb', [syncBrowserStorage()]);
 
   executor.invalidate();
 
@@ -168,16 +213,36 @@ test('does not publish invalidated event if executor is already invalidated', ()
     type: 'plugin_configured',
     target: executor,
     version: 0,
-    payload: { type: 'syncStorage', options: { storageKey: '"xxx"' } },
-  });
-  expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
-  expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor, version: 1 });
-  expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'invalidated', target: executor, version: 2 });
-  expect(listenerMock).toHaveBeenNthCalledWith(5, { type: 'fulfilled', target: executor, version: 3 });
+    payload: { type: 'syncExternalStore', options: { store: expect.any(Object) } },
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(2, {
+    type: 'attached',
+    target: executor,
+    version: 0,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(3, {
+    type: 'fulfilled',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(4, {
+    type: 'invalidated',
+    target: executor,
+    version: 2,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(5, {
+    type: 'fulfilled',
+    target: executor,
+    version: 3,
+    payload: undefined,
+  } satisfies ExecutorEvent);
 });
 
 test('sets storage item to the initial value', () => {
-  executor = manager.getOrCreate('xxx', 'aaa', [syncStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', 'aaa', [syncBrowserStorage()]);
 
   expect(executor.value).toBe('aaa');
 
@@ -190,10 +255,20 @@ test('sets storage item to the initial value', () => {
     type: 'plugin_configured',
     target: executor,
     version: 0,
-    payload: { type: 'syncStorage', options: { storageKey: '"xxx"' } },
-  });
-  expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
-  expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor, version: 1 });
+    payload: { type: 'syncExternalStore', options: { store: expect.any(Object) } },
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(2, {
+    type: 'attached',
+    target: executor,
+    version: 0,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(3, {
+    type: 'fulfilled',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
 });
 
 test('sets storage item if executor was resolved from a preceding plugin', () => {
@@ -201,7 +276,7 @@ test('sets storage item if executor was resolved from a preceding plugin', () =>
     executor => {
       executor.resolve('aaa');
     },
-    syncStorage(localStorage),
+    syncBrowserStorage(),
   ]);
 
   expect(executor.value).toBe('aaa');
@@ -218,7 +293,7 @@ test('initial task is not called if storage item exists', () => {
     '{"value":"aaa","isFulfilled":true,"settledAt":20,"invalidatedAt":30,"annotations":{}}'
   );
 
-  executor = manager.getOrCreate('xxx', taskMock, [syncStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', taskMock, [syncBrowserStorage()]);
 
   expect(executor.value).toBe('aaa');
   expect(taskMock).not.toHaveBeenCalled();
@@ -229,7 +304,7 @@ test('does not set storage item or resolve an executor if an executor is pending
     executor => {
       executor.execute(() => 'aaa');
     },
-    syncStorage(localStorage),
+    syncBrowserStorage(),
   ]);
 
   expect(executor.isPending).toBe(true);
@@ -246,7 +321,7 @@ test('does not set storage item or resolve an executor if an executor is pending
 });
 
 test('resolves an executor when a storage item is set', () => {
-  executor = manager.getOrCreate('xxx', undefined, [syncStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', undefined, [syncBrowserStorage()]);
 
   localStorage.setItem('"xxx"', '{"value":"aaa","settledAt":50,"invalidatedAt":0,"annotations":{},"isFulfilled":true}');
 
@@ -256,7 +331,7 @@ test('resolves an executor when a storage item is set', () => {
 });
 
 test('sets storage item if it was removed', () => {
-  executor = manager.getOrCreate('xxx', 'aaa', [syncStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', 'aaa', [syncBrowserStorage()]);
 
   localStorage.removeItem('"xxx"');
 
@@ -269,7 +344,7 @@ test('sets storage item if it was removed', () => {
 });
 
 test('removes a storage item if an executor was detached', () => {
-  manager.getOrCreate('xxx', 'aaa', [syncStorage(localStorage)]);
+  manager.getOrCreate('xxx', 'aaa', [syncBrowserStorage()]);
 
   manager.detach('xxx');
 
@@ -279,7 +354,7 @@ test('removes a storage item if an executor was detached', () => {
 test('sets storage item if executor was cleared', () => {
   localStorage.setItem('"xxx"', '{"isFulfilled":false,"annotations":{},"settledAt":0,"invalidatedAt":0}');
 
-  executor = manager.getOrCreate('xxx', undefined, [syncStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', undefined, [syncBrowserStorage()]);
 
   expect(executor.value).toBe(undefined);
 
@@ -299,19 +374,29 @@ test('sets storage item if executor was cleared', () => {
 test('ignores stored empty annotations', () => {
   localStorage.setItem('"xxx"', '{"isFulfilled":true,"value":"aaa","settledAt":30,"invalidatedAt":0,"annotations":{}}');
 
-  executor = manager.getOrCreate('xxx', undefined, [syncStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', undefined, [syncBrowserStorage()]);
 
   expect(executor.annotations).toEqual({});
 
   expect(listenerMock).toHaveBeenCalledTimes(3);
-  expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'fulfilled', target: executor, version: 1 });
+  expect(listenerMock).toHaveBeenNthCalledWith(1, {
+    type: 'fulfilled',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
   expect(listenerMock).toHaveBeenNthCalledWith(2, {
     type: 'plugin_configured',
     target: executor,
     version: 1,
-    payload: { type: 'syncStorage', options: { storageKey: '"xxx"' } },
-  });
-  expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'attached', target: executor, version: 1 });
+    payload: { type: 'syncExternalStore', options: { store: expect.any(Object) } },
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(3, {
+    type: 'attached',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
 });
 
 test('does not publish annotated events if annotations are shallow equal', () => {
@@ -320,23 +405,35 @@ test('does not publish annotated events if annotations are shallow equal', () =>
     '{"isFulfilled":true,"value":"aaa","settledAt":30,"invalidatedAt":0,"annotations":{"zzz":111}}'
   );
 
-  executor = manager.getOrCreate('xxx', undefined, [
-    executor => executor.annotate({ zzz: 111 }),
-    syncStorage(localStorage),
-  ]);
+  executor = manager.getOrCreate('xxx', undefined, [executor => executor.annotate({ zzz: 111 }), syncBrowserStorage()]);
 
   expect(executor.annotations).toEqual({ zzz: 111 });
 
   expect(listenerMock).toHaveBeenCalledTimes(4);
-  expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'annotated', target: executor, version: 1 });
-  expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'fulfilled', target: executor, version: 2 });
+  expect(listenerMock).toHaveBeenNthCalledWith(1, {
+    type: 'annotated',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(2, {
+    type: 'fulfilled',
+    target: executor,
+    version: 2,
+    payload: undefined,
+  } satisfies ExecutorEvent);
   expect(listenerMock).toHaveBeenNthCalledWith(3, {
     type: 'plugin_configured',
     target: executor,
     version: 2,
-    payload: { type: 'syncStorage', options: { storageKey: '"xxx"' } },
-  });
-  expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'attached', target: executor, version: 2 });
+    payload: { type: 'syncExternalStore', options: { store: expect.any(Object) } },
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(4, {
+    type: 'attached',
+    target: executor,
+    version: 2,
+    payload: undefined,
+  } satisfies ExecutorEvent);
 });
 
 test('restores non-empty annotations', () => {
@@ -345,20 +442,35 @@ test('restores non-empty annotations', () => {
     '{"isFulfilled":true,"value":"aaa","settledAt":30,"invalidatedAt":0,"annotations":{"zzz":111}}'
   );
 
-  executor = manager.getOrCreate('xxx', undefined, [syncStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', undefined, [syncBrowserStorage()]);
 
   expect(executor.annotations).toEqual({ zzz: 111 });
 
   expect(listenerMock).toHaveBeenCalledTimes(4);
-  expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'annotated', target: executor, version: 1 });
-  expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'fulfilled', target: executor, version: 1 });
+  expect(listenerMock).toHaveBeenNthCalledWith(1, {
+    type: 'annotated',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(2, {
+    type: 'fulfilled',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
   expect(listenerMock).toHaveBeenNthCalledWith(3, {
     type: 'plugin_configured',
     target: executor,
     version: 1,
-    payload: { type: 'syncStorage', options: { storageKey: '"xxx"' } },
-  });
-  expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'attached', target: executor, version: 1 });
+    payload: { type: 'syncExternalStore', options: { store: expect.any(Object) } },
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(4, {
+    type: 'attached',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
 });
 
 test('overwrites annotations', () => {
@@ -367,10 +479,7 @@ test('overwrites annotations', () => {
     '{"isFulfilled":true,"value":"aaa","settledAt":30,"invalidatedAt":0,"annotations":{"zzz":111}}'
   );
 
-  executor = manager.getOrCreate('xxx', undefined, [
-    executor => executor.annotate({ kkk: 222 }),
-    syncStorage(localStorage),
-  ]);
+  executor = manager.getOrCreate('xxx', undefined, [executor => executor.annotate({ kkk: 222 }), syncBrowserStorage()]);
 
   expect(executor.annotations).toEqual({ zzz: 111 });
 });
@@ -378,7 +487,7 @@ test('overwrites annotations', () => {
 test('sets storage item if annotations are changed', () => {
   localStorage.setItem('"xxx"', '{"isFulfilled":false,"settledAt":0,"invalidatedAt":0,"annotations":{"zzz":111}}');
 
-  executor = manager.getOrCreate('xxx', undefined, [syncStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', undefined, [syncBrowserStorage()]);
 
   executor.annotate({ zzz: 222 });
 
@@ -393,7 +502,7 @@ test('overwrites storage item if an error is thrown during parsing', () => {
   localStorage.setItem('"xxx"', 'invalid_state');
 
   executor = manager.getOrCreate('xxx', undefined, [
-    syncStorage(localStorage, {
+    syncBrowserStorage({
       serializer: {
         parse() {
           throw new Error('expected');
@@ -413,7 +522,7 @@ test('overwrites storage item if an error is thrown during parsing', () => {
 test('overwrites storage item if it contains a malformed state', () => {
   localStorage.setItem('"xxx"', '{"annotations":"zzz"}');
 
-  executor = manager.getOrCreate('xxx', undefined, [syncStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', undefined, [syncBrowserStorage()]);
 
   expect(executor).toBeInstanceOf(ExecutorImpl);
 
@@ -423,7 +532,7 @@ test('overwrites storage item if it contains a malformed state', () => {
 });
 
 test('executor is updated with storage item before any events are published', () => {
-  executor = manager.getOrCreate('xxx', 'bbb', [syncStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', 'bbb', [syncBrowserStorage()]);
 
   const listenerMock = vi.fn();
 
@@ -445,11 +554,11 @@ test('executor is updated with storage item before any events are published', ()
     invalidatedAt: 30,
     isFulfilled: true,
     settledAt: 100,
-  });
+  } satisfies ExecutorState);
 });
 
 test('syncs state if task is aborted', () => {
-  executor = manager.getOrCreate('xxx', 'bbb', [syncStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', 'bbb', [syncBrowserStorage()]);
 
   executor.execute(() => new Promise(noop));
 
@@ -465,24 +574,54 @@ test('syncs state if task is aborted', () => {
     type: 'plugin_configured',
     target: executor,
     version: 0,
-    payload: { type: 'syncStorage', options: { storageKey: '"xxx"' } },
-  });
-  expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
-  expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor, version: 1 });
-  expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'pending', target: executor, version: 2 });
+    payload: { type: 'syncExternalStore', options: { store: expect.any(Object) } },
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(2, {
+    type: 'attached',
+    target: executor,
+    version: 0,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(3, {
+    type: 'fulfilled',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(4, {
+    type: 'pending',
+    target: executor,
+    version: 2,
+    payload: undefined,
+  } satisfies ExecutorEvent);
 
   executor.abort();
 
   expect(executor.value).toBe('aaa');
 
   expect(listenerMock).toHaveBeenCalledTimes(7);
-  expect(listenerMock).toHaveBeenNthCalledWith(5, { type: 'aborted', target: executor, version: 3 });
-  expect(listenerMock).toHaveBeenNthCalledWith(6, { type: 'fulfilled', target: executor, version: 4 });
-  expect(listenerMock).toHaveBeenNthCalledWith(7, { type: 'invalidated', target: executor, version: 4 });
+  expect(listenerMock).toHaveBeenNthCalledWith(5, {
+    type: 'aborted',
+    target: executor,
+    version: 3,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(6, {
+    type: 'fulfilled',
+    target: executor,
+    version: 4,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(7, {
+    type: 'invalidated',
+    target: executor,
+    version: 4,
+    payload: undefined,
+  } satisfies ExecutorEvent);
 });
 
-test('publishes only annotated event', () => {
-  executor = manager.getOrCreate('xxx', 'bbb', [syncStorage(localStorage)]);
+test('publishes only annotated and fulfilled events', () => {
+  executor = manager.getOrCreate('xxx', 'bbb', [syncBrowserStorage()]);
 
   localStorage.setItem(
     '"xxx"',
@@ -491,20 +630,41 @@ test('publishes only annotated event', () => {
 
   fireEvent(window, new StorageEvent('storage', { key: '"xxx"', storageArea: localStorage }));
 
-  expect(listenerMock).toHaveBeenCalledTimes(4);
+  expect(listenerMock).toHaveBeenCalledTimes(5);
   expect(listenerMock).toHaveBeenNthCalledWith(1, {
     type: 'plugin_configured',
     target: executor,
     version: 0,
-    payload: { type: 'syncStorage', options: { storageKey: '"xxx"' } },
-  });
-  expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
-  expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor, version: 1 });
-  expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'annotated', target: executor, version: 2 });
+    payload: { type: 'syncExternalStore', options: { store: expect.any(Object) } },
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(2, {
+    type: 'attached',
+    target: executor,
+    version: 0,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(3, {
+    type: 'fulfilled',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(4, {
+    type: 'annotated',
+    target: executor,
+    version: 2,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(5, {
+    type: 'fulfilled',
+    target: executor,
+    version: 2,
+    payload: undefined,
+  } satisfies ExecutorEvent);
 });
 
 test('publishes only fulfilled event', () => {
-  executor = manager.getOrCreate('xxx', 'bbb', [syncStorage(localStorage)]);
+  executor = manager.getOrCreate('xxx', 'bbb', [syncBrowserStorage()]);
 
   localStorage.setItem(
     '"xxx"',
@@ -518,15 +678,30 @@ test('publishes only fulfilled event', () => {
     type: 'plugin_configured',
     target: executor,
     version: 0,
-    payload: { type: 'syncStorage', options: { storageKey: '"xxx"' } },
-  });
-  expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
-  expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor, version: 1 });
-  expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'fulfilled', target: executor, version: 2 });
+    payload: { type: 'syncExternalStore', options: { store: expect.any(Object) } },
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(2, {
+    type: 'attached',
+    target: executor,
+    version: 0,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(3, {
+    type: 'fulfilled',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(4, {
+    type: 'fulfilled',
+    target: executor,
+    version: 2,
+    payload: undefined,
+  } satisfies ExecutorEvent);
 });
 
-test('publishes only invalidated event', () => {
-  executor = manager.getOrCreate('xxx', 'bbb', [syncStorage(localStorage)]);
+test('publishes invalidated and fulfilled events', () => {
+  executor = manager.getOrCreate('xxx', 'bbb', [syncBrowserStorage()]);
 
   localStorage.setItem(
     '"xxx"',
@@ -535,14 +710,35 @@ test('publishes only invalidated event', () => {
 
   fireEvent(window, new StorageEvent('storage', { key: '"xxx"', storageArea: localStorage }));
 
-  expect(listenerMock).toHaveBeenCalledTimes(4);
+  expect(listenerMock).toHaveBeenCalledTimes(5);
   expect(listenerMock).toHaveBeenNthCalledWith(1, {
     type: 'plugin_configured',
     target: executor,
     version: 0,
-    payload: { type: 'syncStorage', options: { storageKey: '"xxx"' } },
-  });
-  expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 0 });
-  expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor, version: 1 });
-  expect(listenerMock).toHaveBeenNthCalledWith(4, { type: 'invalidated', target: executor, version: 2 });
+    payload: { type: 'syncExternalStore', options: { store: expect.any(Object) } },
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(2, {
+    type: 'attached',
+    target: executor,
+    version: 0,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(3, {
+    type: 'fulfilled',
+    target: executor,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(4, {
+    type: 'fulfilled',
+    target: executor,
+    version: 2,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(5, {
+    type: 'invalidated',
+    target: executor,
+    version: 2,
+    payload: undefined,
+  } satisfies ExecutorEvent);
 });
