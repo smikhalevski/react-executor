@@ -1717,17 +1717,17 @@ API to inject its hydration chunks into a streaming process. The API is differen
 [Readable Web Streams&#8239;<sup>↗</sup>](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream).
 
 In NodeJS environment
-use [`PipeableSSRExecutorManager`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/ssr_node.PipeableSSRExecutorManager.html)
+use [`NodeSSRExecutorManager`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/ssr_node.NodeSSRExecutorManager.html)
 
 ```tsx
 import { createServer } from 'http';
 import { renderToPipeableStream } from 'react-dom/server';
 import { ExecutorManagerProvider } from 'react-executor';
-import { PipeableSSRExecutorManager } from 'react-executor/ssr/node';
+import { NodeSSRExecutorManager } from 'react-executor/ssr/node';
 
 const server = createServer((request, response) => {
   // 1️⃣ Create a new manager for each request
-  const manager = new PipeableSSRExecutorManager(response);
+  const manager = new NodeSSRExecutorManager(response);
 
   const stream = renderToPipeableStream(
     <ExecutorManagerProvider value={manager}>
@@ -1787,16 +1787,16 @@ update to "Hello, Paul!". In the meantime `helloExecutor` on the client would be
 ### Readable web streams support
 
 To enable streaming in a modern environment,
-use [`ReadableSSRExecutorManager`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/ssr.ReadableSSRExecutorManager.html)
+use [`WebSSRExecutorManager`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/ssr.WebSSRExecutorManager.html)
 
 ```tsx
 import { renderToReadableStream } from 'react-dom/server';
 import { ExecutorManagerProvider } from 'react-executor';
-import { ReadableSSRExecutorManager } from 'react-executor/ssr';
+import { WebSSRExecutorManager } from 'react-executor/ssr';
 
 async function handler(request) {
   // 1️⃣ Create a new manager for each request
-  const manager = new ReadableSSRExecutorManager();
+  const manager = new WebSSRExecutorManager();
 
   const stream = await renderToReadableStream(
     <ExecutorManagerProvider value={manager}>
@@ -1826,8 +1826,8 @@ non-serializable data like `BigInt`, then a custom state serializer must be prov
 On the server, pass a
 [`serializer`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/ssr.SSRExecutorManagerOptions.html#serializer)
 option to [`SSRExecutorManager`](#render-to-string),
-[`PipeableSSRExecutorManager`](#streaming-ssr),
-or [`ReadableSSRExecutorManager`](#readable-web-streams-support), depending on your setup:
+[`NodeSSRExecutorManager`](#streaming-ssr),
+or [`WebSSRExecutorManager`](#readable-web-streams-support), depending on your setup:
 
 ```ts
 import { SSRExecutorManager } from 'react-executor/ssr';
@@ -1873,7 +1873,7 @@ the [`nonce`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor
 option to `SSRExecutorManager` or any of its subclasses:
 
 ```ts
-const manager = new PipeableSSRExecutorManager(response, { nonce: '2726c7f26c' });
+const manager = new NodeSSRExecutorManager(response, { nonce: '2726c7f26c' });
 ```
 
 Send the header with this nonce in the server response:
