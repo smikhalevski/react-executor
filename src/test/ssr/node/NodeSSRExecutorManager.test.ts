@@ -1,25 +1,27 @@
 import { expect, test, vi } from 'vitest';
 import { delay } from 'parallel-universe';
 import { Writable } from 'stream';
-import { PipeableSSRExecutorManager } from '../../../main/ssr/node/index.js';
+import { NodeSSRExecutorManager } from '../../../main/ssr/node/index.js';
 
 Date.now = () => 50;
 
 test('sends hydration chunk after the content chunk', async () => {
   const writeMock = vi.fn();
 
-  const outputStream = new Writable({
+  const writable = new Writable({
     write(chunk, _encoding, callback) {
       writeMock(chunk.toString());
       callback();
     },
   });
 
-  const manager = new PipeableSSRExecutorManager(outputStream);
+  const manager = new NodeSSRExecutorManager();
 
   manager.getOrCreate('xxx', 111);
 
-  manager.stream.write('aaa</script>');
+  writable.write('aaa</script>');
+
+  manager.pipe(writable);
 
   await delay(200);
 
@@ -34,20 +36,21 @@ test('sends hydration chunk after the content chunk', async () => {
 test('does not send hydration chunk if nothing has changed', async () => {
   const writeMock = vi.fn();
 
-  const outputStream = new Writable({
+  const writable = new Writable({
     write(chunk, _encoding, callback) {
       writeMock(chunk.toString());
       callback();
     },
   });
 
-  const manager = new PipeableSSRExecutorManager(outputStream);
+  const manager = new NodeSSRExecutorManager();
 
   manager.getOrCreate('xxx', 111);
 
-  manager.stream.write('aaa</script>');
-  manager.stream.write('bbb');
-  manager.stream.write('ccc</script>');
+  writable.write('aaa</script>');
+  manager.pipe(writable);
+  writable.write('bbb');
+  writable.write('ccc</script>');
 
   await delay(200);
 
