@@ -71,11 +71,27 @@ export class SSRExecutorManager extends ExecutorManager {
   }
 
   /**
+   * Resolves with `true` if the {@link nextHydrationSourceCode} is non-empty.
+   */
+  hasChanges(): Promise<boolean> {
+    const getVersion = () => Array.from(this).reduce((version, executor) => version + executor.version, 0);
+
+    const initialVersion = getVersion();
+
+    const hasChanges = (): Promise<boolean> =>
+      Promise.allSettled(Array.from(this).map(executor => executor.promise)).then(() =>
+        Array.from(this).some(executor => executor.isPending) ? hasChanges() : getVersion() !== initialVersion
+      );
+
+    return hasChanges();
+  }
+
+  /**
    * Returns an inline `<script>` tag with source that hydrates the client with the state accumulated during SSR,
-   * or an empty string if there are no state changes since the last time {@link nextHydrationScript} was called.
+   * or an empty string if there are no state changes since the last time {@link nextHydrationSourceCode} was called.
    */
   nextHydrationChunk(): string {
-    const source = this.nextHydrationScript();
+    const source = this.nextHydrationSourceCode();
 
     if (source === '') {
       return source;
@@ -86,14 +102,14 @@ export class SSRExecutorManager extends ExecutorManager {
 
   /**
    * Returns a script source that hydrates the client with the state accumulated during SSR, or an empty string if there
-   * are no state changes since the last time {@link nextHydrationScript} was called.
+   * are no state changes since the last time {@link nextHydrationSourceCode} was called.
    */
-  nextHydrationScript(): string {
-    const ssrState = [];
+  nextHydrationSourceCode(): string {
+    const sources = [];
 
     for (const executor of this._executors.values()) {
       if (this._hydratedVersions.get(executor) !== executor.version && this._executorPredicate(executor)) {
-        ssrState.push(
+        sources.push(
           JSON.stringify(this._serializer.stringify(executor.key)),
           JSON.stringify(this._serializer.stringify(executor.getStateSnapshot()))
         );
@@ -102,13 +118,13 @@ export class SSRExecutorManager extends ExecutorManager {
       }
     }
 
-    if (ssrState.length === 0) {
+    if (sources.length === 0) {
       return '';
     }
 
     return (
       '(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push(' +
-      ssrState.join(',').replace(/</g, '\\u003C') +
+      sources.join(',').replace(/</g, '\\u003C') +
       ');var e=document.currentScript;e&&e.parentNode.removeChild(e);'
     );
   }
@@ -122,22 +138,5 @@ export class SSRExecutorManager extends ExecutorManager {
     for (const executor of this) {
       executor.abort(reason);
     }
-  }
-
-  /**
-   * Resolves with `true` if there were pending executors and their state has changed after they became non-pending.
-   * Otherwise, resolves with `false`.
-   */
-  hasChanges(): Promise<boolean> {
-    const getVersion = () => Array.from(this).reduce((version, executor) => version + executor.version, 0);
-
-    const initialVersion = getVersion();
-
-    const hasChanges = (): Promise<boolean> =>
-      Promise.allSettled(Array.from(this).map(executor => executor.promise)).then(() =>
-        Array.from(this).some(executor => executor.isPending) ? hasChanges() : getVersion() !== initialVersion
-      );
-
-    return hasChanges();
   }
 }
