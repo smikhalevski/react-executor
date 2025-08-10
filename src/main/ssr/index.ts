@@ -2,13 +2,14 @@
  * Tooling for SSR implementation that supports executor hydration on the client.
  *
  * ```ts
- * import { SSRExecutorManager } from 'react-executor/ssr';
+ * import { createHydrationStream } from 'react-executor/ssr';
  * ```
  *
  * @module ssr
  */
 
-export { WebSSRExecutorManager } from './WebSSRExecutorManager.js';
 export { SSRExecutorManager } from './SSRExecutorManager.js';
+export { createHydrationStream } from './createHydrationStream.js';
+export { injectHydrationChunk } from './injectHydrationChunk.js';
 
 export type { SSRExecutorManagerOptions } from './SSRExecutorManager.js';
