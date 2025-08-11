@@ -2,9 +2,9 @@ import type { ExecutorManager } from './ExecutorManager.js';
 import type { Serializer } from './types.js';
 
 /**
- * Options provided to {@link enableSSRHydration}.
+ * Options provided to {@link hydrateExecutorManager}.
  */
-export interface SSRHydrationOptions {
+export interface HydrateExecutorManagerOptions {
   /**
    * Parses executor keys and state snapshots that were captured during SSR.
    *
@@ -23,7 +23,7 @@ export interface SSRHydrationOptions {
  * @returns The provided executor manager.
  * @template T The executor manager.
  */
-export function enableSSRHydration<T extends ExecutorManager>(manager: T, options: SSRHydrationOptions = {}): T {
+export function hydrateExecutorManager(manager: ExecutorManager, options: HydrateExecutorManagerOptions = {}): void {
   const { serializer = JSON } = options;
 
   const ssrState =
@@ -44,6 +44,4 @@ export function enableSSRHydration<T extends ExecutorManager>(manager: T, option
   if (ssrState !== undefined) {
     window.__REACT_EXECUTOR_SSR_STATE__.push.apply(undefined, ssrState);
   }
-
-  return manager;
 }

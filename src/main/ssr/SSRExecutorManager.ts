@@ -71,7 +71,7 @@ export class SSRExecutorManager extends ExecutorManager {
   }
 
   /**
-   * Resolves with `true` if the {@link nextHydrationSourceCode} is non-empty.
+   * Resolves with `true` if the {@link nextHydrationChunk} is non-empty.
    */
   hasChanges(): Promise<boolean> {
     const getVersion = () => Array.from(this).reduce((version, executor) => version + executor.version, 0);

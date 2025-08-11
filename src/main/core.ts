@@ -8,10 +8,10 @@
  * @module core
  */
 
-export { enableSSRHydration } from './enableSSRHydration.js';
+export { hydrateExecutorManager } from './hydrateExecutorManager.js';
 export { ExecutorManager } from './ExecutorManager.js';
 
-export type { SSRHydrationOptions } from './enableSSRHydration.js';
+export type { HydrateExecutorManagerOptions } from './hydrateExecutorManager.js';
 export type { ExecutorManagerOptions } from './ExecutorManager.js';
 export type {
   Executor,

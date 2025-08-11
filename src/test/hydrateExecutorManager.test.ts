@@ -3,23 +3,17 @@
  */
 
 import { beforeEach, expect, test, vi } from 'vitest';
-import { enableSSRHydration, ExecutorManager, ExecutorState } from '../main/index.js';
+import { hydrateExecutorManager, ExecutorManager, ExecutorState } from '../main/index.js';
 import { Serializer } from '../main/types.js';
 
 beforeEach(() => {
   window.__REACT_EXECUTOR_SSR_STATE__ = undefined;
 });
 
-test('returns the provided executor manager', () => {
-  const manager = new ExecutorManager();
-
-  expect(enableSSRHydration(manager)).toBe(manager);
-});
-
 test('hydrates an executor that is added after', () => {
   const manager = new ExecutorManager();
 
-  enableSSRHydration(manager);
+  hydrateExecutorManager(manager);
 
   window.__REACT_EXECUTOR_SSR_STATE__!.push(
     '"xxx"',
@@ -42,7 +36,7 @@ test('hydrates an executor that is added after', () => {
 test('hydrates multiple executors that are added after', () => {
   const manager = new ExecutorManager();
 
-  enableSSRHydration(manager);
+  hydrateExecutorManager(manager);
 
   window.__REACT_EXECUTOR_SSR_STATE__!.push(
     '"xxx"',
@@ -89,7 +83,7 @@ test('hydrates an executor that was added before', () => {
 
   const manager = new ExecutorManager();
 
-  enableSSRHydration(manager);
+  hydrateExecutorManager(manager);
 
   const executor = manager.getOrCreate('xxx');
 
@@ -112,7 +106,7 @@ test('hydrates executors that are added before and after', () => {
 
   const manager = new ExecutorManager();
 
-  enableSSRHydration(manager);
+  hydrateExecutorManager(manager);
 
   window.__REACT_EXECUTOR_SSR_STATE__!.push(
     '"yyy"',
@@ -136,9 +130,9 @@ test('hydrates executors that are added before and after', () => {
 test('throws if hydration is enabled twice', () => {
   const manager = new ExecutorManager();
 
-  enableSSRHydration(manager);
+  hydrateExecutorManager(manager);
 
-  expect(() => enableSSRHydration(manager)).toThrow();
+  expect(() => hydrateExecutorManager(manager)).toThrow();
 });
 
 test('uses a custom serializer', () => {
@@ -148,7 +142,7 @@ test('uses a custom serializer', () => {
     stringify: vi.fn(JSON.stringify),
   };
 
-  enableSSRHydration(manager, { serializer: serializerMock });
+  hydrateExecutorManager(manager, { serializer: serializerMock });
 
   window.__REACT_EXECUTOR_SSR_STATE__!.push(
     '"xxx"',

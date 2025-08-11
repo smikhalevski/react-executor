@@ -1631,12 +1631,12 @@ To enable hydration on the client, create the executor manager and provide it th
 ```tsx
 import React from 'react';
 import { hydrateRoot } from 'react-dom/client';
-import { enableSSRHydration, ExecutorManager, ExecutorManagerProvider } from 'react-executor';
+import { hydrateExecutorManager, ExecutorManager, ExecutorManagerProvider } from 'react-executor';
 
 const manager = new ExecutorManager();
 
 // 🟡 Hydrates executors on the client with the server data
-enableSSRHydration(manager);
+hydrateExecutorManager(manager);
 
 hydrateRoot(
   document,
@@ -1649,7 +1649,7 @@ hydrateRoot(
 Here, `App` is the component that renders your application. Inside the `App` you can use `useExecutor` and
 [`useExecutorSuspence`](#suspense) to load your data.
 
-[`enableSSRHydration`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/functions/react-executor.enableSSRHydration.html)
+[`hydrateExecutorManager`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/functions/react-executor.hydrateExecutorManager.html)
 must be called only once, and only one manager on the client-side can receive the dehydrated state from the server.
 
 On the server, you can either render your app contents [as a string](#render-to-string) and send it to the client in one
@@ -1707,7 +1707,7 @@ would resolve with `true` if state of some executors have changed during renderi
 The hydration chunk returned
 by [`nextHydrationChunk`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/ssr.SSRExecutorManager.html#nexthydrationchunk)
 contains the `<script>` tag that hydrates the manager for which
-[`enableSSRHydration`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/functions/react-executor.enableSSRHydration.html)
+[`hydrateExecutorManager`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/functions/react-executor.hydrateExecutorManager.html)
 was invoked.
 
 ## Streaming SSR
@@ -1837,18 +1837,18 @@ const manager = new SSRExecutorManager({ serializer: JSONMarshal });
 ```
 
 On the client, pass _the same_
-[`serializer`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.SSRHydrationOptions.html#serializer)
-to `enableSSRHydration`:
+[`serializer`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.HydrateExecutorManagerOptions.html#serializer)
+to `hydrateExecutorManager`:
 
 ```tsx
 import React from 'react';
 import { hydrateRoot } from 'react-dom/client';
-import { enableSSRHydration, ExecutorManager, ExecutorManagerProvider } from 'react-executor';
+import { hydrateExecutorManager, ExecutorManager, ExecutorManagerProvider } from 'react-executor';
 import JSONMarshal from 'json-marshal';
 
 const manager = new ExecutorManager();
 
-enableSSRHydration(manager, { serializer: JSONMarshal });
+hydrateExecutorManager(manager, { serializer: JSONMarshal });
 
 hydrateRoot(
   document,
@@ -1900,11 +1900,11 @@ an [`ExecutorManager`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react
 'use client';
 
 import { ReactNode } from 'react';
-import { enableSSRHydration, ExecutorManager, ExecutorManagerProvider } from 'react-executor';
+import { hydrateExecutorManager, ExecutorManager, ExecutorManagerProvider } from 'react-executor';
 import { SSRExecutorManager } from 'react-executor/ssr';
 import { ExecutorHydrator } from '@react-executor/next';
 
-const manager = typeof window !== 'undefined' ? enableSSRHydration(new ExecutorManager()) : undefined;
+const manager = typeof window !== 'undefined' ? hydrateExecutorManager(new ExecutorManager()) : undefined;
 
 export function Providers(props: { children: ReactNode }) {
   return (
