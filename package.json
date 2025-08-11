@@ -9,7 +9,6 @@
     ".": "./index.js",
     "./core": "./core.js",
     "./ssr": "./ssr/index.js",
-    "./ssr/node": "./ssr/node/index.js",
     "./observable/navigatorOffline": "./observable/navigatorOffline.js",
     "./observable/navigatorOnline": "./observable/navigatorOnline.js",
     "./observable/windowBlurred": "./observable/windowBlurred.js",

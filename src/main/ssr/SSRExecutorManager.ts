@@ -88,10 +88,10 @@ export class SSRExecutorManager extends ExecutorManager {
 
   /**
    * Returns an inline `<script>` tag with source that hydrates the client with the state accumulated during SSR,
-   * or an empty string if there are no state changes since the last time {@link nextHydrationSourceCode} was called.
+   * or an empty string if there are no state changes since the last time {@link nextHydrationScriptSource} was called.
    */
   nextHydrationChunk(): string {
-    const source = this.nextHydrationSourceCode();
+    const source = this.nextHydrationScriptSource();
 
     if (source === '') {
       return source;
@@ -102,9 +102,9 @@ export class SSRExecutorManager extends ExecutorManager {
 
   /**
    * Returns a script source that hydrates the client with the state accumulated during SSR, or an empty string if there
-   * are no state changes since the last time {@link nextHydrationSourceCode} was called.
+   * are no state changes since the last time {@link nextHydrationScriptSource} was called.
    */
-  nextHydrationSourceCode(): string {
+  nextHydrationScriptSource(): string {
     const sources = [];
 
     for (const executor of this._executors.values()) {
