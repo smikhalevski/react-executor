@@ -883,7 +883,7 @@ describe('getOrAwait', () => {
 
   test('waits until the executor is settled and non-pending', async () => {
     executor.resolve('aaa');
-    executor.execute(() => 'bbb').catch(noop);
+    executor.execute(() => 'bbb');
 
     const promise = executor.getOrAwait();
 

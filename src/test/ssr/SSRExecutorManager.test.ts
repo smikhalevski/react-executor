@@ -1,8 +1,8 @@
 import { describe, expect, test, vi } from 'vitest';
 import { SSRExecutorManager } from '../../main/ssr/index.js';
-import { noop } from '../../main/utils.js';
 import { ExecutorState } from '../../main/index.js';
 import { Serializer } from '../../main/types.js';
+import { noop } from '../../main/utils.js';
 
 Date.now = () => 50;
 

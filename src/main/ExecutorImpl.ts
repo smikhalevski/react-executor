@@ -8,7 +8,7 @@ import type {
   ExecutorTask,
   PartialExecutorEvent,
 } from './types.js';
-import { AbortError, isPromiseLike, noop } from './utils.js';
+import { AbortError, isPromiseLike, preventUnhandledRejection } from './utils.js';
 
 /**
  * The {@link Executor} implementation returned by the {@link ExecutorManager}.
@@ -145,7 +145,7 @@ export class ExecutorImpl<Value = any> implements Executor {
       );
     });
 
-    promise.catch(noop);
+    preventUnhandledRejection(promise);
 
     const prevPromise = this.promise;
     this.promise = promise;
