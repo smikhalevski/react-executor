@@ -27,7 +27,7 @@ jobs:
 
           npm version --no-git-tag-version ${VERSION}
 
-          echo "::notice title=Package::npm install $(npm pkg get name | xargs)@${VERSION}"
+          echo "::notice title=Package::npm install $(npm pkg get name | xargs)@${VERSION} --save-exact"
 
       - run: npm ci
       - run: npm run build
