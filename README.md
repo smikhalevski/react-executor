@@ -8,6 +8,8 @@
 
 <br/>
 
+<!--ARTICLE-->
+
 <!--OVERVIEW-->
 
 Asynchronous task execution and state management for React.
@@ -29,6 +31,8 @@ npm install --save-prod react-executor
 ```
 
 <br>
+
+<!--/ARTICLE-->
 
 <!--TOC-->
 
