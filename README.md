@@ -1563,14 +1563,14 @@ hook:
 ```tsx
 import { useExecutor, useExecutorSuspense } from 'react-executor';
 
-const Account = () => {
+function Account() {
   const accountExecutor = useExecutor('account', signal => {
     // Fetch an account from a server
   });
 
   // Suspend rendering if accountExecutor is pending and isn't fulfilled
   const account = useExecutorSuspense(accountExecutor).get();
-};
+}
 ```
 
 Now when the `Account` component is rendered, it would be suspended until the `accountExecutor` is settled:
@@ -1650,18 +1650,18 @@ Here, `App` is the component that renders your application. Inside the `App` you
 [`useExecutorSuspence`](#suspense) to load your data.
 
 [`hydrateExecutorManager`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/functions/react-executor.hydrateExecutorManager.html)
-must be called only once, and only one manager on the client-side can receive the dehydrated state from the server.
+must be called only once on the client-side with the manager that would receive the dehydrated state from the server.
 
-On the server, you can either render your app contents [as a string](#render-to-string) and send it to the client in one
-go, or [stream the contents](#streaming-ssr).
+On the server-side, you can either render your app contents [as a string](#render-to-string) and send it to the client
+in one go, or [stream the contents](#streaming-ssr).
 
 ## Render to string
 
-To render your app as an HTML string
-use [`SSRExecutorManager`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/ssr.SSRExecutorManager.html):
+Use [`SSRExecutorManager`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/ssr.SSRExecutorManager.html)
+to render your app as an HTML string:
 
 ```tsx
-import { createServer } from 'http';
+import { createServer } from 'node:http';
 import { renderToString } from 'react-dom/server';
 import { ExecutorManagerProvider } from 'react-executor';
 import { SSRExecutorManager } from 'react-executor/ssr';
@@ -1670,6 +1670,7 @@ const server = createServer(async (request, response) => {
   // 1️⃣ Create a new manager for each request
   const manager = new SSRExecutorManager();
 
+  // 2️⃣ Re-render until there are no more changes
   let html;
   do {
     html = renderToString(
@@ -1677,25 +1678,16 @@ const server = createServer(async (request, response) => {
         <App />
       </ExecutorManagerProvider>
     );
-
-    // 2️⃣ Render until there are no more changes
   } while (await manager.hasChanges());
 
-  // 3️⃣ Attach dehydrated executor states
-  html += manager.nextHydrationChunk();
+  // 3️⃣ Inject the hydration script
+  html = html.replace('</body>', manager.nextHydrationChunk() + '</body>');
 
-  // 4️⃣ Send the rendered HTML to the client
+  response.setHeader('Content-Type', 'text/html');
   response.end(html);
 });
 
 server.listen(8080);
-```
-
-In this example, the `App` is expected to render the `<script>` tag that loads the client bundle. Otherwise, you can
-inject client chunk manually:
-
-```ts
-html += '<script src="/client.js" async></script>';
 ```
 
 A new executor manager must be created for each request, so the results that are stored in executors are served in
@@ -1712,42 +1704,45 @@ was invoked.
 
 ## Streaming SSR
 
-Thanks to [Suspense](#suspense), React can stream parts of your app while it is being rendered. React Executor provides
-API to inject its hydration chunks into a streaming process. The API is different for NodeJS streams and
-[Readable Web Streams&#8239;<sup>↗</sup>](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream).
-
-In NodeJS environment
-use [`NodeSSRExecutorManager`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/ssr_node.NodeSSRExecutorManager.html)
+React can stream parts of your app while it is being rendered. You can inject React Executor hydration chunks into the
+React stream.
 
 ```tsx
-import { createServer } from 'http';
-import { renderToPipeableStream } from 'react-dom/server';
+import { createServer } from 'node:http';
+import { Writable } from 'node:stream';
+import { renderToReadableStream } from 'react-dom/server';
 import { ExecutorManagerProvider } from 'react-executor';
-import { NodeSSRExecutorManager } from 'react-executor/ssr/node';
+import { SSRExecutorManager } from 'react-executor/ssr';
 
-const server = createServer((request, response) => {
+const server = createServer(async (request, response) => {
   // 1️⃣ Create a new manager for each request
-  const manager = new NodeSSRExecutorManager(response);
+  const manager = new SSRExecutorManager();
 
-  const stream = renderToPipeableStream(
+  const stream = await renderToReadableStream(
     <ExecutorManagerProvider value={manager}>
       <App />
-    </ExecutorManagerProvider>,
-    {
-      bootstrapScripts: ['/client.js'],
-
-      onShellReady() {
-        // 2️⃣ Pipe the rendering output to the manager's stream
-        stream.pipe(manager.stream);
-      },
-    }
+    </ExecutorManagerProvider>
   );
+
+  const hydrator = new TransformStream({
+    transform(chunk, controller) {
+      controller.enqueue(chunk);
+      controller.enqueue(manager.nextHydrationChunk());
+    },
+  });
+
+  response.setHeader('Content-Type', 'text/html');
+
+  // 2️⃣ Inject the hydration chunks into the react stream
+  await stream.pipeThrough(hydrator).pipeTo(Writable.toWeb(response));
+
+  response.end();
 });
 
 server.listen(8080);
 ```
 
-State of executors is streamed to the client along with the chunks rendered by React.
+`hydrator` injects React Executor hydration chunks into the React stream.
 
 In the `App` component, use the combination
 of [`<Suspense>`&#8239;<sup>↗</sup>](https://react.dev/reference/react/Suspense),
@@ -1757,18 +1752,20 @@ and
 to suspend rendering while executors process their tasks:
 
 ```tsx
-export const App = () => (
-  <html>
-    <head />
-    <body>
-      <Suspense fallback={'Loading'}>
-        <Hello />
-      </Suspense>
-    </body>
-  </html>
-);
+function App() {
+  return (
+    <html>
+      <head />
+      <body>
+        <Suspense fallback={'Loading'}>
+          <Hello />
+        </Suspense>
+      </body>
+    </html>
+  );
+}
 
-export const Hello = () => {
+function Hello() {
   const helloExecutor = useExecutor('hello', async () => {
     // Asynchronously return the result
     return 'Hello, Paul!';
@@ -1778,43 +1775,11 @@ export const Hello = () => {
   useExecutorSuspense(helloExecutor);
 
   return helloExecutor.get();
-};
+}
 ```
 
 If the `App` is rendered in streaming mode, it would first show "Loading" and after the executor is settled, it would
 update to "Hello, Paul!". In the meantime `helloExecutor` on the client would be hydrated with the data from the server.
-
-### Readable web streams support
-
-To enable streaming in a modern environment,
-use [`WebSSRExecutorManager`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/ssr.WebSSRExecutorManager.html)
-
-```tsx
-import { renderToReadableStream } from 'react-dom/server';
-import { ExecutorManagerProvider } from 'react-executor';
-import { WebSSRExecutorManager } from 'react-executor/ssr';
-
-async function handler(request) {
-  // 1️⃣ Create a new manager for each request
-  const manager = new WebSSRExecutorManager();
-
-  const stream = await renderToReadableStream(
-    <ExecutorManagerProvider value={manager}>
-      <App />
-    </ExecutorManagerProvider>,
-    {
-      bootstrapScripts: ['/client.js'],
-    }
-  );
-
-  // 2️⃣ Pipe the response through the manager
-  return new Response(stream.pipeThrough(manager), {
-    headers: { 'content-type': 'text/html' },
-  });
-}
-```
-
-State of executors is streamed to the client along with the chunks rendered by React.
 
 ## State serialization
 
@@ -1825,9 +1790,7 @@ non-serializable data like `BigInt`, then a custom state serializer must be prov
 
 On the server, pass a
 [`serializer`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/ssr.SSRExecutorManagerOptions.html#serializer)
-option to [`SSRExecutorManager`](#render-to-string),
-[`NodeSSRExecutorManager`](#streaming-ssr),
-or [`WebSSRExecutorManager`](#readable-web-streams-support), depending on your setup:
+option to [`SSRExecutorManager`](#render-to-string):
 
 ```ts
 import { SSRExecutorManager } from 'react-executor/ssr';
@@ -1873,7 +1836,7 @@ the [`nonce`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor
 option to `SSRExecutorManager` or any of its subclasses:
 
 ```ts
-const manager = new NodeSSRExecutorManager(response, { nonce: '2726c7f26c' });
+const manager = new SSRExecutorManager(response, { nonce: '2726c7f26c' });
 ```
 
 Send the header with this nonce in the server response:
