@@ -58,3 +58,8 @@ export function negate(observable: Observable<any>): Observable<boolean> {
     subscribe: listener => observable.subscribe(value => listener(!value)),
   };
 }
+
+export function preventUnhandledRejection<T extends PromiseLike<any>>(promise: T): T {
+  promise.then(noop, noop);
+  return promise;
+}
