@@ -54,7 +54,7 @@
   "bugs": {
     "url": "https://github.com/smikhalevski/react-executor/issues"
   },
-  "homepage": "https://github.com/smikhalevski/react-executor#readme",
+  "homepage": "https://megastack.dev/react-executor",
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.4",
     "@testing-library/react": "^16.3.0",
