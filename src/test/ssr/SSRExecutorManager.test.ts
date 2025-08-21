@@ -1,18 +1,18 @@
 import { describe, expect, test, vi } from 'vitest';
 import { SSRExecutorManager } from '../../main/ssr/index.js';
-import { noop } from '../../main/utils.js';
 import { ExecutorState } from '../../main/index.js';
 import { Serializer } from '../../main/types.js';
+import { noop } from '../../main/utils.js';
 
 Date.now = () => 50;
 
-describe('nextHydrationScript', () => {
+describe('nextHydrationScriptSource', () => {
   test('returns an empty string if there no changes in state', () => {
     const manager = new SSRExecutorManager();
 
     manager.getOrCreate('xxx');
 
-    expect(manager.nextHydrationScript()).toBe('');
+    expect(manager.nextHydrationScriptSource()).toBe('');
   });
 
   test('returns the hydration script for a single executor', async () => {
@@ -20,15 +20,15 @@ describe('nextHydrationScript', () => {
 
     const executor = manager.getOrCreate('xxx');
 
-    expect(manager.nextHydrationScript()).toBe('');
+    expect(manager.nextHydrationScriptSource()).toBe('');
 
     const promise = executor.execute(() => 111);
 
-    expect(manager.nextHydrationScript()).toBe('');
+    expect(manager.nextHydrationScriptSource()).toBe('');
 
     await promise;
 
-    expect(manager.nextHydrationScript()).toBe(
+    expect(manager.nextHydrationScriptSource()).toBe(
       '(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("\\"xxx\\"","{\\"isFulfilled\\":true,\\"value\\":111,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);'
     );
   });
@@ -39,17 +39,17 @@ describe('nextHydrationScript', () => {
     const executor1 = manager.getOrCreate('xxx');
     const executor2 = manager.getOrCreate('yyy');
 
-    expect(manager.nextHydrationScript()).toBe('');
+    expect(manager.nextHydrationScriptSource()).toBe('');
 
     const promise1 = executor1.execute(() => 111);
     const promise2 = executor2.execute(() => 222);
 
-    expect(manager.nextHydrationScript()).toBe('');
+    expect(manager.nextHydrationScriptSource()).toBe('');
 
     await promise1;
     await promise2;
 
-    expect(manager.nextHydrationScript()).toBe(
+    expect(manager.nextHydrationScriptSource()).toBe(
       '(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("\\"xxx\\"","{\\"isFulfilled\\":true,\\"value\\":111,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}","\\"yyy\\"","{\\"isFulfilled\\":true,\\"value\\":222,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);'
     );
   });
@@ -62,15 +62,15 @@ describe('nextHydrationScript', () => {
 
     await executor1.execute(() => 111);
 
-    manager.nextHydrationScript();
+    manager.nextHydrationScriptSource();
 
     const promise = executor2.execute(() => 222);
 
-    expect(manager.nextHydrationScript()).toBe('');
+    expect(manager.nextHydrationScriptSource()).toBe('');
 
     await promise;
 
-    expect(manager.nextHydrationScript()).toBe(
+    expect(manager.nextHydrationScriptSource()).toBe(
       '(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("\\"yyy\\"","{\\"isFulfilled\\":true,\\"value\\":222,\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);'
     );
   });
@@ -83,7 +83,7 @@ describe('nextHydrationScript', () => {
       .execute(() => Promise.reject('expected'))
       .catch(noop);
 
-    expect(manager.nextHydrationScript()).toBe('');
+    expect(manager.nextHydrationScriptSource()).toBe('');
   });
 
   test('respects executorPredicate option', async () => {
@@ -96,7 +96,7 @@ describe('nextHydrationScript', () => {
       .execute(() => Promise.reject('expected'))
       .catch(noop);
 
-    expect(manager.nextHydrationScript()).toBe(
+    expect(manager.nextHydrationScriptSource()).toBe(
       '(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("\\"xxx\\"","{\\"isFulfilled\\":false,\\"reason\\":\\"expected\\",\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);'
     );
   });
@@ -111,7 +111,7 @@ describe('nextHydrationScript', () => {
 
     manager.getOrCreate('xxx', 111);
 
-    manager.nextHydrationScript();
+    manager.nextHydrationScriptSource();
 
     expect(serializerMock.parse).not.toHaveBeenCalled();
     expect(serializerMock.stringify).toHaveBeenCalledTimes(2);
@@ -131,7 +131,7 @@ describe('nextHydrationScript', () => {
 
     manager.getOrCreate('xxx', '<script src="https://xxx.yyy"></script>');
 
-    const source = manager.nextHydrationScript();
+    const source = manager.nextHydrationScriptSource();
 
     expect(source).toBe(
       '(window.__REACT_EXECUTOR_SSR_STATE__=window.__REACT_EXECUTOR_SSR_STATE__||[]).push("\\"xxx\\"","{\\"isFulfilled\\":true,\\"value\\":\\"\\u003Cscript src=\\\\\\"https://xxx.yyy\\\\\\">\\u003C/script>\\",\\"annotations\\":{},\\"settledAt\\":50,\\"invalidatedAt\\":0}");var e=document.currentScript;e&&e.parentNode.removeChild(e);'

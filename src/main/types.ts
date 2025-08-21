@@ -263,7 +263,7 @@ export interface ReadonlyExecutor<Value = any> extends ExecutorState<Value>, Obs
    * The promise of the pending {@link task} execution, or `null` if there's no pending task execution.
    *
    * **Note:** This promise is aborted if
-   * [the task is replaced](https://github.com/smikhalevski/react-executor?tab=readme-ov-file#replace-a-task).
+   * [the task is replaced](https://megastack.dev/react-executor#replace-a-task).
    * Use {@link getOrAwait} to wait until the executor becomes {@link isSettled settled}.
    */
   readonly promise: AbortablePromise<Value> | null;

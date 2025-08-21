@@ -9,7 +9,6 @@
     ".": "./index.js",
     "./core": "./core.js",
     "./ssr": "./ssr/index.js",
-    "./ssr/node": "./ssr/node/index.js",
     "./observable/navigatorOffline": "./observable/navigatorOffline.js",
     "./observable/navigatorOnline": "./observable/navigatorOnline.js",
     "./observable/windowBlurred": "./observable/windowBlurred.js",
@@ -55,19 +54,19 @@
   "bugs": {
     "url": "https://github.com/smikhalevski/react-executor/issues"
   },
-  "homepage": "https://github.com/smikhalevski/react-executor#readme",
+  "homepage": "https://megastack.dev/react-executor",
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.4",
     "@testing-library/react": "^16.3.0",
-    "@types/node": "^24.1.0",
-    "@types/react": "^18.3.1",
+    "@types/node": "^24.2.1",
+    "@types/react": "^19.1.10",
     "jsdom": "^26.1.0",
     "prettier": "^3.6.2",
     "rimraf": "^6.0.1",
     "tslib": "^2.8.1",
-    "typedoc": "^0.28.8",
-    "typedoc-plugin-mdn-links": "^5.0.6",
-    "typescript": "^5.8.3",
+    "typedoc": "^0.28.10",
+    "typedoc-plugin-mdn-links": "^5.0.8",
+    "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   },
   "optionalDependencies": {
