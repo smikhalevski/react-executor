@@ -4,7 +4,8 @@ import { ExecutorImpl } from '../main/ExecutorImpl.js';
 import { AbortError, noop } from '../main/utils.js';
 import { ExecutorEvent, ExecutorState } from '../main/index.js';
 
-Date.now = () => 50;
+vi.useFakeTimers();
+vi.setSystemTime(50);
 
 const expectedReason = new Error('expected');
 
