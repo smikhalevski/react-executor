@@ -10,17 +10,16 @@
     "inherited": true,
     "protected": false
   },
-  "sortEntryPoints": false,
   "readme": "none",
   "tsconfig": "./tsconfig.json",
   "entryPoints": [
     "./src/main/index.ts",
     "./src/main/core.ts",
     "./src/main/ssr/index.ts",
-    "./src/main/ssr/node/index.ts",
     "./src/main/plugin/*.ts",
     "./src/main/observable/*.ts"
   ],
+  "sortEntryPoints": false,
   "intentionallyNotExported": ["ExecutorImpl", "NoInfer"],
   "plugin": ["typedoc-plugin-mdn-links"],
   "externalSymbolLinkMappings": {

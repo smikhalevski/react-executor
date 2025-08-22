@@ -4,7 +4,8 @@ import { ExecutorState } from '../../main/index.js';
 import { Serializer } from '../../main/types.js';
 import { noop } from '../../main/utils.js';
 
-Date.now = () => 50;
+vi.useFakeTimers();
+vi.setSystemTime(50);
 
 describe('nextHydrationScriptSource', () => {
   test('returns an empty string if there no changes in state', () => {

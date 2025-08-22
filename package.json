@@ -30,7 +30,8 @@
     "./plugin/retryInvalidated": "./plugin/retryInvalidated.js",
     "./plugin/retryRejected": "./plugin/retryRejected.js",
     "./plugin/retryWhen": "./plugin/retryWhen.js",
-    "./plugin/syncStorage": "./plugin/syncStorage.js",
+    "./plugin/syncBrowserStorage": "./plugin/syncBrowserStorage.js",
+    "./plugin/syncExternalStore": "./plugin/syncExternalStore.js",
     "./package.json": "./package.json"
   },
   "sideEffects": false,

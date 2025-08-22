@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, Mock, test, vi } from 'vitest';
 import { ExecutorManager } from '../main/index.js';
 import { ExecutorImpl } from '../main/ExecutorImpl.js';
 
-Date.now = () => 50;
+vi.useFakeTimers();
+vi.setSystemTime(50);
 
 let listenerMock: Mock;
 let manager: ExecutorManager;

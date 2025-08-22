@@ -77,7 +77,8 @@ npm install --save-prod react-executor
 - [`retryInvalidated`](#retryinvalidated)
 - [`retryRejected`](#retryrejected)
 - [`retryWhen`](#retrywhen)
-- [`syncStorage`](#syncstorage)
+- [`syncBrowserStorage`](#syncbrowserstorage)
+- [`syncExternalStore`](#syncsxternalstore)
 
 <span class="toc-icon">⚛️&ensp;</span>[**React integration**](#react-integration)
 
@@ -1411,17 +1412,14 @@ const executor = useExecutor('test', heavyTask, [
 ]);
 ```
 
-## `syncStorage`
+## `syncBrowserStorage`
 
-Persists the executor value in the synchronous storage.
+Synchronizes the executor state with `localStorage` or `sessionStorage` item. No-op in a non-browser environment.
 
-<!-- prettier-ignore -->
 ```ts
-import syncStorage from 'react-executor/plugin/syncStorage';
+import syncBrowserStorage from 'react-executor/plugin/syncBrowserStorage';
 
-const executor = useExecutor('test', 42, [
-  syncStorage(localStorage),
-]);
+const executor = useExecutor('test', 42, [syncBrowserStorage()]);
 ```
 
 With this plugin, you can synchronize the executor state
@@ -1442,7 +1440,7 @@ Here's how you can enable serialization of objects with circular references:
 import JSONMarshal from 'json-marshal';
 
 const executor = useExecutor('test', 42, [
-  syncStorage(localStorage, {
+  syncBrowserStorage({
     serializer: JSONMarshal,
   }),
 ]);
@@ -1452,21 +1450,52 @@ const executor = useExecutor('test', 42, [
 > With additional configuration, [json-marshal&#8239;<sup>↗</sup>](https://github.com/smikhalevski/json-marshal#readme)
 > can stringify and parse any data structure.
 
-By default, `syncStorage` plugin uses a [serialized executor key](#executor-keys) as a storage key. You can provide a
-custom key
-via [`storageKey`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/plugin_syncStorage.SyncStorageOptions.html#storagekey)
+By default, `syncBrowserStorage` plugin uses a [serialized executor key](#executor-keys) as a storage key. You can
+provide a custom key
+via [`storageKey`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/plugin_syncBrowserStorage.SyncBrowserStorageOptions.html#storagekey)
 option:
 
 ```ts
-useExecutor('test', 42, [syncStorage(localStorage, { storageKey: 'hello' })]);
+useExecutor('test', 42, [syncBrowserStorage({ storageKey: 'hello' })]);
 ```
 
-In the environment where storage is unavailable (for example, [during SSR](#server-side-rendering)), you can
-conditionally disable the plugin:
+## `syncExternalStore`
+
+Persists the executor state in the observable external store.
+
+Here's the minimal external store example:
 
 ```ts
-useExecutor('test', 42, [typeof localStorage !== 'undefined' ? syncStorage(localStorage) : null]);
+import { useExecutor, ExecutorState } from 'react-executor';
+import syncExternalStore, { ExternalStore } from 'react-executor/plugin/syncExternalStore';
+
+let myStoredState: ExecutorState | null = null;
+
+const myStore: ExternalStore<ExecutorState> = {
+  get() {
+    return myStoredState;
+  },
+
+  subscribe(listener) {
+    // Place subscription login here
+    return () => {};
+  },
+};
+
+const myExecutor = useExecutor('test', 42, [syncExternalStore(myStore)]);
 ```
+
+When executor is [settled](#settle-an-executor), [cleared](#clear-an-executor), [invalidated](#invalidate-results) or
+annotated then the plugin calls
+the [`ExternalStore.set`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/plugin_syncExternalStore.ExternalStore.html#set)
+method on the store.
+
+When executor is [detached](#detach-an-executor) then the plugin calls
+the [`ExternalStore.delete`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/plugin_syncExternalStore.ExternalStore.html#delete)
+method on the store.
+
+Prefer [`syncBrowserStorage`](#syncbrowserstorage) if you want to persist the executor state in a `localStorage`
+or `sessionStorage`.
 
 # React integration
 
@@ -2091,13 +2120,13 @@ const App = () => <ExecutorManagerProvider value={manager}>{/* Render you app he
 
 ## Storage state versioning
 
-You can store an executor state in a `localStorage` using the [`syncStorage`](#syncstorage) plugin:
+You can store an executor state in a `localStorage` using the [`syncBrowserStorage`](#syncbrowserstorage) plugin:
 
 ```ts
 import { useExecutor } from 'react-executor';
-import syncStorage from 'react-executor/plugin/syncStorage';
+import syncBrowserStorage from 'react-executor/plugin/syncBrowserStorage';
 
-const playerExecutor = useExecutor('player', { health: '50%' }, [syncStorage(localStorage)]);
+const playerExecutor = useExecutor('player', { health: '50%' }, [syncBrowserStorage()]);
 // ⮕ Executor<{ health: string }>
 ```
 
@@ -2105,7 +2134,7 @@ But what if over time you'd like to change the structure of the value stored in 
 make `health` property a number:
 
 ```ts
-const playerExecutor = useExecutor('player', { health: 0.5 }, [syncStorage(localStorage)]);
+const playerExecutor = useExecutor('player', { health: 0.5 }, [syncBrowserStorage()]);
 ```
 
 After users have used the previous version of the app where `health` was a string, they would still receive a string
@@ -2139,10 +2168,10 @@ export function requireVersion(version: number): ExecutorPlugin {
 Add the plugin to the executor:
 
 ```ts
-const playerExecutor = useExecutor('player', { health: 0.5 }, [syncStorage(localStorage), requireVersion(1)]);
+const playerExecutor = useExecutor('player', { health: 0.5 }, [syncBrowserStorage(), requireVersion(1)]);
 ```
 
-After the `syncStorage` plugin reads the data from the `localStorage`, the `requireVersion` plugin ensures that
+After the `syncBrowserStorage` plugin reads the data from the `localStorage`, the `requireVersion` plugin ensures that
 the `version` annotation read from the `localStorage` matches the required version. On mismatch the executor is cleared
 and the initial value `{ health: 0.5 }` is written to the storage.
 
@@ -2176,7 +2205,7 @@ Now `requireVersion` would apply the migration on the state version mismatch:
 
 ```ts
 const playerExecutor = useExecutor('player', { health: 0.5 }, [
-  syncStorage(localStorage),
+  syncBrowserStorage(),
 
   requireVersion(1, executor => {
     executor.resolve({
