@@ -19,7 +19,7 @@ Asynchronous task execution and state management for React.
 - Works great with SSR and Suspense.
 - [Extensible with plugins.](#plugins)
 - [First class devtools.](#devtools)
-- [Just 5&#8239;kB gzipped.&#8239;<sup>↗</sup>](https://pkg-size.dev/react-executor)
+- [Just 5&#8239;kB gzipped.](https://pkg-size.dev/react-executor)
 - Check out the [Cookbook](#cookbook) for real-life examples!
 
 <!--/OVERVIEW-->
@@ -36,10 +36,10 @@ npm install --save-prod react-executor
 
 <!--TOC-->
 
-- [API docs&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/)
-- [TODO app example&#8239;<sup>↗</sup>](https://stackblitz.com/edit/react-executor-todo-app?file=README.md)
-- [Streaming SSR example&#8239;<sup>↗</sup>](https://codesandbox.io/p/devbox/react-executor-ssr-streaming-example-mwrmrs)
-- [Next.js integration example&#8239;<sup>↗</sup>](https://codesandbox.io/p/devbox/react-executor-next-example-whsj4v)
+- [API docs](https://smikhalevski.github.io/react-executor/)
+- [TODO app example](https://stackblitz.com/edit/react-executor-todo-app?file=README.md)
+- [Streaming SSR example](https://codesandbox.io/p/devbox/react-executor-ssr-streaming-example-mwrmrs)
+- [Next.js integration example](https://codesandbox.io/p/devbox/react-executor-next-example-whsj4v)
 
 <span class="toc-icon">🔰&ensp;</span>[**Introduction**](#introduction)
 
@@ -115,9 +115,9 @@ npm install --save-prod react-executor
 An executor executes a task, stores the execution result, and provides access to it. Tasks are callbacks that return a
 value or throw an error.
 
-An [`Executor`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html)
-is created and managed by
-an [`ExecutorManager`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html)
+An [`Executor`](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html) is created and
+managed by
+an [`ExecutorManager`](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html)
 which controls the executor lifecycle:
 
 ```ts
@@ -131,11 +131,11 @@ const rookyExecutor = manager.getOrCreate('rooky');
 
 Each executor has a unique key in the scope of the manager. Here we created the new executor with the key `'rooky'`.
 Managers create a new executor when you call
-[`getOrCreate`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html#getorcreate)
+[`getOrCreate`](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html#getorcreate)
 with a new key. Each consequent call with that key returns the same executor.
 
 If you want to retrieve an existing executor by its key and don't want to create a new executor if it doesn't exist, use
-[`get`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html#get):
+[`get`](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html#get):
 
 ```ts
 manager.get('bobby');
@@ -186,8 +186,8 @@ plugins in the [Plugins](#plugins) section.
 ## Executor keys
 
 Anything can be an executor key: a string, a number, an object, etc. By default, keys are considered identical if
-their [`JSON`&#8239;<sup>↗</sup>](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON)
--serialized form is identical:
+their [`JSON`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON)-serialized form
+is identical:
 
 ```ts
 const manager = new ExecutorManager();
@@ -198,7 +198,7 @@ manager.get(['user', 123]);
 // ⮕ userExecutor
 ```
 
-Pass [`keyIdGenerator`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.ExecutorManagerOptions.html#keyidgenerator)
+Pass [`keyIdGenerator`](https://smikhalevski.github.io/react-executor/interfaces/react-executor.ExecutorManagerOptions.html#keyidgenerator)
 option to the `ExecutorManager` constructor to change the way key identity is computed. The returned key ID can be
 anything, a string, or an object.
 
@@ -222,8 +222,8 @@ manager.get({ name: 'Rooky', id: 123 });
 ```
 
 > [!TIP]\
-> With additional configuration, [json-marshal&#8239;<sup>↗</sup>](https://github.com/smikhalevski/json-marshal#readme)
-> can stringify and parse any data structure.
+> With additional configuration, [json-marshal](https://github.com/smikhalevski/json-marshal#readme) can stringify and
+> parse any data structure.
 
 If you want to use object references as executor key IDs, provide an identity function:
 
@@ -257,15 +257,15 @@ const helloPromise = rookyExecutor.execute(task);
 // ⮕ AbortablePromise<any>
 ```
 
-`helloTask` receives an [`AbortSignal`&#8239;<sup>↗</sup>](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal)
+`helloTask` receives an [`AbortSignal`](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal)
 and `rookyExecutor` as arguments. The signal is aborted if the task is [aborted](#abort-a-task) or
 [replaced](#replace-a-task).
 
 While tasks can be synchronous or asynchronous, executors always handle them in an asynchronous fashion. The executor is
 marked
-as [pending&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#ispending)
+as [pending](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#ispending)
 immediately after
-[`execute`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#execute)
+[`execute`](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#execute)
 is called:
 
 ```ts
@@ -292,7 +292,7 @@ rookyExecutor.value;
 ```
 
 The executor keeps track of
-the [latest task&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#task)
+the [latest task](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#task)
 it has executed:
 
 ```ts
@@ -325,11 +325,11 @@ rookyExecutor.reason;
 ```
 
 Executors always preserve the latest value and the latest reason. So even when the executor
-[`isPending`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#ispending),
+[`isPending`](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#ispending),
 you can access the previous value or failure reason. Use
-[`isFulfilled`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#isfulfilled)
+[`isFulfilled`](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#isfulfilled)
 and
-[`isRejected`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#isrejected)
+[`isRejected`](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#isrejected)
 to detect with what result the executor has settled the last time. An executor cannot be both fulfilled and rejected at
 the same time.
 
@@ -371,8 +371,8 @@ rookyExecutor.value;
 ## Abort a task
 
 The promise returned by
-the [`execute`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#execute)
-method is [abortable&#8239;<sup>↗</sup>](https://smikhalevski.github.io/parallel-universe/classes/AbortablePromise.html)
+the [`execute`](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#execute)
+method is [abortable](https://smikhalevski.github.io/parallel-universe/classes/AbortablePromise.html)
 so the task can be prematurely aborted. Results of the aborted task are discarded:
 
 ```ts
@@ -397,11 +397,11 @@ rookyExecutor.abort();
 If there's no pending task, then aborting an executor is a no-op.
 
 When a task is aborted, the signal it received as an argument is aborted as well. Check
-the [signal status&#8239;<sup>↗</sup>](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal/aborted) to ensure
-that computation should be concluded.
+the [signal status](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal/aborted) to ensure that computation
+should be concluded.
 
 For example, if you're fetching data from the server inside a task, you can pass signal as
-a [`fetch`&#8239;<sup>↗</sup>](https://developer.mozilla.org/en-US/docs/Web/API/fetch#signal) option:
+a [`fetch`](https://developer.mozilla.org/en-US/docs/Web/API/fetch#signal) option:
 
 ```ts
 const byeTask: ExecutorTask = async (signal, executor) => {
@@ -428,7 +428,7 @@ executor.value;
 ## Wait for a task to complete
 
 In the [Execute a task](#execute-a-task) section we used a promise that is returned from
-[`Executor.execute`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#execute)
+[`Executor.execute`](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#execute)
 to wait for a task execution to complete. While this approach allows to wait for a given task execution to settle, it is
 usually required to wait for an executor itself become settled. The main point here is that the executor remains
 pending while multiple tasks [replace one another](#replace-a-task).
@@ -469,8 +469,8 @@ printerExecutor.execute(() => 'Hello');
 ## Retry the latest task
 
 To retry
-the [latest task&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#task),
-use [`retry`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#retry):
+the [latest task](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#task),
+use [`retry`](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#retry):
 
 ```ts
 const planets = ['Mars', 'Venus'];
@@ -500,7 +500,7 @@ While tasks are always handled in an asynchronous fashion, there are cases when 
 synchronously.
 
 Executor can be synchronously fulfilled via
-[`resolve`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#resolve):
+[`resolve`](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#resolve):
 
 ```ts
 executor.resolve('Venus');
@@ -513,7 +513,7 @@ executor.value;
 ```
 
 Or rejected
-via [`reject`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#reject):
+via [`reject`](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#reject):
 
 ```ts
 executor.reject(new Error('Ooops!'));
@@ -547,24 +547,24 @@ executor.value;
 ## Clear an executor
 
 After the executor
-becomes [settled&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#issettled),
+becomes [settled](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#issettled),
 it remains settled until it is cleared.
 
 You can reset the executor back to its unsettled state
-using [`clear`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#clear):
+using [`clear`](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#clear):
 
 ```ts
 executor.clear();
 ```
 
 Clearing an executor removes the stored value and reason, but _doesn't_ affect the pending task execution and preserves
-the [latest task&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#task)
+the [latest task](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#task)
 that was executed.
 
 # Events and lifecycle
 
 Executors publish various events when their state changes. To subscribe to executor events use the
-[`subscribe`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#subscribe)
+[`subscribe`](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#subscribe)
 method:
 
 ```ts
@@ -593,7 +593,7 @@ manager.subscribe(event => {
 ```
 
 Both executors and managers may have multiple subscribers and each subscriber receives
-[events&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.ExecutorEvent.html)
+[events](https://smikhalevski.github.io/react-executor/interfaces/react-executor.ExecutorEvent.html)
 with following types:
 
 <dl>
@@ -633,7 +633,7 @@ executor. Read more in the [Activate an executor](#activate-an-executor) section
 <dd>
 
 The executor started [a task execution](#execute-a-task). You can find the latest task the executor handled in the
-[`Executor.task`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#task)
+[`Executor.task`](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#task)
 property.
 
 </dd>
@@ -658,13 +658,13 @@ The executor was rejected with a reason.
 The [task was aborted](#abort-a-task).
 
 If executor is
-still [pending&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#ispending)
+still [pending](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#ispending)
 when an `'aborted'` event is published then the currently pending task is being [replaced](#replace-a-task) with a new
 task.
 
-Calling [`Executor.execute`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#execute)
+Calling [`Executor.execute`](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#execute)
 when handling an abort event may lead to stack overflow. If you need to do this anyway, execute a new task from async
-context using [`queueMicrotask`&#8239;<sup>↗</sup>](https://developer.mozilla.org/en-US/docs/Web/API/queueMicrotask) or
+context using [`queueMicrotask`](https://developer.mozilla.org/en-US/docs/Web/API/queueMicrotask) or
 a similar API.
 
 </dd>
@@ -682,7 +682,7 @@ Results stored in an executor were [invalidated](#invalidate-results).
 <dt>annotated</dt>
 <dd>
 
-[Annotations&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#annotations)
+[Annotations](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#annotations)
 associated with the executor were patched.
 
 </dd>
@@ -698,7 +698,7 @@ The configuration of the plugin associated with the executor was updated.
 ## Activate an executor
 
 Executors have
-an [active&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#isactive)
+an [active](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#isactive)
 status that tells whether executor is actively used by a consumer.
 
 ```ts
@@ -763,14 +763,14 @@ executor.isInvalidated;
 ```
 
 By default, invalidating an executor has no effect except marking it
-as [invalidated&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#isinvalidated).
+as [invalidated](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#isinvalidated).
 
 ## Detach an executor
 
 By default, executors that a manager has created are preserved indefinitely and are always available though
-[`get`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html#get).
+[`get`](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html#get).
 This isn't always optimal, and you may want to detach an executor when it isn't needed anymore.
-Use [`detach`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html#detach)
+Use [`detach`](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html#detach)
 in such case:
 
 ```ts
@@ -806,9 +806,9 @@ const detachPlugin: ExecutorPlugin = executor => {
 ```
 
 To apply a plugin, pass it to the
-[`ExecutorManager.getOrCreate`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html#getorcreate)
+[`ExecutorManager.getOrCreate`](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html#getorcreate)
 or to
-the [`useExecutor`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/functions/react-executor.useExecutor.html)
+the [`useExecutor`](https://smikhalevski.github.io/react-executor/functions/react-executor.useExecutor.html)
 hook:
 
 ```ts
@@ -855,7 +855,7 @@ once for this plugin to have an effect.
 ## `abortPendingAfter`
 
 [Aborts the pending task](#abort-a-task)
-with [`TimeoutError`&#8239;<sup>↗</sup>](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#timeouterror) if
+with [`TimeoutError`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#timeouterror) if
 the task execution took longer then the given delay.
 
 <!-- prettier-ignore -->
@@ -870,7 +870,7 @@ const executor = useExecutor('test', heavyTask, [
 ## `abortWhen`
 
 [Aborts the pending task](#abort-a-task) if the
-[observable&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Observable.html)
+[observable](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Observable.html)
 emits `true`.
 
 For example, abort the current task if the device is disconnected from the network for more then 5 seconds:
@@ -1051,8 +1051,7 @@ cheeseExecutor.resolve('Mozzarella');
 ## `invalidateWhen`
 
 [Invalidates](#invalidate-results) the settled executor result when the
-[observable&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Observable.html)
-emits `true`.
+[observable](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Observable.html) emits `true`.
 
 For example, if the window was offline for more than 5 seconds, then the executor would be invalidated when the window
 goes is back online:
@@ -1133,7 +1132,7 @@ executor.invalidate();
 ## `rejectPendingAfter`
 
 [Aborts the pending task](#abort-a-task) and [rejects the executor](#settle-an-executor)
-with [`TimeoutError`&#8239;<sup>↗</sup>](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#timeouterror) if
+with [`TimeoutError`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#timeouterror) if
 the task execution
 took longer then the given timeout.
 
@@ -1149,7 +1148,7 @@ const executor = useExecutor('test', heavyTask, [
 ## `resolveBy`
 
 [Resolves the executor](#settle-an-executor) with values pushed by an
-[`Observable`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Observable.html).
+[`Observable`](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Observable.html).
 
 <!-- prettier-ignore -->
 ```ts
@@ -1173,8 +1172,8 @@ const executor = useExecutor('planet', 'Mars', [
 ]);
 ```
 
-[`PubSub`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/parallel-universe/classes/PubSub.html) can be used do
-decouple the lazy data source from the executor:
+[`PubSub`](https://smikhalevski.github.io/parallel-universe/classes/PubSub.html) can be used do decouple the lazy data
+source from the executor:
 
 <!-- prettier-ignore -->
 ```ts
@@ -1396,8 +1395,7 @@ retryRejected({ isEager: true });
 ## `retryWhen`
 
 [Retries the latest task](#abort-a-task) if the
-[observable&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Observable.html)
-emits `true`.
+[observable](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Observable.html) emits `true`.
 
 For example, if the window was offline for more than 5 seconds, the executor would retry the `heavyTask` after
 the window is back online:
@@ -1423,16 +1421,14 @@ const executor = useExecutor('test', 42, [syncBrowserStorage()]);
 ```
 
 With this plugin, you can synchronize the executor state
-[across multiple browser tabs&#8239;<sup>↗</sup>](https://stackblitz.com/edit/react-executor-todo-app?file=README.md)
-in just one line.
+[across multiple browser tabs](https://stackblitz.com/edit/react-executor-todo-app?file=README.md) in just one line.
 
 > [!IMPORTANT]\
 > If executor is [detached](#detach-an-executor), then the corresponding item is removed from the storage.
 
 By default, an executor state is serialized using
-[`JSON`&#8239;<sup>↗</sup>](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON). If
-your executor stores a value that may contain circular references, or non-serializable data like `BigInt`, use a custom
-serializer.
+[`JSON`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON). If your executor stores
+a value that may contain circular references, or non-serializable data like `BigInt`, use a custom serializer.
 
 Here's how you can enable serialization of objects with circular references:
 
@@ -1447,12 +1443,12 @@ const executor = useExecutor('test', 42, [
 ```
 
 > [!TIP]\
-> With additional configuration, [json-marshal&#8239;<sup>↗</sup>](https://github.com/smikhalevski/json-marshal#readme)
-> can stringify and parse any data structure.
+> With additional configuration, [json-marshal](https://github.com/smikhalevski/json-marshal#readme) can stringify and
+> parse any data structure.
 
 By default, `syncBrowserStorage` plugin uses a [serialized executor key](#executor-keys) as a storage key. You can
 provide a custom key
-via [`storageKey`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/plugin_syncBrowserStorage.SyncBrowserStorageOptions.html#storagekey)
+via [`storageKey`](https://smikhalevski.github.io/react-executor/interfaces/plugin_syncBrowserStorage.SyncBrowserStorageOptions.html#storagekey)
 option:
 
 ```ts
@@ -1487,11 +1483,11 @@ const myExecutor = useExecutor('test', 42, [syncExternalStore(myStore)]);
 
 When executor is [settled](#settle-an-executor), [cleared](#clear-an-executor), [invalidated](#invalidate-results) or
 annotated then the plugin calls
-the [`ExternalStore.set`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/plugin_syncExternalStore.ExternalStore.html#set)
+the [`ExternalStore.set`](https://smikhalevski.github.io/react-executor/interfaces/plugin_syncExternalStore.ExternalStore.html#set)
 method on the store.
 
 When executor is [detached](#detach-an-executor) then the plugin calls
-the [`ExternalStore.delete`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/plugin_syncExternalStore.ExternalStore.html#delete)
+the [`ExternalStore.delete`](https://smikhalevski.github.io/react-executor/interfaces/plugin_syncExternalStore.ExternalStore.html#delete)
 method on the store.
 
 Prefer [`syncBrowserStorage`](#syncbrowserstorage) if you want to persist the executor state in a `localStorage`
@@ -1500,7 +1496,7 @@ or `sessionStorage`.
 # React integration
 
 In the basic scenario, to use executors in your React app, you don't need any additional configuration, just use
-the [`useExecutor`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/functions/react-executor.useExecutor.html)
+the [`useExecutor`](https://smikhalevski.github.io/react-executor/functions/react-executor.useExecutor.html)
 hook right away:
 
 ```tsx
@@ -1523,16 +1519,16 @@ Every time the executor's state is changed, the component is re-rendered. The ex
 [activated](#activate-an-executor) after mount and deactivated on unmount.
 
 The hook has the exact same signature as
-the [`ExecutorManager.getOrCreate`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html#getorcreate)
+the [`ExecutorManager.getOrCreate`](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html#getorcreate)
 method, described in the [Introduction](#introduction) section.
 
 > [!TIP]\
 > Check out the live example
-> of [the TODO app&#8239;<sup>↗</sup>](https://stackblitz.com/edit/react-executor-todo-app?file=README.md) that employs
+> of [the TODO app](https://stackblitz.com/edit/react-executor-todo-app?file=README.md) that employs
 > React Executor.
 
 You can use executors both inside and outside the rendering process. To do this, provide a custom
-[`ExecutorManager`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html)
+[`ExecutorManager`](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html)
 through the context:
 
 ```tsx
@@ -1555,7 +1551,7 @@ const executor = manager.get(['user', '28']);
 
 If you want to have access to an executor in a component, but don't want to re-render the component when the executor's
 state is changed,
-use [`useExecutorManager`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/functions/react-executor.useExecutorManager.html)
+use [`useExecutorManager`](https://smikhalevski.github.io/react-executor/functions/react-executor.useExecutorManager.html)
 hook:
 
 ```ts
@@ -1590,7 +1586,7 @@ useEffect(() => {
 
 Executors support fetch-as-you-render approach and can be integrated with React Suspense. To facilitate the rendering
 suspension, use the
-[`useExecutorSuspense`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/functions/react-executor.useExecutorSuspense.html)
+[`useExecutorSuspense`](https://smikhalevski.github.io/react-executor/functions/react-executor.useExecutorSuspense.html)
 hook:
 
 ```tsx
@@ -1654,8 +1650,7 @@ function Account() {
 
 > [!TIP]\
 > Check out the live example
-> of [streaming SSR&#8239;<sup>↗</sup>](https://codesandbox.io/p/devbox/react-executor-ssr-streaming-example-mwrmrs)
-> with React Executor.
+> of [streaming SSR](https://codesandbox.io/p/devbox/react-executor-ssr-streaming-example-mwrmrs) with React Executor.
 
 Executors can be hydrated on the client after being settled on the server.
 
@@ -1682,7 +1677,7 @@ hydrateRoot(
 Here, `App` is the component that renders your application. Inside the `App` you can use `useExecutor` and
 [`useExecutorSuspence`](#suspense) to load your data.
 
-[`hydrateExecutorManager`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/functions/react-executor.hydrateExecutorManager.html)
+[`hydrateExecutorManager`](https://smikhalevski.github.io/react-executor/functions/react-executor.hydrateExecutorManager.html)
 must be called only once on the client-side with the manager that would receive the dehydrated state from the server.
 
 On the server-side, you can either render your app contents [as a string](#render-to-string) and send it to the client
@@ -1690,7 +1685,7 @@ in one go, or [stream the contents](#streaming-ssr).
 
 ## Render to string
 
-Use [`SSRExecutorManager`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/ssr.SSRExecutorManager.html)
+Use [`SSRExecutorManager`](https://smikhalevski.github.io/react-executor/classes/ssr.SSRExecutorManager.html)
 to render your app as an HTML string:
 
 ```tsx
@@ -1726,13 +1721,13 @@ server.listen(8080);
 A new executor manager must be created for each request, so the results that are stored in executors are served in
 response to a particular request.
 
-[`hasChanges`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/ssr.SSRExecutorManager.html#haschanges)
+[`hasChanges`](https://smikhalevski.github.io/react-executor/classes/ssr.SSRExecutorManager.html#haschanges)
 would resolve with `true` if state of some executors have changed during rendering.
 
 The hydration chunk returned
-by [`nextHydrationChunk`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/ssr.SSRExecutorManager.html#nexthydrationchunk)
+by [`nextHydrationChunk`](https://smikhalevski.github.io/react-executor/classes/ssr.SSRExecutorManager.html#nexthydrationchunk)
 contains the `<script>` tag that hydrates the manager for which
-[`hydrateExecutorManager`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/functions/react-executor.hydrateExecutorManager.html)
+[`hydrateExecutorManager`](https://smikhalevski.github.io/react-executor/functions/react-executor.hydrateExecutorManager.html)
 was invoked.
 
 ## Streaming SSR
@@ -1778,10 +1773,10 @@ server.listen(8080);
 `hydrator` injects React Executor hydration chunks into the React stream.
 
 In the `App` component, use the combination
-of [`<Suspense>`&#8239;<sup>↗</sup>](https://react.dev/reference/react/Suspense),
-[`useExecutor`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/functions/react-executor.useExecutor.html)
+of [`<Suspense>`](https://react.dev/reference/react/Suspense),
+[`useExecutor`](https://smikhalevski.github.io/react-executor/functions/react-executor.useExecutor.html)
 and
-[`useExecutorSuspence`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/functions/react-executor.useExecutorSuspense.html)
+[`useExecutorSuspence`](https://smikhalevski.github.io/react-executor/functions/react-executor.useExecutorSuspense.html)
 to suspend rendering while executors process their tasks:
 
 ```tsx
@@ -1817,12 +1812,12 @@ update to "Hello, Paul!". In the meantime `helloExecutor` on the client would be
 ## State serialization
 
 By default, an executor state is serialized using
-[`JSON`&#8239;<sup>↗</sup>](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON)
+[`JSON`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON)
 that has quite a few limitations. If your executor stores a value that may contain circular references, or
 non-serializable data like `BigInt`, then a custom state serializer must be provided.
 
 On the server, pass a
-[`serializer`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/ssr.SSRExecutorManagerOptions.html#serializer)
+[`serializer`](https://smikhalevski.github.io/react-executor/interfaces/ssr.SSRExecutorManagerOptions.html#serializer)
 option to [`SSRExecutorManager`](#render-to-string):
 
 ```ts
@@ -1833,7 +1828,7 @@ const manager = new SSRExecutorManager({ serializer: JSONMarshal });
 ```
 
 On the client, pass _the same_
-[`serializer`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.HydrateExecutorManagerOptions.html#serializer)
+[`serializer`](https://smikhalevski.github.io/react-executor/interfaces/react-executor.HydrateExecutorManagerOptions.html#serializer)
 to `hydrateExecutorManager`:
 
 ```tsx
@@ -1855,17 +1850,17 @@ hydrateRoot(
 ```
 
 > [!TIP]\
-> With additional configuration, [json-marshal&#8239;<sup>↗</sup>](https://github.com/smikhalevski/json-marshal#readme)
-> can stringify and parse any data structure.
+> With additional configuration, [json-marshal](https://github.com/smikhalevski/json-marshal#readme) can stringify and
+> parse any data structure.
 
 ## Content-Security-Policy support
 
 By default,
-[`nextHydrationChunk`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/ssr.SSRExecutorManager.html#nexthydrationchunk)
+[`nextHydrationChunk`](https://smikhalevski.github.io/react-executor/classes/ssr.SSRExecutorManager.html#nexthydrationchunk)
 renders an inline `<script>` tag without any attributes. To enable the support of
-the [`script-src`&#8239;<sup>↗</sup>](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src)
+the [`script-src`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src)
 directive of the `Content-Security-Policy` header, provide
-the [`nonce`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/ssr.SSRExecutorManagerOptions.html#nonce)
+the [`nonce`](https://smikhalevski.github.io/react-executor/interfaces/ssr.SSRExecutorManagerOptions.html#nonce)
 option to `SSRExecutorManager` or any of its subclasses:
 
 ```ts
@@ -1882,14 +1877,14 @@ Content-Security-Policy: script-src 'nonce-2726c7f26c'
 
 > [!TIP]\
 > Check out the live example
-> of [the Next.js app&#8239;<sup>↗</sup>](https://codesandbox.io/p/devbox/react-executor-next-example-whsj4v) that
-> showcases streaming SSR with React Executor.
+> of [the Next.js app](https://codesandbox.io/p/devbox/react-executor-next-example-whsj4v) that showcases streaming SSR
+> with React Executor.
 
 To enable client hydration in Next.js,
-use [`@react-executor/next`&#8239;<sup>↗</sup>](https://github.com/smikhalevski/react-executor-next) package.
+use [`@react-executor/next`](https://github.com/smikhalevski/react-executor-next) package.
 
 First, provide
-an [`ExecutorManager`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html):
+an [`ExecutorManager`](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html):
 
 ```tsx
 // providers.tsx
@@ -1935,7 +1930,7 @@ export default function (props: { children: ReactNode }) {
 # Devtools
 
 To inspect the current state of executors in your app, install the
-[React Executor Devtools&#8239;<sup>↗</sup>](https://chromewebstore.google.com/detail/react-executor-devtools/achlflelpafnlpepfpfhildkahbfhgjc)
+[React Executor Devtools](https://chromewebstore.google.com/detail/react-executor-devtools/achlflelpafnlpepfpfhildkahbfhgjc)
 browser extension and open its panel in the Chrome Developer Tools:
 
 <br/>
@@ -1952,7 +1947,7 @@ Devtools extension doesn't require any additional configuration and provides int
 page, regardless if they were rendered through React or created outside of the rendering process.
 
 To disable devtools, create a custom
-[`ExecutorManager`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html):
+[`ExecutorManager`](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html):
 
 ```ts
 import { ExecutorManager } from 'react-executor';
@@ -1966,8 +1961,7 @@ Executors created by the `opaqueExecutorManager` won't be visible in the React E
 recommended to use this setting in production.
 
 The extension source can be found in
-the [react-executor-devtools&#8239;<sup>↗</sup>](https://github.com/smikhalevski/react-executor-devtools)
-repo.
+the [react-executor-devtools](https://github.com/smikhalevski/react-executor-devtools) repo.
 
 # Cookbook
 
@@ -2068,7 +2062,7 @@ const handleLoadMoreClick = () => {
 
 ## Invalidate all executors
 
-[`ExecutorManager`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html#_iterator_)
+[`ExecutorManager`](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html#_iterator_)
 is iterable and provides access to all executors that it has created. You can perform bach operations with all executors
 in for-loop:
 
@@ -2082,7 +2076,7 @@ for (const executor of manager) {
 
 By default, invalidating an executor has no additional effect. If you want to
 [retry the latest task](#retry-the-latest-task) that each executor has executed, use
-[`retry`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#retry):
+[`retry`](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#retry):
 
 ```ts
 for (const executor of manager) {
@@ -2091,7 +2085,7 @@ for (const executor of manager) {
 ```
 
 It isn't optimal to retry all executors even if they aren't [actively used](#activate-an-executor). Use the
-[`retryInvalidated`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/modules/plugin_retryInvalidated.html)
+[`retryInvalidated`](https://smikhalevski.github.io/react-executor/modules/plugin_retryInvalidated.html)
 to retry active executors when they are invalidated.
 
 ## Prefetching
@@ -2218,7 +2212,7 @@ const playerExecutor = useExecutor('player', { health: 0.5 }, [
 ## Global loading indicator
 
 To detect a global pending state we can rely on events published by
-an [`ExecutorManager`&#8239;<sup>↗</sup>](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html):
+an [`ExecutorManager`](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html):
 
 ```ts
 function useGlobalPending(predicate = (executor: Executor) => true): boolean {
