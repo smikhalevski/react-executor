@@ -2,15 +2,6 @@ import type { AbortablePromise } from 'parallel-universe';
 import type { ExecutorManager } from './ExecutorManager.js';
 
 /**
- * Annotations that allow to associate arbitrary metadata with the {@link Executor} instance.
- *
- * @see {@link Executor.annotate}
- */
-export interface ExecutorAnnotations {
-  readonly [key: PropertyKey]: any;
-}
-
-/**
  * The type of the event.
  *
  * See {@link ExecutorEvent} for more details.
@@ -171,7 +162,7 @@ export interface ExecutorState<Value = any> {
   /**
    * The map of annotations associated with the executor.
    */
-  readonly annotations: ExecutorAnnotations;
+  readonly annotations: Record<PropertyKey, any>;
 
   /**
    * The timestamp when the executor was settled, or 0 if it isn't settled.
@@ -396,7 +387,7 @@ export interface Executor<Value = any> extends ReadonlyExecutor<Value> {
    *
    * @param patch The patch containing new annotations.
    */
-  annotate(patch: ExecutorAnnotations): void;
+  annotate(patch: Record<PropertyKey, any>): void;
 }
 
 /**

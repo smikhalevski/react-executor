@@ -12,7 +12,6 @@ export { hydrateExecutorManager, type HydrateExecutorManagerOptions } from './hy
 export { ExecutorManager, type ExecutorManagerOptions } from './ExecutorManager.js';
 export {
   type Executor,
-  type ExecutorAnnotations,
   type ExecutorEventType,
   type ExecutorEvent,
   type ExecutorState,

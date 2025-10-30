@@ -1,13 +1,6 @@
 import { AbortablePromise, PubSub } from 'parallel-universe';
 import type { ExecutorManager } from './ExecutorManager.js';
-import type {
-  Executor,
-  ExecutorAnnotations,
-  ExecutorEvent,
-  ExecutorState,
-  ExecutorTask,
-  PartialExecutorEvent,
-} from './types.js';
+import type { Executor, ExecutorEvent, ExecutorState, ExecutorTask, PartialExecutorEvent } from './types.js';
 import { AbortError, isPromiseLike, preventUnhandledRejection } from './utils.js';
 
 /**
@@ -22,7 +15,7 @@ export class ExecutorImpl<Value = any> implements Executor {
   settledAt = 0;
   invalidatedAt = 0;
   isFulfilled = false;
-  annotations: ExecutorAnnotations = {};
+  annotations: Record<PropertyKey, any> = {};
   version = 0;
   promise: AbortablePromise<Value> | null = null;
 
@@ -254,7 +247,7 @@ export class ExecutorImpl<Value = any> implements Executor {
     });
   };
 
-  annotate = (patch: ExecutorAnnotations): void => {
+  annotate = (patch: Record<PropertyKey, any>): void => {
     this.version++;
     Object.assign(this.annotations, patch);
     this.publish({ type: 'annotated' });
