@@ -112,13 +112,13 @@ npm install --save-prod react-executor
 
 # Introduction
 
-An executor executes a task, stores the execution result, and provides access to it. Tasks are callbacks that return a
-value or throw an error.
+An executor runs a task, stores the execution result, and provides access to that result. Tasks are callbacks that
+return a value or throw an error.
 
 An [`Executor`](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html) is created and
 managed by
-an [`ExecutorManager`](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html)
-which controls the executor lifecycle:
+an [`ExecutorManager`](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html),
+which controls the executor's lifecycle:
 
 ```ts
 import { ExecutorManager } from 'react-executor';
@@ -129,12 +129,12 @@ const rookyExecutor = manager.getOrCreate('rooky');
 // ⮕ Executor<any>
 ```
 
-Each executor has a unique key in the scope of the manager. Here we created the new executor with the key `'rooky'`.
-Managers create a new executor when you call
+Each executor has a unique key within the manager's scope. In this example, we created a new executor with the key
+`'rooky'`. The manager creates a new executor when you call
 [`getOrCreate`](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html#getorcreate)
-with a new key. Each consequent call with that key returns the same executor.
+with a previously unused key. Subsequent calls with the same key return the same executor instance.
 
-If you want to retrieve an existing executor by its key and don't want to create a new executor if it doesn't exist, use
+If you want to retrieve an existing executor by its key and avoid creating a new one if it doesn't exist, use
 [`get`](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html#get):
 
 ```ts
@@ -145,7 +145,7 @@ manager.get('rooky');
 // ⮕ Executor<any>
 ```
 
-The executor we created is unsettled, which means it neither stores a value, nor a task failure reason:
+The executor we created is _unsettled_, meaning it stores neither a value nor a failure reason:
 
 ```ts
 rookyExecutor.isSettled;
@@ -168,11 +168,11 @@ bobbyExecutor.value;
 // ⮕ 42
 ```
 
-An initial value can be a task which is executed, a promise which the executor awaits, or any other value that instantly
-fulfills the executor. Read more in the [Execute a task](#execute-a-task) and in
+An initial value may be a task (which will be executed), a promise (which the executor will await), or any other value
+that immediately fulfills the executor. Read more in the [Execute a task](#execute-a-task) and in
 the [Settle an executor](#settle-an-executor) sections.
 
-When an executor is created, you can provide an array of plugins:
+When creating an executor, you can also provide an array of plugins:
 
 ```ts
 import retryRejected from 'react-executor/plugin/retryRejected';
@@ -180,7 +180,7 @@ import retryRejected from 'react-executor/plugin/retryRejected';
 const rookyExecutor = manager.getOrCreate('rooky', 42, [retryRejected()]);
 ```
 
-Plugins can subscribe to [executor events](#events-and-lifecycle) or alter the executor instance. Read more about
+Plugins can subscribe to [executor events](#events-and-lifecycle) or modify the executor instance. Read more about
 plugins in the [Plugins](#plugins) section.
 
 ## Executor keys
@@ -2215,24 +2215,20 @@ To detect a global pending state we can rely on events published by
 an [`ExecutorManager`](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html):
 
 ```ts
-function useGlobalPending(predicate = (executor: Executor) => true): boolean {
+function useIsPending(predicate = (executor: Executor) => true): boolean {
   const manager = useExecutorManager();
   const [isPending, setPending] = useState(false);
 
   useEffect(() => {
-    const listener = (event: ExecutorEvent) => {
-      setPending(
-        Array.from(manager)
-          .filter(predicate)
-          .some(executor => executor.isPending)
-      );
+    const syncIsPending = (event: ExecutorEvent) => {
+      setPending(Array.from(manager).some(executor => predicate(executor) && executor.isPending));
     };
 
     // 1️⃣ Ensure isPending is up-to-date after mount
-    listener();
+    syncIsPending();
 
     // 2️⃣ Sync isPending when any event is published
-    return manager.subscribe(listener);
+    return manager.subscribe(syncIsPending);
   }, [manager]);
 
   return isPending;
@@ -2242,7 +2238,7 @@ function useGlobalPending(predicate = (executor: Executor) => true): boolean {
 Now a global pending indicator can be shown when _any_ executor is pending:
 
 ```tsx
-const isPending = useGlobalPending();
+const isPending = useIsPending();
 
 isPending && <LoadingIndicator />;
 ```
@@ -2254,17 +2250,14 @@ be marked as such, for example with an annotation:
 const accountExecutor = useExecutor(
   'account',
 
-  async () => {
-    const response = await fetch('/account');
-    return response.json();
-  },
+  () => fetch('/account'),
 
   // 1️⃣ Annotate an executor once via a plugin
   [executor => executor.annotate({ isFetching: true })]
 );
 
 // 2️⃣ Get global pending status for executors that are fetching data
-const isPending = useGlobalPending(executor => executor.annotations.isFetching);
+const isPending = useIsPending(executor => executor.annotations.isFetching);
 ```
 
 <!--/ARTICLE-->

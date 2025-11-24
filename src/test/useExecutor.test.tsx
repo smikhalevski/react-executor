@@ -3,14 +3,18 @@
  */
 
 import { beforeEach, expect, test, vi } from 'vitest';
-import { act, renderHook } from '@testing-library/react';
+import { act, render, renderHook } from '@testing-library/react';
 import React, { StrictMode } from 'react';
-import { ExecutorManager, ExecutorManagerProvider, useExecutor } from '../main/index.js';
+import { ExecutorEvent, ExecutorManager, ExecutorManagerProvider, useExecutor } from '../main/index.js';
 
 let testIndex = 0;
 let executorKey: string;
 
+vi.useFakeTimers();
+
 beforeEach(() => {
+  vi.clearAllTimers();
+
   executorKey = 'executor' + testIndex++;
 });
 
@@ -164,4 +168,89 @@ test('re-renders after task execute', async () => {
   expect(executor.task).toBe(task);
 
   expect(renderMock).toHaveBeenCalledTimes(6);
+});
+
+test('deactivates an executor when key changes after parent component render', async () => {
+  const task = vi.fn();
+  const listenerMock = vi.fn();
+
+  const manager = new ExecutorManager();
+
+  const Parent = (props: { executorKey: string }) => (
+    <ExecutorManagerProvider value={manager}>
+      <Child executorKey={props.executorKey} />
+    </ExecutorManagerProvider>
+  );
+
+  const Child = (props: { executorKey: string }) => {
+    useExecutor(props.executorKey, task, [executor => executor.subscribe(listenerMock)]);
+    return null;
+  };
+
+  const { rerender } = await act(() => render(<Parent executorKey={'xxx'} />));
+
+  expect(manager['_executors'].size).toBe(1);
+
+  expect(manager.get('xxx')!.isActive).toBe(true);
+
+  expect(listenerMock).toHaveBeenCalledTimes(4);
+  expect(listenerMock).toHaveBeenNthCalledWith(1, {
+    type: 'attached',
+    target: manager.get('xxx')!,
+    version: 0,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(2, {
+    type: 'pending',
+    target: manager.get('xxx')!,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(3, {
+    type: 'activated',
+    target: manager.get('xxx')!,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(4, {
+    type: 'fulfilled',
+    target: manager.get('xxx')!,
+    version: 2,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+
+  act(() => rerender(<Parent executorKey={'yyy'} />));
+
+  vi.runAllTimers();
+
+  expect(manager['_executors'].size).toBe(2);
+
+  expect(manager.get('xxx')!.isActive).toBe(false);
+  expect(manager.get('yyy')!.isActive).toBe(true);
+
+  expect(listenerMock).toHaveBeenCalledTimes(8);
+  expect(listenerMock).toHaveBeenNthCalledWith(5, {
+    type: 'attached',
+    target: manager.get('yyy')!,
+    version: 0,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(6, {
+    type: 'pending',
+    target: manager.get('yyy')!,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(7, {
+    type: 'deactivated',
+    target: expect.objectContaining({ key: 'xxx' }),
+    version: 2,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(8, {
+    type: 'activated',
+    target: manager.get('yyy')!,
+    version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
 });

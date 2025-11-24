@@ -1,5 +1,5 @@
 import * as React from 'react';
-import type { Executor } from './types.js';
+import type { Executor, ExecutorState } from './types.js';
 
 /**
  * Re-renders the component when an executor's state is changed.
@@ -12,13 +12,11 @@ export function useExecutorSubscription<Value>(executor: Executor<Value>): Execu
   React.useDebugValue(executor, getExecutorStateSnapshot);
 
   if (typeof React.useSyncExternalStore === 'function') {
-    const subscribe = React.useCallback(executor.subscribe.bind(executor), [executor]);
+    const getSnapshot = () => getExecutorId(executor) + '.' + executor.version;
 
-    const getSnapshot = () => executor.version;
+    React.useSyncExternalStore(executor.subscribe, getSnapshot, getSnapshot);
 
-    React.useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-
-    React.useEffect(executor.activate.bind(executor), [executor]);
+    React.useEffect(executor.activate, [executor]);
 
     return executor;
   }
@@ -26,16 +24,11 @@ export function useExecutorSubscription<Value>(executor: Executor<Value>): Execu
   const [, setVersion] = React.useState(executor.version);
 
   React.useEffect(() => {
-    let version = executor.version;
-
     const deactivate = executor.activate();
-    const unsubscribe = executor.subscribe(() => {
-      if (version < executor.version) {
-        setVersion((version = executor.version));
-      }
-    });
 
-    setVersion(version);
+    const unsubscribe = executor.subscribe(() => setVersion(executor.version));
+
+    setVersion(executor.version);
 
     return () => {
       unsubscribe();
@@ -46,6 +39,14 @@ export function useExecutorSubscription<Value>(executor: Executor<Value>): Execu
   return executor;
 }
 
-function getExecutorStateSnapshot(executor: Executor) {
+const executorIds = new WeakMap<Executor, number>();
+
+let executorCount = 0;
+
+function getExecutorId(executor: Executor): number {
+  return executorIds.get(executor) || (executorIds.set(executor, ++executorCount), executorCount);
+}
+
+function getExecutorStateSnapshot(executor: Executor): ExecutorState {
   return executor.getStateSnapshot();
 }
