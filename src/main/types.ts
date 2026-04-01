@@ -181,7 +181,7 @@ export interface ExecutorState<Value = any> {
 }
 
 /**
- * Provides access execution results and allows to subscribe to an execution state changes.
+ * Provides access to execution results and allows subscribing to execution state changes.
  *
  * @template Value The value stored by the executor.
  */
@@ -194,8 +194,8 @@ export interface ReadonlyExecutor<Value = any> extends ExecutorState<Value>, Obs
   /**
    * The value of the latest fulfillment.
    *
-   * **Note:** An executor may still have value even if it was {@link isRejected rejected}. Use {@link get},
-   * {@link getOrDefault}, or {@link getOrAwait} to retrieve a value of the {@link Executor.isFulfilled fulfilled}
+   * **Note:** An executor may still have a value even if it was {@link isRejected rejected}. Use {@link get},
+   * {@link getOrDefault}, or {@link getOrAwait} to retrieve the value of a {@link Executor.isFulfilled fulfilled}
    * executor.
    */
   readonly value: Value | undefined;
@@ -230,7 +230,7 @@ export interface ReadonlyExecutor<Value = any> extends ExecutorState<Value>, Obs
   readonly isSettled: boolean;
 
   /**
-   * `true` if the executor was {@link Executor.activate activated} more times then deactivated.
+   * `true` if the executor was {@link Executor.activate activated} more times than deactivated.
    */
   readonly isActive: boolean;
 
@@ -246,7 +246,7 @@ export interface ReadonlyExecutor<Value = any> extends ExecutorState<Value>, Obs
   readonly isInvalidated: boolean;
 
   /**
-   * The latest task that was {@link Executor.execute executed}, or `null` if the executor didn't execute any tasks.
+   * The latest task that was {@link Executor.execute executed}, or `null` if the executor hasn't executed any tasks.
    */
   readonly task: ExecutorTask<Value> | null;
 
@@ -274,16 +274,16 @@ export interface ReadonlyExecutor<Value = any> extends ExecutorState<Value>, Obs
    * Returns a {@link value} if the executor is {@link isFulfilled fulfilled}. Otherwise, returns the default value.
    *
    * @param defaultValue The default value.
-   * @template DefaultValue The default value.
+   * @template DefaultValue The type of the default value.
    */
   getOrDefault<DefaultValue>(defaultValue: DefaultValue): Value | DefaultValue;
 
   /**
-   * Waits for the executor to become {@link isSettled settled} and non-{@link isPending pending}. Then, the returned
-   * promise is resolved with a {@link value} if the executor is {@link isFulfilled fulfilled}, or rejected with
-   * a {@link reason} if the executor is {@link isRejected rejected}.
+   * Waits for the executor to become {@link isSettled settled} and non-{@link isPending pending}. The returned
+   * promise is then resolved with a {@link value} if the executor is {@link isFulfilled fulfilled}, or rejected
+   * with a {@link reason} if the executor is {@link isRejected rejected}.
    *
-   * If the executor is detached during this operation, then the returned promise is rejected with the
+   * If the executor is detached during this operation, the returned promise is rejected with an
    * {@link !DOMException AbortError}.
    */
   getOrAwait(): AbortablePromise<Value>;
@@ -296,13 +296,16 @@ export interface ReadonlyExecutor<Value = any> extends ExecutorState<Value>, Obs
 
 /**
  * Manages the async task execution process and provides ways to access execution results, abort or replace a task
- * execution, and subscribe to an execution state changes.
+ * execution, and subscribe to execution state changes.
  *
  * @template Value The value stored by the executor.
  */
 export interface Executor<Value = any> extends ReadonlyExecutor<Value> {
   /**
-   * The latest task that was {@link Executor.execute executed}, or `null` if the executor didn't execute any tasks.
+   * The latest task that was {@link execute executed}, or `null` if the executor hasn't executed any tasks.
+   *
+   * **Note:** Unlike {@link ReadonlyExecutor.task}, this property is writable to allow plugins and advanced
+   * use cases to replace the stored task reference directly.
    */
   task: ExecutorTask<Value> | null;
 
@@ -321,8 +324,8 @@ export interface Executor<Value = any> extends ReadonlyExecutor<Value> {
   execute(task: ExecutorTask<Value>): AbortablePromise<Value>;
 
   /**
-   * If the executor isn't {@link isPending pending} then the {@link task latest task} is {@link execute executed}
-   * again. If there's no task then no-op.
+   * If the executor is not {@link isPending pending}, the {@link task latest task} is {@link execute executed}
+   * again. If there's no task then this is a no-op.
    */
   retry(): void;
 
@@ -334,27 +337,31 @@ export interface Executor<Value = any> extends ReadonlyExecutor<Value> {
   clear(): void;
 
   /**
-   * Instantly aborts pending execution and preserves available results as is. Value (or error) returned from pending
-   * task callback is ignored. The signal passed to the executed task callback is aborted.
+   * Instantly aborts pending execution and preserves available results as-is. The value (or error) returned from
+   * the pending task callback is ignored, and the signal passed to the task callback is aborted.
    *
-   * @param reason The abort reason that is used for rejection of the pending task promise.
+   * **Note:** This method only affects the pending task promise, not the executor's settled state. To also
+   * clear or reject the executor's value, call {@link clear} or {@link reject} afterwards.
+   *
+   * @param reason The abort reason used to reject the pending task promise.
    */
   abort(reason?: unknown): void;
 
   /**
-   * If the executor is settled the result is masted as {@link isInvalidated invalidated}.
+   * If the executor is settled, marks the result as {@link isInvalidated invalidated}.
    *
-   * @param invalidatedAt The timestamp when the executor result was invalidated.
+   * @param invalidatedAt The timestamp to record as the invalidation time. Defaults to `Date.now()`.
    */
   invalidate(invalidatedAt?: number): void;
 
   /**
    * Aborts pending execution and fulfills the executor with the value.
    *
-   * **Note:** If value is a promise-like then {@link execute} is implicitly called which replaces the {@link task}.
+   * **Note:** If the value is a {@link PromiseLike}, it is wrapped internally and the {@link task} is updated to
+   * reflect the pending resolution. This differs from passing a plain value, where settlement is immediate.
    *
    * @param value The value.
-   * @param settledAt The timestamp when the value was acquired. If value is a promise then the timestamp is ignored.
+   * @param settledAt The timestamp when the value was acquired. Ignored if value is a `PromiseLike`.
    */
   resolve(value: PromiseLike<Value> | Value, settledAt?: number): void;
 
@@ -362,28 +369,28 @@ export interface Executor<Value = any> extends ReadonlyExecutor<Value> {
    * Instantly aborts pending execution and rejects the executor with the reason.
    *
    * @param reason The reason of failure.
-   * @param settledAt The timestamp when the reason was acquired.
+   * @param settledAt The timestamp when the reason was acquired. Defaults to `Date.now()`.
    */
   reject(reason: any, settledAt?: number): void;
 
   /**
    * Marks the executor as being actively monitored by an external consumer.
    *
-   * Activated executor stays {@link isActive active} until all returned deactivate callbacks are invoked.
+   * An activated executor stays {@link isActive active} until all returned deactivate callbacks are invoked.
    *
    * @returns The callback that deactivates the executor if there are no more active consumers.
    */
   activate(): () => void;
 
   /**
-   * Publishes the event for subscribers of the executor and its manager.
+   * Publishes the event to subscribers of the executor and its manager.
    *
    * @param event The event to publish.
    */
   publish(event: PartialExecutorEvent): void;
 
   /**
-   * Assigns patch to {@link annotations existing annotations}.
+   * Merges the patch into the {@link annotations existing annotations}.
    *
    * @param patch The patch containing new annotations.
    */
@@ -391,7 +398,7 @@ export interface Executor<Value = any> extends ReadonlyExecutor<Value> {
 }
 
 /**
- * The observable that allows to subscribe to a stream of values.
+ * The observable that allows subscribing to a stream of values.
  *
  * @template T The value pushed by the observable.
  */
@@ -435,14 +442,14 @@ export interface PluginConfiguredPayload {
  */
 export interface Serializer {
   /**
-   * Parses serialized value.
+   * Parses a serialized value.
    *
    * @param text The serialized value.
    */
   parse(text: string): any;
 
   /**
-   * Serializes value as a string.
+   * Serializes a value as a string.
    *
    * @param value The value to serialize.
    */

@@ -78,7 +78,7 @@ npm install --save-prod react-executor
 - [`retryRejected`](#retryrejected)
 - [`retryWhen`](#retrywhen)
 - [`syncBrowserStorage`](#syncbrowserstorage)
-- [`syncExternalStore`](#syncsxternalstore)
+- [`syncExternalStore`](#syncexternalstore)
 
 <span class="toc-icon">⚛️&ensp;</span>[**React integration**](#react-integration)
 
@@ -261,9 +261,8 @@ const helloPromise = rookyExecutor.execute(task);
 and `rookyExecutor` as arguments. The signal is aborted if the task is [aborted](#abort-a-task) or
 [replaced](#replace-a-task).
 
-While tasks can be synchronous or asynchronous, executors always handle them in an asynchronous fashion. The executor is
-marked
-as [pending](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#ispending)
+While tasks can be synchronous or asynchronous, executors always handle them in an asynchronous fashion. The executor
+is marked as [pending](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#ispending)
 immediately after
 [`execute`](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#execute)
 is called:
@@ -429,8 +428,8 @@ executor.value;
 
 In the [Execute a task](#execute-a-task) section we used a promise that is returned from
 [`Executor.execute`](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#execute)
-to wait for a task execution to complete. While this approach allows to wait for a given task execution to settle, it is
-usually required to wait for an executor itself become settled. The main point here is that the executor remains
+to wait for a task execution to complete. While this approach allows to wait for a given task execution to settle, it
+is usually required to wait for an executor itself become settled. The main point here is that the executor remains
 pending while multiple tasks [replace one another](#replace-a-task).
 
 Let's consider the scenario where a task is replaced with another task:
@@ -581,8 +580,8 @@ const unsubscribe = rookyExecutor.subscribe(event => {
 unsubscribe();
 ```
 
-You can subscribe to the executor manager to receive events from all executors. For example, you can automatically retry
-any invalidated executor:
+You can subscribe to the executor manager to receive events from all executors. For example, you can automatically
+retry any invalidated executor:
 
 ```ts
 manager.subscribe(event => {
@@ -797,7 +796,7 @@ create a plugin that aborts the pending task and [detaches an executor](#detach-
 ```ts
 const detachPlugin: ExecutorPlugin = executor => {
   executor.subscribe(event => {
-    if (event.type === 'deactivted') {
+    if (event.type === 'deactivated') {
       executor.abort();
       executor.manager.detach(executor.key);
     }
@@ -1077,7 +1076,7 @@ follows these requirements:
 ```ts
 import { useExecutor } from 'react-executor';
 import abortWhen from 'react-executor/plugin/abortWhen';
-import invalidateWhen from 'react-executor/observable/invalidateWhen';
+import invalidateWhen from 'react-executor/plugin/invalidateWhen';
 import navigatorOffline from 'react-executor/observable/navigatorOffline';
 import navigatorOnline from 'react-executor/observable/navigatorOnline';
 import retryInvalidated from 'react-executor/plugin/retryInvalidated';
@@ -1110,7 +1109,7 @@ useExecutor('test', heavyTask, [
 
 Sets [an executor task](#execute-a-task) but doesn't execute it.
 
-This plugin is useful when you have an static initial value and a task that can update this value later:
+This plugin is useful when you have a static initial value and a task that can update this value later:
 
 ```ts
 import lazyTask from 'react-executor/plugin/lazyTask';
@@ -1123,7 +1122,7 @@ const executor = useExecutor('meaningOfLife', 42, [
 ```
 
 `executor` is created with the `value` set to 42. `getTheMeaningOfLife` task isn't executed and would be called only if
-executor is invalidated (tanks to [`retryInvalidated`](#retryinvalidated) plugin):
+executor is invalidated (thanks to [`retryInvalidated`](#retryinvalidated) plugin):
 
 ```ts
 executor.invalidate();
@@ -1133,8 +1132,7 @@ executor.invalidate();
 
 [Aborts the pending task](#abort-a-task) and [rejects the executor](#settle-an-executor)
 with [`TimeoutError`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#timeouterror) if
-the task execution
-took longer then the given timeout.
+the task execution took longer then the given timeout.
 
 <!-- prettier-ignore -->
 ```ts
@@ -1172,7 +1170,7 @@ const executor = useExecutor('planet', 'Mars', [
 ]);
 ```
 
-[`PubSub`](https://smikhalevski.github.io/parallel-universe/classes/PubSub.html) can be used do decouple the lazy data
+[`PubSub`](https://smikhalevski.github.io/parallel-universe/classes/PubSub.html) can be used to decouple the lazy data
 source from the executor:
 
 <!-- prettier-ignore -->
@@ -1675,7 +1673,7 @@ hydrateRoot(
 ```
 
 Here, `App` is the component that renders your application. Inside the `App` you can use `useExecutor` and
-[`useExecutorSuspence`](#suspense) to load your data.
+[`useExecutorSuspense`](#suspense) to load your data.
 
 [`hydrateExecutorManager`](https://smikhalevski.github.io/react-executor/functions/react-executor.hydrateExecutorManager.html)
 must be called only once on the client-side with the manager that would receive the dehydrated state from the server.
@@ -1776,7 +1774,7 @@ In the `App` component, use the combination
 of [`<Suspense>`](https://react.dev/reference/react/Suspense),
 [`useExecutor`](https://smikhalevski.github.io/react-executor/functions/react-executor.useExecutor.html)
 and
-[`useExecutorSuspence`](https://smikhalevski.github.io/react-executor/functions/react-executor.useExecutorSuspense.html)
+[`useExecutorSuspense`](https://smikhalevski.github.io/react-executor/functions/react-executor.useExecutorSuspense.html)
 to suspend rendering while executors process their tasks:
 
 ```tsx
@@ -1807,7 +1805,8 @@ function Hello() {
 ```
 
 If the `App` is rendered in streaming mode, it would first show "Loading" and after the executor is settled, it would
-update to "Hello, Paul!". In the meantime `helloExecutor` on the client would be hydrated with the data from the server.
+update to "Hello, Paul!". In the meantime `helloExecutor` on the client would be hydrated with the data from the
+server.
 
 ## State serialization
 
@@ -2063,8 +2062,8 @@ const handleLoadMoreClick = () => {
 ## Invalidate all executors
 
 [`ExecutorManager`](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html#_iterator_)
-is iterable and provides access to all executors that it has created. You can perform bach operations with all executors
-in for-loop:
+is iterable and provides access to all executors that it has created. You can perform batch operations with all
+executors in a for-loop:
 
 ```ts
 const manager = useExecutorManager();
@@ -2098,8 +2097,8 @@ const User = () => {
 };
 ```
 
-In this example, the executor with the `'shoppingCart'` key is initialized once the component is rendered for the first
-time. The `User` component _won't be re-rendered_ if the state of this executor is changed.
+In this example, the executor with the `'shoppingCart'` key is initialized once the component is rendered for the
+first time. The `User` component _won't be re-rendered_ if the state of this executor is changed.
 
 To do prefetching before the application is even rendered, create an executor manager beforehand:
 
