@@ -1,7 +1,4 @@
-/**
- * @vitest-environment jsdom
- */
-
+// @vitest-environment jsdom
 import { expect, test, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { act, render, screen } from '@testing-library/react';
@@ -19,7 +16,7 @@ test('suspends component rendering until the executor is settled', async () => {
     return useExecutorSuspense(useExecutor('xxx', () => 'aaa')).get();
   };
 
-  const renderPromise = act(() =>
+  const resultPromise = act(() =>
     render(
       <Suspense fallback={'ccc'}>
         <Component />
@@ -29,7 +26,7 @@ test('suspends component rendering until the executor is settled', async () => {
 
   expect(screen.getByText('ccc')).toBeInTheDocument();
 
-  await renderPromise;
+  await resultPromise;
 
   expect(screen.getByText('aaa')).toBeInTheDocument();
 });

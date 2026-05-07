@@ -1,7 +1,7 @@
 /**
  * The observable that emits `true` when
  * [the window receives focus](https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState), and emits
- * `false` when the window looses focus.
+ * `false` when the window loses focus.
  *
  * ```ts
  * import retryWhen from 'react-executor/plugin/retryWhen';
@@ -28,7 +28,7 @@ function handleChange(): void {
 /**
  * The observable that emits `true` when
  * [the window receives focus](https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState), and emits
- * `false` when the window looses focus.
+ * `false` when the window loses focus.
  */
 const windowFocused: Observable<boolean> = {
   subscribe(listener) {

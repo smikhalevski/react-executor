@@ -1,5 +1,5 @@
 /**
- * The plugin that retries the last task if it has is failed.
+ * The plugin that retries the last task if it has failed.
  *
  * ```ts
  * import retryRejected from 'react-executor/plugin/retryRejected';
@@ -42,7 +42,7 @@ export interface RetryRejectedOptions<Value> {
 }
 
 /**
- * Retries the last task if it has is failed.
+ * Retries the last task if it has failed.
  *
  * @param options Retry options.
  * @template Value The value stored by the executor.

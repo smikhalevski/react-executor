@@ -3,7 +3,7 @@ import { useExecutorManager } from './useExecutorManager.js';
 import { useExecutorSubscription } from './useExecutorSubscription.js';
 
 /**
- * Gets an existing executor or create a new executor using the {@link ExecutorManager}.
+ * Gets an existing executor or creates a new executor using the {@link ExecutorManager}.
  *
  * All hook usages with the same key, return the same {@link Executor} instance.
  *
@@ -23,7 +23,7 @@ export function useExecutor<Value = any>(
 ): Executor<Value>;
 
 /**
- * Gets an existing executor or create a new executor using the {@link ExecutorManager}.
+ * Gets an existing executor or creates a new executor using the {@link ExecutorManager}.
  *
  * All hook usages with the same key, return the same {@link Executor} instance.
  *

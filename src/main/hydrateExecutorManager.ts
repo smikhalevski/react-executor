@@ -20,8 +20,6 @@ export interface HydrateExecutorManagerOptions {
  *
  * @param manager The executor manager for which SSR hydration must be enabled.
  * @param options Additional options.
- * @returns The provided executor manager.
- * @template T The executor manager.
  */
 export function hydrateExecutorManager(manager: ExecutorManager, options: HydrateExecutorManagerOptions = {}): void {
   const { serializer = JSON } = options;

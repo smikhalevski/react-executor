@@ -39,7 +39,7 @@ export interface RetryWhenOptions {
 /**
  * Retries the latest task if the observable emits `true`.
  *
- * **NOte:** If executor isn't active and retry isn't {@link RetryWhenOptions.isEager eager} then the task is retried
+ * **Note:** If executor isn't active and retry isn't {@link RetryWhenOptions.isEager eager} then the task is retried
  * after the executor becomes active.
  *
  * @param observable The observable that triggers the retry of the latest task.

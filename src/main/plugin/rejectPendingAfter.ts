@@ -1,6 +1,6 @@
 /**
  * The plugin that aborts the pending task and rejects the executor with {@link !DOMException TimeoutError} if the task
- * execution took longer then the delay.
+ * execution took longer than the delay.
  *
  * ```ts
  * import rejectPendingAfter from 'react-executor/plugin/rejectPendingAfter';
@@ -18,7 +18,7 @@ import { TimeoutError } from '../utils.js';
 
 /**
  * Aborts the pending task and rejects the executor with {@link !DOMException TimeoutError} if the task execution took
- * longer then the delay.
+ * longer than the delay.
  *
  * @param delay The delay in milliseconds after which the executor is rejected.
  */
@@ -30,7 +30,7 @@ export default function rejectPendingAfter(delay: number): ExecutorPlugin {
       switch (event.type) {
         case 'pending':
           timer = setTimeout(
-            error => {
+            (error: Error) => {
               executor.abort(error);
               executor.reject(error);
             },

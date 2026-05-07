@@ -1,7 +1,4 @@
-/**
- * @vitest-environment jsdom
- */
-
+// @vitest-environment jsdom
 import { beforeEach, expect, test, vi } from 'vitest';
 import { hydrateExecutorManager, ExecutorManager, ExecutorState } from '../main/index.js';
 import { Serializer } from '../main/types.js';

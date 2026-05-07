@@ -1,6 +1,6 @@
 /**
  * The observable that emits `true` when
- * [the window looses focus](https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState), and emits
+ * [the window loses focus](https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState), and emits
  * `false` when the window receives focus.
  *
  * ```ts
@@ -20,7 +20,7 @@ import { negate } from '../utils.js';
 
 /**
  * The observable that emits `true` when
- * [the window looses focus](https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState), and emits
+ * [the window loses focus](https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState), and emits
  * `false` when the window receives focus.
  */
 const windowBlurred = negate(windowFocused);

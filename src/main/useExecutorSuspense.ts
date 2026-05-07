@@ -5,25 +5,33 @@ import type { Executor } from './types.js';
  * Suspends rendering until an executor satisfies a predicate.
  *
  * @example
- * // Suspend if executor is pending or get the current value
+ * // Suspend while the executor is pending, then get the settled value
  * const value = useExecutorSuspense(useExecutor('test', heavyTask)).get();
  *
  * @example
  * const cheeseExecutor = useExecutor('cheese', buyCheeseTask);
  * const breadExecutor = useExecutor('bread', bakeBreadTask);
  *
- * // Executors run in parallel and rendering is suspended until both of them are settled
+ * // Executors run in parallel; rendering suspends until both are settled
  * useExecutorSuspense(cheeseExecutor);
  * useExecutorSuspense(breadExecutor);
  *
- * @param executor The executor to get value of.
- * @param predicate The predicate which a pending executor must conform to _prevent_ rendering suspension. By default,
- * only non-fulfilled executors are awaited.
- * @returns The executor value.
+ * @example
+ * // Only suspend if the executor has never been fulfilled before (allow stale values through)
+ * useExecutorSuspense(executor, executor => !executor.isSettled);
+ *
+ * @param executor The executor to suspend on.
+ * @param shouldSuspend A predicate called on a {@link Executor.isPending pending} executor. If it returns `true`,
+ * rendering is suspended until the executor settles. If it returns `false`, rendering continues immediately with
+ * whatever state the executor currently holds. Only called when the executor is pending — non-pending executors
+ * never trigger suspension regardless of this predicate.
+ * Defaults to suspending whenever the executor is pending and not yet {@link Executor.isFulfilled fulfilled}.
+ * @returns The executor, for chaining with {@link ReadonlyExecutor.get get} or
+ * {@link ReadonlyExecutor.getOrDefault getOrDefault}.
  * @template Value The value stored by the executor.
  */
-export function useExecutorSuspense<Value>(executor: Executor<Value>, predicate = isNotFulfilled): Executor<Value> {
-  if (!executor.isPending || !predicate(executor)) {
+export function useExecutorSuspense<Value>(executor: Executor<Value>, shouldSuspend = isNotFulfilled): Executor<Value> {
+  if (!executor.isPending || !shouldSuspend(executor)) {
     return executor;
   }
 

@@ -124,7 +124,7 @@ function publishChanges(executor: ExecutorImpl, prevState: ExecutorState, nextSt
   }
 
   if (
-    nextState.settledAt !== nextState.settledAt ||
+    nextState.settledAt !== prevState.settledAt ||
     nextState.isFulfilled !== prevState.isFulfilled ||
     !Object.is(prevState.value, nextState.value) ||
     !Object.is(prevState.reason, nextState.reason)

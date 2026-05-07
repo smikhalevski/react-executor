@@ -1,7 +1,4 @@
-/**
- * @vitest-environment jsdom
- */
-
+// @vitest-environment jsdom
 import { expect, test, vi } from 'vitest';
 import { fireEvent } from '@testing-library/react';
 import navigatorOnline from '../../main/observable/navigatorOnline.js';

@@ -1,5 +1,5 @@
 /**
- * The plugin that aborts the pending task if the observable emits `false`.
+ * The plugin that aborts the pending task if the observable emits `true`.
  *
  * ```ts
  * import abortWhen from 'react-executor/plugin/abortWhen';

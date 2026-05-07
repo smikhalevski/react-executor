@@ -1,7 +1,4 @@
-/**
- * @vitest-environment jsdom
- */
-
+// @vitest-environment jsdom
 import { afterEach, beforeEach, expect, Mock, test, vi } from 'vitest';
 import { fireEvent } from '@testing-library/react';
 import { Executor, ExecutorEvent, ExecutorManager, ExecutorState } from '../../main/index.js';

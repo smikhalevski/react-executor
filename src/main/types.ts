@@ -357,7 +357,7 @@ export interface Executor<Value = any> extends ReadonlyExecutor<Value> {
   /**
    * Aborts pending execution and fulfills the executor with the value.
    *
-   * **Note:** If the value is a {@link PromiseLike}, it is wrapped internally and the {@link task} is updated to
+   * **Note:** If the value is a `PromiseLike`, it is wrapped internally and the {@link task} is updated to
    * reflect the pending resolution. This differs from passing a plain value, where settlement is immediate.
    *
    * @param value The value.

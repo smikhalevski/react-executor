@@ -1,7 +1,4 @@
-/**
- * @vitest-environment jsdom
- */
-
+// @vitest-environment jsdom
 import { beforeEach, expect, test, vi } from 'vitest';
 import { act, render, renderHook } from '@testing-library/react';
 import { StrictMode } from 'react';
