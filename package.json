@@ -57,18 +57,18 @@
   },
   "homepage": "https://megastack.dev/react-executor",
   "devDependencies": {
-    "@testing-library/jest-dom": "^6.6.4",
-    "@testing-library/react": "^16.3.0",
-    "@types/node": "^24.2.1",
-    "@types/react": "^19.1.10",
-    "jsdom": "^26.1.0",
-    "prettier": "^3.6.2",
-    "rimraf": "^6.0.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^25.6.0",
+    "@types/react": "^19.2.14",
+    "jsdom": "^29.1.1",
+    "prettier": "^3.8.3",
+    "rimraf": "^6.1.3",
     "tslib": "^2.8.1",
-    "typedoc": "^0.28.10",
-    "typedoc-plugin-mdn-links": "^5.0.8",
-    "typescript": "^5.9.2",
-    "vitest": "^3.2.4"
+    "typedoc": "^0.28.19",
+    "typedoc-plugin-mdn-links": "^5.1.1",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.5"
   },
   "optionalDependencies": {
     "react": ">=16.8.0"
