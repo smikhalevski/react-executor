@@ -72,16 +72,31 @@ export class SSRExecutorManager extends ExecutorManager {
 
   /**
    * Resolves with `true` if the {@link nextHydrationChunk} is non-empty.
+   *
+   * @param maxRetries The maximum number of times to re-check for pending executors before throwing.
+   * Increase this if your SSR data-fetching involves many sequential async steps.
+   *
+   * @throws {Error} If pending executors are still found after `maxRetries` attempts. This usually indicates
+   * a plugin that continuously re-executes tasks during SSR, such as {@link retryFulfilled} with a short delay.
    */
-  hasChanges(): Promise<boolean> {
+  hasChanges(maxRetries = 10): Promise<boolean> {
     const getVersion = () => Array.from(this).reduce((version, executor) => version + executor.version, 0);
 
     const initialVersion = getVersion();
 
-    const hasChanges = (): Promise<boolean> =>
-      Promise.allSettled(Array.from(this).map(executor => executor.promise)).then(() =>
+    let retryCount = 0;
+
+    const hasChanges = (): Promise<boolean> => {
+      if (++retryCount > maxRetries) {
+        return Promise.reject(
+          new Error('Too many retries. Ensure SSR plugins do not retry indefinitely, or increase maxRetries.')
+        );
+      }
+
+      return Promise.allSettled(Array.from(this).map(executor => executor.promise)).then(() =>
         Array.from(this).some(executor => executor.isPending) ? hasChanges() : getVersion() !== initialVersion
       );
+    };
 
     return hasChanges();
   }
