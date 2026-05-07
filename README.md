@@ -1655,7 +1655,6 @@ Executors can be hydrated on the client after being settled on the server.
 To enable hydration on the client, create the executor manager and provide it through a context:
 
 ```tsx
-import React from 'react';
 import { hydrateRoot } from 'react-dom/client';
 import { hydrateExecutorManager, ExecutorManager, ExecutorManagerProvider } from 'react-executor';
 
@@ -1831,7 +1830,6 @@ On the client, pass _the same_
 to `hydrateExecutorManager`:
 
 ```tsx
-import React from 'react';
 import { hydrateRoot } from 'react-dom/client';
 import { hydrateExecutorManager, ExecutorManager, ExecutorManagerProvider } from 'react-executor';
 import JSONMarshal from 'json-marshal';

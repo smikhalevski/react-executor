@@ -6,7 +6,7 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "skipLibCheck": true,
-    "jsx": "react",
+    "jsx": "react-jsx",
     "target": "ES6",
     "module": "NodeNext",
     "lib": ["DOM", "ES2020"],

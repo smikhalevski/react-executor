@@ -1,3 +1,4 @@
+import * as React from 'react';
 import type { Executor } from './types.js';
 
 /**
@@ -9,22 +10,29 @@ import type { Executor } from './types.js';
  *
  * @example
  * const cheeseExecutor = useExecutor('cheese', buyCheeseTask);
- * const beadExecutor = useExecutor('bread', bakeBreadTask);
+ * const breadExecutor = useExecutor('bread', bakeBreadTask);
  *
  * // Executors run in parallel and rendering is suspended until both of them are settled
  * useExecutorSuspense(cheeseExecutor);
  * useExecutorSuspense(breadExecutor);
  *
- * @param executor The executors to get value of.
- * @param predicate The predicate which a pending executor must conform to suspend the rendering process. By default,
+ * @param executor The executor to get value of.
+ * @param predicate The predicate which a pending executor must conform to _prevent_ rendering suspension. By default,
  * only non-fulfilled executors are awaited.
  * @returns The executor value.
  * @template Value The value stored by the executor.
  */
 export function useExecutorSuspense<Value>(executor: Executor<Value>, predicate = isNotFulfilled): Executor<Value> {
-  if (executor.isPending && predicate(executor)) {
+  if (!executor.isPending || !predicate(executor)) {
+    return executor;
+  }
+
+  // Backward compatibility
+  if (typeof React.use !== 'function') {
     throw executor.getOrAwait();
   }
+
+  React.use(executor.getOrAwait());
   return executor;
 }
 

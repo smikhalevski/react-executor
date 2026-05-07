@@ -4,7 +4,7 @@
 
 import { beforeEach, expect, test, vi } from 'vitest';
 import { act, render, renderHook } from '@testing-library/react';
-import React, { StrictMode } from 'react';
+import { StrictMode } from 'react';
 import { ExecutorEvent, ExecutorManager, ExecutorManagerProvider, useExecutor } from '../main/index.js';
 
 let testIndex = 0;

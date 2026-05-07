@@ -4,8 +4,8 @@
 
 import { expect, test, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
-import { render } from '@testing-library/react';
-import React, { Suspense, useEffect } from 'react';
+import { act, render, screen } from '@testing-library/react';
+import { Suspense, useEffect } from 'react';
 import {
   ExecutorManager,
   ExecutorManagerProvider,
@@ -19,15 +19,19 @@ test('suspends component rendering until the executor is settled', async () => {
     return useExecutorSuspense(useExecutor('xxx', () => 'aaa')).get();
   };
 
-  const result = render(
-    <Suspense fallback={'ccc'}>
-      <Component />
-    </Suspense>
+  const renderPromise = act(() =>
+    render(
+      <Suspense fallback={'ccc'}>
+        <Component />
+      </Suspense>
+    )
   );
 
-  expect(result.getByText('ccc')).toBeInTheDocument();
+  expect(screen.getByText('ccc')).toBeInTheDocument();
 
-  expect(await result.findByText('aaa')).toBeInTheDocument();
+  await renderPromise;
+
+  expect(screen.getByText('aaa')).toBeInTheDocument();
 });
 
 test('does not suspend rendering if the pending executor is settled', async () => {

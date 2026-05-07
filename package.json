@@ -71,7 +71,7 @@
     "vitest": "^4.1.5"
   },
   "optionalDependencies": {
-    "react": ">=16.8.0"
+    "react": ">=17.0.0"
   },
   "dependencies": {
     "parallel-universe": "^6.1.2"

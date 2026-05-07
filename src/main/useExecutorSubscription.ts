@@ -11,30 +11,31 @@ import type { Executor, ExecutorState } from './types.js';
 export function useExecutorSubscription<Value>(executor: Executor<Value>): Executor<Value> {
   React.useDebugValue(executor, getExecutorStateSnapshot);
 
-  if (typeof React.useSyncExternalStore === 'function') {
-    const getSnapshot = () => getExecutorId(executor) + '.' + executor.version;
+  // Backward compatibility
+  if (typeof React.useSyncExternalStore !== 'function') {
+    const [, setVersion] = React.useState(executor.version);
 
-    React.useSyncExternalStore(executor.subscribe, getSnapshot, getSnapshot);
+    React.useEffect(() => {
+      const deactivate = executor.activate();
 
-    React.useEffect(executor.activate, [executor]);
+      const unsubscribe = executor.subscribe(() => setVersion(executor.version));
+
+      setVersion(executor.version);
+
+      return () => {
+        unsubscribe();
+        deactivate();
+      };
+    }, [executor]);
 
     return executor;
   }
 
-  const [, setVersion] = React.useState(executor.version);
+  const getSnapshot = () => getExecutorId(executor) + '.' + executor.version;
 
-  React.useEffect(() => {
-    const deactivate = executor.activate();
+  React.useSyncExternalStore(executor.subscribe, getSnapshot, getSnapshot);
 
-    const unsubscribe = executor.subscribe(() => setVersion(executor.version));
-
-    setVersion(executor.version);
-
-    return () => {
-      unsubscribe();
-      deactivate();
-    };
-  }, [executor]);
+  React.useEffect(executor.activate, [executor]);
 
   return executor;
 }
