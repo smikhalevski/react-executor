@@ -1,7 +1,14 @@
 import { AbortablePromise, PubSub } from 'parallel-universe';
 import type { ExecutorManager } from './ExecutorManager.js';
-import type { Executor, ExecutorEvent, ExecutorState, ExecutorTask, PartialExecutorEvent } from './types.js';
-import { AbortError, isPromiseLike, preventUnhandledRejection } from './utils.js';
+import {
+  ExecutionOptions,
+  Executor,
+  ExecutorEvent,
+  ExecutorState,
+  ExecutorTask,
+  PartialExecutorEvent,
+} from './types.js';
+import { AbortError, emptyObject, isPromiseLike, preventUnhandledRejection } from './utils.js';
 
 /**
  * The {@link Executor} implementation returned by the {@link ExecutorManager}.
@@ -28,6 +35,11 @@ export class ExecutorImpl<Value = any> implements Executor {
    * The pubsub that handles the executor subscriptions.
    */
   _pubSub = new PubSub<ExecutorEvent>();
+
+  /**
+   * Snapshot captured before optimistic task execution.
+   */
+  _rollbackSnapshot: ExecutorState<Value> | null = null;
 
   get isRejected(): boolean {
     return this.isSettled && !this.isFulfilled;
@@ -98,14 +110,21 @@ export class ExecutorImpl<Value = any> implements Executor {
     });
   };
 
-  execute = (task: ExecutorTask<Value>): AbortablePromise<Value> => {
-    const handleAbort = (): void => {
+  execute = (task: ExecutorTask<Value>, options: ExecutionOptions<Value> = emptyObject): AbortablePromise<Value> => {
+    const { placeholderValue, skipTaskReplace } = options;
+
+    const handleAbort = () => {
       if (this.promise === promise) {
+        this._rollback();
         this.promise = null;
         this.version++;
       }
+
       this.publish({ type: 'aborted' });
     };
+
+    // Rollback pending execution
+    this._rollback();
 
     const promise = new AbortablePromise<Value>((resolve, reject, signal) => {
       signal.addEventListener('abort', handleAbort);
@@ -149,10 +168,24 @@ export class ExecutorImpl<Value = any> implements Executor {
       this.version++;
     }
 
-    if (this.promise === promise) {
-      this.task = task;
-      this.publish({ type: 'pending' });
+    if (this.promise !== promise) {
+      // Task was replaced midflight
+      return promise;
     }
+
+    if (!skipTaskReplace) {
+      this.task = task;
+    }
+
+    if (placeholderValue !== undefined) {
+      this._rollbackSnapshot = this.getStateSnapshot();
+      this.isFulfilled = true;
+      this.value = placeholderValue;
+      this.settledAt = Date.now();
+      this.invalidatedAt = 0;
+    }
+
+    this.publish({ type: 'pending' });
 
     return promise;
   };
@@ -187,9 +220,11 @@ export class ExecutorImpl<Value = any> implements Executor {
 
   resolve = (value: PromiseLike<Value> | Value, settledAt = Date.now()): void => {
     if (isPromiseLike(value)) {
-      this.execute(() => value);
+      this.execute(() => value, { skipTaskReplace: true });
       return;
     }
+
+    this._rollback();
 
     const prevPromise = this.promise;
     this.promise = null;
@@ -206,6 +241,8 @@ export class ExecutorImpl<Value = any> implements Executor {
   };
 
   reject = (reason: any, settledAt = Date.now()): void => {
+    this._rollback();
+
     const prevPromise = this.promise;
     this.promise = null;
 
@@ -263,4 +300,11 @@ export class ExecutorImpl<Value = any> implements Executor {
       invalidatedAt: this.invalidatedAt,
     };
   };
+
+  _rollback(): void {
+    if (this._rollbackSnapshot !== null) {
+      Object.assign(this, this._rollbackSnapshot);
+      this._rollbackSnapshot = null;
+    }
+  }
 }

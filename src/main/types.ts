@@ -294,6 +294,11 @@ export interface ReadonlyExecutor<Value = any> extends ExecutorState<Value>, Obs
   getStateSnapshot(): ExecutorState<Value>;
 }
 
+export interface ExecutionOptions<Value> {
+  placeholderValue?: Value;
+  skipTaskReplace?: boolean;
+}
+
 /**
  * Manages the async task execution process and provides ways to access execution results, abort or replace a task
  * execution, and subscribe to execution state changes.
@@ -319,9 +324,10 @@ export interface Executor<Value = any> extends ReadonlyExecutor<Value> {
    * ignored.
    *
    * @param task The task callback that returns the new result for the executor to store.
+   * @param options Task execution options.
    * @returns The promise that is resolved with the result of the task.
    */
-  execute(task: ExecutorTask<Value>): AbortablePromise<Value>;
+  execute(task: ExecutorTask<Value>, options?: ExecutionOptions<Value>): AbortablePromise<Value>;
 
   /**
    * If the executor is not {@link isPending pending}, the {@link task latest task} is {@link execute executed}
