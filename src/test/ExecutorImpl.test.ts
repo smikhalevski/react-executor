@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, Mock, test, vi } from 'vitest';
 import { AbortablePromise } from 'parallel-universe';
 import { ExecutorImpl } from '../main/ExecutorImpl.js';
 import { AbortError, noop } from '../main/utils.js';
-import { ExecutorEvent, ExecutorState } from '../main/index.js';
+import { ExecutorEvent, ExecutorState, ExecutorTask } from '../main/index.js';
 
 vi.useFakeTimers();
 vi.setSystemTime(50);
@@ -73,7 +73,7 @@ describe('getOrDefault', () => {
 });
 
 describe('execute', () => {
-  test('executes a task', async () => {
+  test('executes a task callback', async () => {
     const callbackMock = vi.fn((_signal, _executor) => 'aaa');
     const promise = executor.execute(callbackMock);
 
@@ -90,6 +90,44 @@ describe('execute', () => {
       version: 1,
       payload: { task: { callback: callbackMock } },
     } satisfies ExecutorEvent);
+
+    expect(executor.promise).toBe(promise);
+
+    await expect(promise).resolves.toEqual('aaa');
+
+    expect(listenerMock).toHaveBeenCalledTimes(2);
+    expect(listenerMock).toHaveBeenNthCalledWith(2, {
+      type: 'fulfilled',
+      target: executor,
+      version: 2,
+      payload: undefined,
+    } satisfies ExecutorEvent);
+
+    expect(executor.isFulfilled).toBe(true);
+    expect(executor.isRejected).toBe(false);
+    expect(executor.value).toBe('aaa');
+    expect(executor.promise).toBeNull();
+  });
+
+  test('executes a task object', async () => {
+    const callbackMock = vi.fn((_signal, _executor) => 'aaa');
+    const task: ExecutorTask = { callback: callbackMock };
+    const promise = executor.execute(task);
+
+    expect(executor.task).toBe(task);
+
+    expect(callbackMock).toHaveBeenCalledTimes(1);
+    expect(callbackMock.mock.calls[0][0].aborted).toBe(false);
+    expect(callbackMock.mock.calls[0][1]).toBe(executor);
+
+    expect(listenerMock).toHaveBeenCalledTimes(1);
+    expect(listenerMock).toHaveBeenNthCalledWith(1, {
+      type: 'pending',
+      target: executor,
+      version: 1,
+      payload: { task },
+    } satisfies ExecutorEvent);
+    expect(listenerMock.mock.calls[0][0].payload.task).toBe(task);
 
     expect(executor.promise).toBe(promise);
 
@@ -401,6 +439,165 @@ describe('execute', () => {
 
     expect(executor.value).toBe('bbb');
     expect(executor.promise).toBeNull();
+  });
+
+  test('applies pending value when task is pending', async () => {
+    const callbackMock = vi.fn((_signal, _executor) => 'aaa');
+
+    const task: ExecutorTask = { callback: callbackMock, pendingValue: 'xxx' };
+
+    const promise = executor.execute(task);
+
+    expect(executor.task).toBe(task);
+    expect(executor.isFulfilled).toBe(true);
+    expect(executor.value).toBe('xxx');
+    expect(executor.settledAt).toBe(50);
+    expect(executor.invalidatedAt).toBe(0);
+    expect(executor.isPending).toBe(true);
+    expect(executor._rollbackSnapshot).toStrictEqual({
+      annotations: {},
+      invalidatedAt: 0,
+      isFulfilled: false,
+      reason: undefined,
+      settledAt: 0,
+      value: undefined,
+    });
+
+    expect(callbackMock).toHaveBeenCalledTimes(1);
+
+    expect(listenerMock).toHaveBeenCalledTimes(1);
+    expect(listenerMock).toHaveBeenNthCalledWith(1, {
+      type: 'pending',
+      target: executor,
+      version: 1,
+      payload: { task },
+    } satisfies ExecutorEvent);
+
+    expect(executor.promise).toBe(promise);
+
+    await expect(promise).resolves.toEqual('aaa');
+
+    expect(listenerMock).toHaveBeenCalledTimes(2);
+    expect(listenerMock).toHaveBeenNthCalledWith(2, {
+      type: 'fulfilled',
+      target: executor,
+      version: 2,
+      payload: undefined,
+    } satisfies ExecutorEvent);
+
+    expect(executor.isFulfilled).toBe(true);
+    expect(executor.isRejected).toBe(false);
+    expect(executor.value).toBe('aaa');
+    expect(executor.promise).toBeNull();
+    expect(executor._rollbackSnapshot).toBeNull();
+  });
+
+  test('rollbacks pending value if task fails', async () => {
+    executor.resolve('kkk');
+
+    expect(executor.value).toBe('kkk');
+
+    await expect(
+      executor.execute({
+        callback() {
+          throw new Error('expected');
+        },
+        pendingValue: 'xxx',
+      })
+    ).rejects.toEqual(new Error('expected'));
+
+    expect(listenerMock).toHaveBeenCalledTimes(3);
+    expect(listenerMock).toHaveBeenNthCalledWith(3, {
+      type: 'rejected',
+      target: executor,
+      version: 3,
+      payload: undefined,
+    } satisfies ExecutorEvent);
+
+    expect(executor.isFulfilled).toBe(false);
+    expect(executor.isRejected).toBe(true);
+    expect(executor.value).toBe('kkk');
+    expect(executor.promise).toBeNull();
+    expect(executor._rollbackSnapshot).toBeNull();
+  });
+
+  test('rollbacks pending value if task is aborted', async () => {
+    executor.resolve('kkk');
+
+    expect(executor.value).toBe('kkk');
+
+    const promise = executor.execute({ callback: () => 'aaa', pendingValue: 'xxx' });
+
+    promise.abort();
+
+    await promise.catch(noop);
+
+    expect(executor.value).toBe('kkk');
+    expect(executor._rollbackSnapshot).toBeNull();
+  });
+
+  test('rollbacks pending value when task is replaced', async () => {
+    executor.resolve('kkk');
+
+    expect(executor.value).toBe('kkk');
+
+    executor.execute({ callback: () => 'aaa', pendingValue: 'xxx' }).catch(noop);
+
+    expect(executor.value).toBe('xxx');
+
+    const promise = executor.execute({ callback: () => 'bbb', pendingValue: 'yyy' });
+
+    expect(executor.value).toBe('yyy');
+
+    expect(executor._rollbackSnapshot).toStrictEqual({
+      annotations: {},
+      invalidatedAt: 0,
+      isFulfilled: true,
+      reason: undefined,
+      settledAt: 50,
+      value: 'kkk',
+    });
+
+    await expect(promise).resolves.toEqual('bbb');
+
+    expect(executor.value).toBe('bbb');
+    expect(executor.promise).toBeNull();
+    expect(executor._rollbackSnapshot).toBeNull();
+  });
+
+  test('rollbacks pending value when replacement task fails', async () => {
+    executor.resolve('kkk');
+
+    expect(executor.value).toBe('kkk');
+
+    executor.execute({ callback: () => 'aaa', pendingValue: 'xxx' }).catch(noop);
+
+    expect(executor.value).toBe('xxx');
+
+    const promise = executor.execute({
+      callback() {
+        throw new Error('expected');
+      },
+      pendingValue: 'yyy',
+    });
+
+    expect(executor.value).toBe('yyy');
+
+    expect(executor._rollbackSnapshot).toStrictEqual({
+      annotations: {},
+      invalidatedAt: 0,
+      isFulfilled: true,
+      reason: undefined,
+      settledAt: 50,
+      value: 'kkk',
+    });
+
+    await expect(promise).rejects.toEqual(new Error('expected'));
+
+    expect(executor.value).toBe('kkk');
+    expect(executor.isRejected).toBe(true);
+    expect(executor.promise).toBeNull();
+    expect(executor._rollbackSnapshot).toBeNull();
   });
 });
 
