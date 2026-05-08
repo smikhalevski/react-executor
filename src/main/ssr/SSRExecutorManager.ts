@@ -77,7 +77,7 @@ export class SSRExecutorManager extends ExecutorManager {
    * Increase this if your SSR data-fetching involves many sequential async steps.
    *
    * @throws {Error} If pending executors are still found after `maxRetries` attempts. This usually indicates
-   * a plugin that continuously re-executes tasks during SSR, such as {@link retryFulfilled} with a short delay.
+   * a plugin that continuously re-executes tasks during SSR.
    */
   hasChanges(maxRetries = 10): Promise<boolean> {
     const getVersion = () => Array.from(this).reduce((version, executor) => version + executor.version, 0);

@@ -282,17 +282,17 @@ test('sets storage item if executor was resolved from a preceding plugin', () =>
 });
 
 test('initial task is not called if storage item exists', () => {
-  const taskMock = vi.fn(() => 'bbb');
+  const callbackMock = vi.fn(() => 'bbb');
 
   localStorage.setItem(
     '"xxx"',
     '{"value":"aaa","isFulfilled":true,"settledAt":20,"invalidatedAt":30,"annotations":{}}'
   );
 
-  executor = manager.getOrCreate('xxx', taskMock, [syncBrowserStorage()]);
+  executor = manager.getOrCreate('xxx', callbackMock, [syncBrowserStorage()]);
 
   expect(executor.value).toBe('aaa');
-  expect(taskMock).not.toHaveBeenCalled();
+  expect(callbackMock).not.toHaveBeenCalled();
 });
 
 test('does not set storage item or resolve an executor if an executor is pending', async () => {
@@ -588,7 +588,7 @@ test('syncs state if task is aborted', () => {
     type: 'pending',
     target: executor,
     version: 2,
-    payload: undefined,
+    payload: { task: { callback: expect.any(Function) } },
   } satisfies ExecutorEvent);
 
   executor.abort();

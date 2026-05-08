@@ -14,9 +14,9 @@ beforeEach(() => {
 test('retries an active executor', async () => {
   const pubSub = new PubSub<boolean>();
 
-  const taskMock = vi.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
+  const callbackMock = vi.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
 
-  const executor = manager.getOrCreate('xxx', taskMock, [retryWhen(pubSub)]);
+  const executor = manager.getOrCreate('xxx', callbackMock, [retryWhen(pubSub)]);
 
   executor.activate();
 
@@ -37,15 +37,15 @@ test('retries an active executor', async () => {
 
   await expect(executor.getOrAwait()).resolves.toBe('bbb');
 
-  expect(taskMock).toHaveBeenCalledTimes(2);
+  expect(callbackMock).toHaveBeenCalledTimes(2);
 });
 
 test('does not retry a non-active executor', async () => {
   const pubSub = new PubSub<boolean>();
 
-  const taskMock = vi.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
+  const callbackMock = vi.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
 
-  const executor = manager.getOrCreate('xxx', taskMock, [retryWhen(pubSub)]);
+  const executor = manager.getOrCreate('xxx', callbackMock, [retryWhen(pubSub)]);
 
   await expect(executor.getOrAwait()).resolves.toBe('aaa');
 
@@ -61,15 +61,15 @@ test('does not retry a non-active executor', async () => {
 
   expect(executor.isPending).toBe(false);
 
-  expect(taskMock).toHaveBeenCalledTimes(1);
+  expect(callbackMock).toHaveBeenCalledTimes(1);
 });
 
 test('does not retry if observable has pushed false before timeout', async () => {
   const pubSub = new PubSub<boolean>();
 
-  const taskMock = vi.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
+  const callbackMock = vi.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
 
-  const executor = manager.getOrCreate('xxx', taskMock, [retryWhen(pubSub, { delay: 10_000 })]);
+  const executor = manager.getOrCreate('xxx', callbackMock, [retryWhen(pubSub, { delay: 10_000 })]);
 
   executor.activate();
 
@@ -87,15 +87,15 @@ test('does not retry if observable has pushed false before timeout', async () =>
 
   expect(executor.isPending).toBe(false);
 
-  expect(taskMock).toHaveBeenCalledTimes(1);
+  expect(callbackMock).toHaveBeenCalledTimes(1);
 });
 
 test('retries if observable has pushed true after timeout', async () => {
   const pubSub = new PubSub<boolean>();
 
-  const taskMock = vi.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
+  const callbackMock = vi.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
 
-  const executor = manager.getOrCreate('xxx', taskMock, [retryWhen(pubSub, { delay: 5_000 })]);
+  const executor = manager.getOrCreate('xxx', callbackMock, [retryWhen(pubSub, { delay: 5_000 })]);
 
   executor.activate();
 
@@ -113,5 +113,5 @@ test('retries if observable has pushed true after timeout', async () => {
 
   expect(executor.isPending).toBe(true);
 
-  expect(taskMock).toHaveBeenCalledTimes(2);
+  expect(callbackMock).toHaveBeenCalledTimes(2);
 });

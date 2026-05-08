@@ -12,15 +12,21 @@
  * @module plugin/lazyTask
  */
 
-import type { ExecutorPlugin, ExecutorTask, PluginConfiguredPayload } from '../types.js';
+import type { ExecutorPlugin, ExecutorTask, ExecutorTaskCallback, PluginConfiguredPayload } from '../types.js';
 
 /**
  * Sets an executor task but doesn't execute it.
  *
  * @param task The task that is set to an executor.
  */
-export default function lazyTask<Value>(task: ExecutorTask<Value>): ExecutorPlugin<Value> {
+export default function lazyTask<Value>(
+  task: ExecutorTask<Value> | ExecutorTaskCallback<Value>
+): ExecutorPlugin<Value> {
   return executor => {
+    if (typeof task === 'function') {
+      task = { callback: task };
+    }
+
     executor.task = task;
 
     executor.publish({

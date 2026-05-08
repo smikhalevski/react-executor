@@ -102,8 +102,8 @@ test('creates an executor with the initial value', () => {
 });
 
 test('creates an executor with the initial task', async () => {
-  const taskMock = vi.fn(() => 'aaa');
-  const renderMock = vi.fn(() => useExecutor(executorKey, taskMock));
+  const callbackMock = vi.fn(() => 'aaa');
+  const renderMock = vi.fn(() => useExecutor(executorKey, callbackMock));
 
   const hook = renderHook(renderMock, { wrapper: StrictMode });
   const executor = hook.result.current;
@@ -114,9 +114,9 @@ test('creates an executor with the initial task', async () => {
   expect(executor.isRejected).toBe(false);
   expect(executor.value).toBeUndefined();
   expect(executor.reason).toBeUndefined();
-  expect(executor.task).toBe(taskMock);
+  expect(executor.task).toStrictEqual({ callback: callbackMock });
 
-  expect(taskMock).toHaveBeenCalledTimes(1);
+  expect(callbackMock).toHaveBeenCalledTimes(1);
   expect(renderMock).toHaveBeenCalledTimes(2);
 
   await act(() => executor.getOrAwait());
@@ -126,7 +126,7 @@ test('creates an executor with the initial task', async () => {
   expect(executor.isRejected).toBe(false);
   expect(executor.value).toBe('aaa');
   expect(executor.reason).toBeUndefined();
-  expect(executor.task).toBe(taskMock);
+  expect(executor.task).toStrictEqual({ callback: callbackMock });
 
   expect(renderMock).toHaveBeenCalledTimes(4);
 });
@@ -150,19 +150,19 @@ test('re-renders after reject', () => {
 });
 
 test('re-renders after task execute', async () => {
-  const task = () => 'aaa';
+  const callback = () => 'aaa';
   const renderMock = vi.fn(() => useExecutor(executorKey));
   const hook = renderHook(renderMock, { wrapper: StrictMode });
   const executor = hook.result.current;
 
-  await act(() => executor.execute(task));
+  await act(() => executor.execute(callback));
 
   expect(executor.isPending).toBe(false);
   expect(executor.isFulfilled).toBe(true);
   expect(executor.isRejected).toBe(false);
   expect(executor.value).toBe('aaa');
   expect(executor.reason).toBeUndefined();
-  expect(executor.task).toBe(task);
+  expect(executor.task).toStrictEqual({ callback });
 
   expect(renderMock).toHaveBeenCalledTimes(6);
 });
@@ -201,7 +201,7 @@ test('deactivates an executor when key changes after parent component render', a
     type: 'pending',
     target: manager.get('xxx')!,
     version: 1,
-    payload: undefined,
+    payload: { task: { callback: expect.any(Function) } },
   } satisfies ExecutorEvent);
   expect(listenerMock).toHaveBeenNthCalledWith(3, {
     type: 'activated',
@@ -236,7 +236,7 @@ test('deactivates an executor when key changes after parent component render', a
     type: 'pending',
     target: manager.get('yyy')!,
     version: 1,
-    payload: undefined,
+    payload: { task: { callback: expect.any(Function) } },
   } satisfies ExecutorEvent);
   expect(listenerMock).toHaveBeenNthCalledWith(7, {
     type: 'deactivated',

@@ -5,7 +5,7 @@ import type {
   ExecutorEvent,
   ExecutorPlugin,
   ExecutorState,
-  ExecutorTask,
+  ExecutorTaskCallback,
   NoInfer,
   Observable,
 } from './types.js';
@@ -146,7 +146,7 @@ export class ExecutorManager implements Iterable<Executor>, Observable<ExecutorE
    */
   getOrCreate<Value = any>(
     key: unknown,
-    initialValue?: ExecutorTask<Value> | PromiseLike<Value> | Value,
+    initialValue?: ExecutorTaskCallback<Value> | PromiseLike<Value> | Value,
     plugins?: Array<ExecutorPlugin<NoInfer<Value>> | null | undefined>
   ): Executor<Value>;
 
@@ -163,7 +163,7 @@ export class ExecutorManager implements Iterable<Executor>, Observable<ExecutorE
     executor = Object.assign(new ExecutorImpl(key, this), this._initialState.get(keyId));
 
     if (typeof initialValue === 'function') {
-      executor.task = initialValue as ExecutorTask;
+      executor.task = { callback: initialValue as ExecutorTaskCallback };
     }
 
     const unsubscribe = executor.subscribe(event => {
@@ -194,7 +194,7 @@ export class ExecutorManager implements Iterable<Executor>, Observable<ExecutorE
       return executor;
     }
     if (typeof initialValue === 'function') {
-      executor.execute(initialValue as ExecutorTask);
+      executor.execute(initialValue as ExecutorTaskCallback);
     } else {
       executor.resolve(initialValue);
     }

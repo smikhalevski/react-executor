@@ -213,15 +213,15 @@ describe('abort', () => {
   test('aborts executors', () => {
     const manager = new SSRExecutorManager();
 
-    const taskMock = vi.fn(_signal => 111);
+    const callbackMock = vi.fn(_signal => 111);
 
     const executor = manager.getOrCreate('xxx');
 
-    executor.execute(taskMock);
+    executor.execute(callbackMock);
 
     manager.abort();
 
     expect(executor.isPending).toBe(false);
-    expect(taskMock.mock.calls[0][0].aborted).toBe(true);
+    expect(callbackMock.mock.calls[0][0].aborted).toBe(true);
   });
 });

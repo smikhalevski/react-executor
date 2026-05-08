@@ -134,14 +134,48 @@ export interface PartialExecutorEvent {
 export type ExecutorPlugin<Value = any> = (executor: Executor<Value>) => void;
 
 /**
- * The task that can be executed by an {@link Executor}.
+ * The task callback that can be executed by an {@link Executor}.
  *
  * @param signal The {@link AbortSignal} that is aborted if task was discarded.
  * @param executor The executor that executes the task.
  * @returns The value that the executor must be fulfilled with.
  * @template Value The value stored by the executor.
  */
-export type ExecutorTask<Value = any> = (signal: AbortSignal, executor: Executor<Value>) => PromiseLike<Value> | Value;
+export type ExecutorTaskCallback<Value = any> = (
+  signal: AbortSignal,
+  executor: Executor<Value>
+) => PromiseLike<Value> | Value;
+
+/**
+ * The task that can be executed by an {@link Executor}.
+ *
+ * @template Value The value stored by the executor.
+ */
+export interface ExecutorTask<Value = any> {
+  /**
+   * The task callback that can be executed by an {@link Executor}.
+   */
+  callback: ExecutorTaskCallback<Value>;
+
+  /**
+   * The value to resolve the executor with immediately while {@link callback} is pending.
+   * Acts as an optimistic result — the UI can render with this value before the task settles.
+   * Replaced by the real result on fulfillment, or discarded and rolled back on rejection.
+   *
+   * If `undefined`, the executor remains in its current state while the task is pending.
+   */
+  pendingValue?: Value;
+
+  /**
+   * If `true`, {@link Executor.task} is not overwritten by this task upon execution.
+   *
+   * Useful when the task is the canonical source of truth for the executor and should not be silently replaced by
+   * a one-off execution — for example, a polling task or a task submitted by a plugin.
+   *
+   * @default false
+   */
+  preserveLatestTask?: boolean;
+}
 
 /**
  * The minimal serializable state that is required to hydrate the {@link Executor} instance.
@@ -318,10 +352,10 @@ export interface Executor<Value = any> extends ReadonlyExecutor<Value> {
    * If a new task is executed before the returned promise is fulfilled then the signal is aborted and the result is
    * ignored.
    *
-   * @param task The task callback that returns the new result for the executor to store.
+   * @param task The task object or the task callback that returns the new result for the executor to store.
    * @returns The promise that is resolved with the result of the task.
    */
-  execute(task: ExecutorTask<Value>): AbortablePromise<Value>;
+  execute(task: ExecutorTask<Value> | ExecutorTaskCallback<Value>): AbortablePromise<Value>;
 
   /**
    * If the executor is not {@link isPending pending}, the {@link task latest task} is {@link execute executed}
