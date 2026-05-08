@@ -588,7 +588,7 @@ test('syncs state if task is aborted', () => {
     type: 'pending',
     target: executor,
     version: 2,
-    payload: undefined,
+    payload: { task: { callback: expect.any(Function) } },
   } satisfies ExecutorEvent);
 
   executor.abort();

@@ -148,8 +148,8 @@ export type ExecutorTaskCallback<Value = any> = (
 
 export interface ExecutorTask<Value = any> {
   callback: ExecutorTaskCallback<Value>;
-  placeholderValue?: Value;
-  noTaskReplace?: boolean;
+  pendingValue?: Value;
+  preserveLatestTask?: boolean;
 }
 
 /**

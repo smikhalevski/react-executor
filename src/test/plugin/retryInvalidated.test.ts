@@ -52,7 +52,7 @@ test('retries the invalidated active executor', async () => {
     type: 'pending',
     target: executor,
     version: 1,
-    payload: undefined,
+    payload: { task: { callback: callbackMock } },
   } satisfies ExecutorEvent);
   expect(listenerMock).toHaveBeenNthCalledWith(4, {
     type: 'activated',
@@ -76,7 +76,7 @@ test('retries the invalidated active executor', async () => {
     type: 'pending',
     target: executor,
     version: 4,
-    payload: undefined,
+    payload: { task: { callback: callbackMock } },
   } satisfies ExecutorEvent);
   expect(listenerMock).toHaveBeenNthCalledWith(8, {
     type: 'fulfilled',
@@ -126,7 +126,7 @@ test('retries the activated and invalidated executor', async () => {
     type: 'pending',
     target: executor,
     version: 1,
-    payload: undefined,
+    payload: { task: { callback: callbackMock } },
   } satisfies ExecutorEvent);
   expect(listenerMock).toHaveBeenNthCalledWith(4, {
     type: 'fulfilled',
@@ -150,7 +150,7 @@ test('retries the activated and invalidated executor', async () => {
     type: 'pending',
     target: executor,
     version: 4,
-    payload: undefined,
+    payload: { task: { callback: callbackMock } },
   } satisfies ExecutorEvent);
   expect(listenerMock).toHaveBeenNthCalledWith(8, {
     type: 'fulfilled',

@@ -88,7 +88,7 @@ describe('execute', () => {
       type: 'pending',
       target: executor,
       version: 1,
-      payload: undefined,
+      payload: { task: { callback: callbackMock } },
     } satisfies ExecutorEvent);
 
     expect(executor.promise).toBe(promise);
@@ -126,7 +126,7 @@ describe('execute', () => {
       type: 'pending',
       target: executor,
       version: 1,
-      payload: undefined,
+      payload: { task: { callback: callbackMock1 } },
     } satisfies ExecutorEvent);
     expect(listenerMock).toHaveBeenNthCalledWith(2, {
       type: 'aborted',
@@ -138,7 +138,7 @@ describe('execute', () => {
       type: 'pending',
       target: executor,
       version: 1,
-      payload: undefined,
+      payload: { task: { callback: callbackMock2 } },
     } satisfies ExecutorEvent);
 
     expect(executor.isFulfilled).toBe(false);
@@ -175,7 +175,7 @@ describe('execute', () => {
       type: 'pending',
       target: executor,
       version: 1,
-      payload: undefined,
+      payload: { task: { callback: callbackMock } },
     } satisfies ExecutorEvent);
 
     expect(executor.promise).toBe(promise);
@@ -215,7 +215,7 @@ describe('execute', () => {
       type: 'pending',
       target: executor,
       version: 1,
-      payload: undefined,
+      payload: { task: { callback: callbackMock } },
     } satisfies ExecutorEvent);
     expect(listenerMock).toHaveBeenNthCalledWith(2, {
       type: 'aborted',
@@ -257,7 +257,7 @@ describe('execute', () => {
       type: 'pending',
       target: executor,
       version: 1,
-      payload: undefined,
+      payload: { task: { callback: callbackMock1 } },
     } satisfies ExecutorEvent);
     expect(listenerMock).toHaveBeenNthCalledWith(2, {
       type: 'aborted',
@@ -269,7 +269,7 @@ describe('execute', () => {
       type: 'pending',
       target: executor,
       version: 3,
-      payload: undefined,
+      payload: { task: { callback: callbackMock2 } },
     } satisfies ExecutorEvent);
 
     await expect(executor.promise).resolves.toBe('bbb');
@@ -310,7 +310,7 @@ describe('execute', () => {
       type: 'pending',
       target: executor,
       version: 1,
-      payload: undefined,
+      payload: { task: { callback: callbackMock1 } },
     } satisfies ExecutorEvent);
     expect(listenerMock).toHaveBeenNthCalledWith(2, {
       type: 'aborted',
@@ -328,7 +328,7 @@ describe('execute', () => {
       type: 'pending',
       target: executor,
       version: 1,
-      payload: undefined,
+      payload: { task: { callback: callbackMock3 } },
     } satisfies ExecutorEvent);
 
     await expect(executor.promise).resolves.toBe('ccc');
@@ -447,7 +447,7 @@ describe('resolve', () => {
       type: 'pending',
       target: executor,
       version: 1,
-      payload: undefined,
+      payload: { task: { callback: callbackMock } },
     } satisfies ExecutorEvent);
     expect(listenerMock).toHaveBeenNthCalledWith(2, {
       type: 'aborted',
@@ -482,7 +482,12 @@ describe('resolve', () => {
       type: 'pending',
       target: executor,
       version: 1,
-      payload: undefined,
+      payload: {
+        task: {
+          callback: expect.any(Function),
+          preserveLatestTask: true,
+        },
+      },
     } satisfies ExecutorEvent);
 
     expect(executor.isFulfilled).toBe(false);
@@ -553,7 +558,7 @@ describe('reject', () => {
       type: 'pending',
       target: executor,
       version: 1,
-      payload: undefined,
+      payload: { task: { callback: callbackMock } },
     } satisfies ExecutorEvent);
     expect(listenerMock).toHaveBeenNthCalledWith(2, {
       type: 'aborted',
@@ -722,7 +727,7 @@ describe('abort', () => {
       type: 'pending',
       target: executor,
       version: 1,
-      payload: undefined,
+      payload: { task: { callback: expect.any(Function) } },
     } satisfies ExecutorEvent);
     expect(listenerMock).toHaveBeenNthCalledWith(2, {
       type: 'fulfilled',
@@ -746,7 +751,7 @@ describe('abort', () => {
       type: 'pending',
       target: executor,
       version: 1,
-      payload: undefined,
+      payload: { task: { callback: expect.any(Function) } },
     } satisfies ExecutorEvent);
     expect(listenerMock).toHaveBeenNthCalledWith(2, {
       type: 'rejected',
@@ -772,7 +777,7 @@ describe('abort', () => {
       type: 'pending',
       target: executor,
       version: 1,
-      payload: undefined,
+      payload: { task: { callback: callbackMock } },
     } satisfies ExecutorEvent);
     expect(listenerMock).toHaveBeenNthCalledWith(2, {
       type: 'aborted',

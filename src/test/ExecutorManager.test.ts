@@ -101,7 +101,12 @@ describe('getOrCreate', () => {
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
     expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'attached', target: executor, version: 0 });
-    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'pending', target: executor, version: 1 });
+    expect(listenerMock).toHaveBeenNthCalledWith(2, {
+      type: 'pending',
+      target: executor,
+      version: 1,
+      payload: { task: { callback: callbackMock } },
+    });
 
     await expect(executor.getOrAwait()).resolves.toBe(111);
 
@@ -155,7 +160,12 @@ describe('getOrCreate', () => {
     expect(callbackMock).toHaveBeenCalledTimes(0);
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'pending', target: executor, version: 1 });
+    expect(listenerMock).toHaveBeenNthCalledWith(1, {
+      type: 'pending',
+      target: executor,
+      version: 1,
+      payload: { task: { callback: expect.any(Function) } },
+    });
     expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 1 });
 
     await executor.getOrAwait();
@@ -163,7 +173,12 @@ describe('getOrCreate', () => {
     expect(executor.value).toBe(222);
 
     expect(listenerMock).toHaveBeenCalledTimes(3);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'pending', target: executor, version: 1 });
+    expect(listenerMock).toHaveBeenNthCalledWith(1, {
+      type: 'pending',
+      target: executor,
+      version: 1,
+      payload: { task: { callback: expect.any(Function) } },
+    });
     expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 1 });
     expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor, version: 2 });
   });

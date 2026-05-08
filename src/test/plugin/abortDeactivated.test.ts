@@ -49,7 +49,7 @@ test('aborts a deactivated executor', async () => {
     type: 'pending',
     target: executor,
     version: 1,
-    payload: undefined,
+    payload: { task: { callback: callbackMock } },
   } satisfies ExecutorEvent);
   expect(listenerMock).toHaveBeenNthCalledWith(5, {
     type: 'deactivated',
@@ -101,7 +101,7 @@ test('cancels abortion of an activated executor', async () => {
     type: 'pending',
     target: executor,
     version: 1,
-    payload: undefined,
+    payload: { task: { callback: callbackMock } },
   } satisfies ExecutorEvent);
   expect(listenerMock).toHaveBeenNthCalledWith(5, {
     type: 'deactivated',

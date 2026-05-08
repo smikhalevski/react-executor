@@ -115,7 +115,7 @@ export class ExecutorImpl<Value = any> implements Executor {
       task = { callback: task };
     }
 
-    const { callback, placeholderValue, noTaskReplace } = task;
+    const { callback, pendingValue, preserveLatestTask } = task;
 
     const handleAbort = () => {
       if (this.promise === promise) {
@@ -177,19 +177,19 @@ export class ExecutorImpl<Value = any> implements Executor {
       return promise;
     }
 
-    if (!noTaskReplace) {
+    if (!preserveLatestTask) {
       this.task = task;
     }
 
-    if (placeholderValue !== undefined) {
+    if (pendingValue !== undefined) {
       this._rollbackSnapshot = this.getStateSnapshot();
       this.isFulfilled = true;
-      this.value = placeholderValue;
+      this.value = pendingValue;
       this.settledAt = Date.now();
       this.invalidatedAt = 0;
     }
 
-    this.publish({ type: 'pending' });
+    this.publish({ type: 'pending', payload: { task } });
 
     return promise;
   };
@@ -224,7 +224,7 @@ export class ExecutorImpl<Value = any> implements Executor {
 
   resolve = (value: PromiseLike<Value> | Value, settledAt = Date.now()): void => {
     if (isPromiseLike(value)) {
-      this.execute({ callback: () => value, noTaskReplace: true });
+      this.execute({ callback: () => value, preserveLatestTask: true });
       return;
     }
 

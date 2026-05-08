@@ -201,7 +201,7 @@ test('deactivates an executor when key changes after parent component render', a
     type: 'pending',
     target: manager.get('xxx')!,
     version: 1,
-    payload: undefined,
+    payload: { task: { callback: expect.any(Function) } },
   } satisfies ExecutorEvent);
   expect(listenerMock).toHaveBeenNthCalledWith(3, {
     type: 'activated',
@@ -236,7 +236,7 @@ test('deactivates an executor when key changes after parent component render', a
     type: 'pending',
     target: manager.get('yyy')!,
     version: 1,
-    payload: undefined,
+    payload: { task: { callback: expect.any(Function) } },
   } satisfies ExecutorEvent);
   expect(listenerMock).toHaveBeenNthCalledWith(7, {
     type: 'deactivated',
