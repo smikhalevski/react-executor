@@ -37,7 +37,7 @@ export class ExecutorImpl<Value = any> implements Executor {
   _pubSub = new PubSub<ExecutorEvent>();
 
   /**
-   * Snapshot captured before optimistic task execution.
+   * Snapshot captured before task execution, if the execution can be rolled back.
    */
   _rollbackSnapshot: ExecutorState<Value> | null = null;
 
@@ -127,7 +127,7 @@ export class ExecutorImpl<Value = any> implements Executor {
       this.publish({ type: 'aborted' });
     };
 
-    // Rollback pending execution
+    // Rollback pending execution if any
     this._rollback();
 
     const promise = new AbortablePromise<Value>((resolve, reject, signal) => {

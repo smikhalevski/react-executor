@@ -134,7 +134,7 @@ export interface PartialExecutorEvent {
 export type ExecutorPlugin<Value = any> = (executor: Executor<Value>) => void;
 
 /**
- * The task that can be executed by an {@link Executor}.
+ * The task callback that can be executed by an {@link Executor}.
  *
  * @param signal The {@link AbortSignal} that is aborted if task was discarded.
  * @param executor The executor that executes the task.
@@ -146,9 +146,34 @@ export type ExecutorTaskCallback<Value = any> = (
   executor: Executor<Value>
 ) => PromiseLike<Value> | Value;
 
+/**
+ * The task that can be executed by an {@link Executor}.
+ *
+ * @template Value The value stored by the executor.
+ */
 export interface ExecutorTask<Value = any> {
+  /**
+   * The task callback that can be executed by an {@link Executor}.
+   */
   callback: ExecutorTaskCallback<Value>;
+
+  /**
+   * The value to resolve the executor with immediately while {@link callback} is pending.
+   * Acts as an optimistic result — the UI can render with this value before the task settles.
+   * Replaced by the real result on fulfillment, or discarded and rolled back on rejection.
+   *
+   * If `undefined`, the executor remains in its current state while the task is pending.
+   */
   pendingValue?: Value;
+
+  /**
+   * If `true`, {@link Executor.task} is not overwritten by this task upon execution.
+   *
+   * Useful when the task is the canonical source of truth for the executor and should not be silently replaced by
+   * a one-off execution — for example, a polling task or a task submitted by a plugin.
+   *
+   * @default false
+   */
   preserveLatestTask?: boolean;
 }
 
