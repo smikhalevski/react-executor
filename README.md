@@ -12,23 +12,17 @@
 
 <!--OVERVIEW-->
 
-Fetch data, run async tasks, and keep your UI in sync — without the boilerplate. React Executor replaces ad-hoc
-`useState`/`useEffect` data-fetching patterns with a composable, plugin-driven model that works with Suspense and SSR
-out of the box.
+Asynchronous task execution and state management for React.
 
 - TypeScript first.
 - Expressive and concise API with strict typings.
 - Works great with SSR and Suspense.
 - [Extensible with plugins.](#plugins)
 - [First class devtools.](#devtools)
-- [Just 5&#8239;kB gzipped.](https://pkg-size.dev/react-executor)
+- [Just 3&#8239;kB gzipped.](https://bundlephobia.com/package/react-executor)
 - Check out the [Cookbook](#cookbook) for real-life examples!
 
 <!--/OVERVIEW-->
-
-> [!TIP]
-> New here? Skip straight to the [Cookbook](#cookbook) for real-world patterns including polling, optimistic updates,
-> pagination, and dependent tasks.
 
 <br>
 
@@ -42,11 +36,6 @@ npm install --save-prod react-executor
 
 <!--TOC-->
 
-- [API docs](https://smikhalevski.github.io/react-executor/)
-- [TODO app example](https://stackblitz.com/edit/react-executor-todo-app?file=README.md)
-- [Streaming SSR example](https://codesandbox.io/p/devbox/react-executor-ssr-streaming-example-mwrmrs)
-- [Next.js integration example](https://codesandbox.io/p/devbox/react-executor-next-example-whsj4v)
-
 <span class="toc-icon">🔰&ensp;</span>[**Introduction**](#introduction)
 
 - [Executor keys](#executor-keys)
@@ -57,6 +46,7 @@ npm install --save-prod react-executor
 - [Retry the latest task](#retry-the-latest-task)
 - [Settle an executor](#settle-an-executor)
 - [Clear an executor](#clear-an-executor)
+- [Optimistic updates](#optimistic-updates)
 
 <span class="toc-icon">📢&ensp;</span>[**Events and lifecycle**](#events-and-lifecycle)
 
@@ -110,7 +100,6 @@ npm install --save-prod react-executor
 
 <span class="toc-icon">🍪&ensp;</span>**Cookbook**
 
-- [Optimistic updates](#optimistic-updates)
 - [Dependent tasks](#dependent-tasks)
 - [Derived executors](#derived-executors)
 - [Pagination](#pagination)
@@ -119,6 +108,13 @@ npm install --save-prod react-executor
 - [Prefetching](#prefetching)
 - [Storage state versioning](#storage-state-versioning)
 - [Global loading indicator](#global-loading-indicator)
+
+<span class="toc-icon">🔎&ensp;</span>**Resources**
+
+- [API docs](https://smikhalevski.github.io/react-executor/)
+- [TODO app example](https://stackblitz.com/edit/react-executor-todo-app?file=README.md)
+- [Streaming SSR example](https://codesandbox.io/p/devbox/react-executor-ssr-streaming-example-mwrmrs)
+- [Next.js integration example](https://codesandbox.io/p/devbox/react-executor-next-example-whsj4v)
 
 <!--/TOC-->
 
@@ -574,6 +570,44 @@ executor.clear();
 Clearing an executor removes the stored value and reason, but _doesn't_ affect the pending task execution and preserves
 the [latest task](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#task)
 that was executed.
+
+## Optimistic updates
+
+Optimistic updates are a UX technique where the UI reflects the result of an action instantly, before the server has
+confirmed it. If the server succeeds, nothing changes visually. If the server fails, the UI rolls back to the state it
+was in before the action.
+
+In React Executor, optimistic updates are first-class citizens and can be achieved by providing
+[`pendingValue`](https://smikhalevski.github.io/react-executor/interfaces/react-executor.ExecutorTask.html#pendingxalue)
+in executor task. When a task is submitted with a `pendingValue`, the executor resolves to that value instantly
+(before the task callback runs) and stores a checkpoint of the previous state. If the task fails, the checkpoint is
+restored automatically.
+
+```ts
+const executor = useExecutor('meaningOfLife');
+
+const handleClick = () => {
+  executor.execute({
+    callback: async signal => await getTheMeaningOfLife(signal),
+
+    // 🟡 Executor is resolved with this value before running callback
+    pendingValue: 42,
+  });
+};
+```
+
+The UI reflects `42` the moment the button is clicked. If `getTheMeaningOfLife` rejects, the executor rolls back
+to the value it held before execute was called — no manual snapshot or error handling required.
+
+The rollback covers three cases depending on what state the executor was in before the optimistic update was applied:
+
+- If previously _fulfilled_, then the executor is resolved back to the previous value.
+
+- If previously _rejected_, then the executor is rejected with the previous reason.
+
+- If previously _unsettled_, then the executor is cleared back to its initial state.
+
+This means `pendingValue` is safe to use regardless of whether the executor has ever successfully fetched data.
 
 # Events and lifecycle
 
@@ -2041,31 +2075,6 @@ The extension source can be found in
 the [react-executor-devtools](https://github.com/smikhalevski/react-executor-devtools) repo.
 
 # Cookbook
-
-## Optimistic updates
-
-To implement optimistic updates, [resolve the executor](#settle-an-executor) with the expected value and then
-execute a server request.
-
-For example, if you want to instantly show to a user that a flag was enabled:
-
-```ts
-const executor = useExecutor('flag', false);
-
-const handleEnableClick = () => {
-  // 1️⃣ Optimistically resolve an executor
-  executor.resolve(true);
-
-  // 2️⃣ Synchronize state with the server
-  executor.execute(async signal => {
-    const response = await fetch('/flag', { signal });
-
-    const data = await response.json();
-
-    return data.isEnabled;
-  });
-};
-```
 
 ## Dependent tasks
 
