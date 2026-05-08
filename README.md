@@ -12,7 +12,9 @@
 
 <!--OVERVIEW-->
 
-Asynchronous task execution and state management for React.
+Fetch data, run async tasks, and keep your UI in sync — without the boilerplate. React Executor replaces ad-hoc
+`useState`/`useEffect` data-fetching patterns with a composable, plugin-driven model that works with Suspense and SSR
+out of the box.
 
 - TypeScript first.
 - Expressive and concise API with strict typings.
@@ -23,6 +25,10 @@ Asynchronous task execution and state management for React.
 - Check out the [Cookbook](#cookbook) for real-life examples!
 
 <!--/OVERVIEW-->
+
+> [!TIP]
+> New here? Skip straight to the [Cookbook](#cookbook) for real-world patterns including polling, optimistic updates,
+> pagination, and dependent tasks.
 
 <br>
 
@@ -80,6 +86,13 @@ npm install --save-prod react-executor
 - [`syncBrowserStorage`](#syncbrowserstorage)
 - [`syncExternalStore`](#syncexternalstore)
 
+<span class="toc-icon">👁️&ensp;</span>[**Observables**](#observables)
+
+- [`navigatorOnline`](#navigatoronline)
+- [`navigatorOffline`](#navigatoroffline)
+- [`windowFocused`](#windowfocused)
+- [`windowBlurred`](#windowblurred)
+
 <span class="toc-icon">⚛️&ensp;</span>[**React integration**](#react-integration)
 
 - [Suspense](#suspense)
@@ -99,6 +112,7 @@ npm install --save-prod react-executor
 
 - [Optimistic updates](#optimistic-updates)
 - [Dependent tasks](#dependent-tasks)
+- [Derived executors](#derived-executors)
 - [Pagination](#pagination)
 - [Infinite scroll](#infinite-scroll)
 - [Invalidate all executors](#invalidate-all-executors)
@@ -198,7 +212,8 @@ manager.get(['user', 123]);
 // ⮕ userExecutor
 ```
 
-Pass [`keyIdGenerator`](https://smikhalevski.github.io/react-executor/interfaces/react-executor.ExecutorManagerOptions.html#keyidgenerator)
+Pass
+[`keyIdGenerator`](https://smikhalevski.github.io/react-executor/interfaces/react-executor.ExecutorManagerOptions.html#keyidgenerator)
 option to the `ExecutorManager` constructor to change the way key identity is computed. The returned key ID can be
 anything, a string, or an object.
 
@@ -661,7 +676,8 @@ still [pending](https://smikhalevski.github.io/react-executor/interfaces/react-e
 when an `'aborted'` event is published then the currently pending task is being [replaced](#replace-a-task) with a new
 task.
 
-Calling [`Executor.execute`](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#execute)
+Calling
+[`Executor.execute`](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#execute)
 when handling an abort event may lead to stack overflow. If you need to do this anyway, execute a new task from async
 context using [`queueMicrotask`](https://developer.mozilla.org/en-US/docs/Web/API/queueMicrotask) or
 a similar API.
@@ -806,8 +822,7 @@ const detachPlugin: ExecutorPlugin = executor => {
 
 To apply a plugin, pass it to the
 [`ExecutorManager.getOrCreate`](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html#getorcreate)
-or to
-the [`useExecutor`](https://smikhalevski.github.io/react-executor/functions/react-executor.useExecutor.html)
+or to the [`useExecutor`](https://smikhalevski.github.io/react-executor/functions/react-executor.useExecutor.html)
 hook:
 
 ```ts
@@ -829,6 +844,13 @@ const manager = new ExecutorManager({
   plugins: [detachPlugin],
 });
 ```
+
+> [!IMPORTANT]
+> Plugins are applied in array order. When combining plugins that react to the same events, order matters. A good rule
+> of thumb: plugins that _read_ state (e.g. [`syncBrowserStorage`](#syncbrowserstorage)) should come before plugins that
+> _act_ on it (e.g. [`invalidateAfter`](#invalidateafter)), and cleanup plugins
+> (e.g. [`abortDeactivated`](#abortdeactivated)) before lifecycle plugins
+> (e.g. [`detachDeactivated`](#detachdeactivated)).
 
 ## `abortDeactivated`
 
@@ -855,7 +877,7 @@ once for this plugin to have an effect.
 
 [Aborts the pending task](#abort-a-task)
 with [`TimeoutError`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#timeouterror) if
-the task execution took longer then the given delay.
+the task execution took longer than the given delay.
 
 <!-- prettier-ignore -->
 ```ts
@@ -1053,7 +1075,7 @@ cheeseExecutor.resolve('Mozzarella');
 [observable](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Observable.html) emits `true`.
 
 For example, if the window was offline for more than 5 seconds, then the executor would be invalidated when the window
-goes is back online:
+goes back online:
 
 <!-- prettier-ignore -->
 ```ts
@@ -1090,7 +1112,7 @@ useExecutor('test', heavyTask, [
   // Retry the task every 5 seconds if if succeeds
   retryFulfilled({ delay: 5_000 }),
 
-  // Abort the task if the window looses focus for at least 10 seconds
+  // Abort the task if the window loses focus for at least 10 seconds
   abortWhen(windowBlurred, { delay: 10_000 }),
 
   // Abort the pending task if the device is disconnected from the network
@@ -1132,7 +1154,7 @@ executor.invalidate();
 
 [Aborts the pending task](#abort-a-task) and [rejects the executor](#settle-an-executor)
 with [`TimeoutError`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#timeouterror) if
-the task execution took longer then the given timeout.
+the task execution took longer than the given timeout.
 
 <!-- prettier-ignore -->
 ```ts
@@ -1392,7 +1414,7 @@ retryRejected({ isEager: true });
 
 ## `retryWhen`
 
-[Retries the latest task](#abort-a-task) if the
+[Retries the latest task](#retry-the-latest-task) if the
 [observable](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Observable.html) emits `true`.
 
 For example, if the window was offline for more than 5 seconds, the executor would retry the `heavyTask` after
@@ -1445,8 +1467,8 @@ const executor = useExecutor('test', 42, [
 > parse any data structure.
 
 By default, `syncBrowserStorage` plugin uses a [serialized executor key](#executor-keys) as a storage key. You can
-provide a custom key
-via [`storageKey`](https://smikhalevski.github.io/react-executor/interfaces/plugin_syncBrowserStorage.SyncBrowserStorageOptions.html#storagekey)
+provide a custom key via
+[`storageKey`](https://smikhalevski.github.io/react-executor/interfaces/plugin_syncBrowserStorage.SyncBrowserStorageOptions.html#storagekey)
 option:
 
 ```ts
@@ -1480,16 +1502,69 @@ const myExecutor = useExecutor('test', 42, [syncExternalStore(myStore)]);
 ```
 
 When executor is [settled](#settle-an-executor), [cleared](#clear-an-executor), [invalidated](#invalidate-results) or
-annotated then the plugin calls
-the [`ExternalStore.set`](https://smikhalevski.github.io/react-executor/interfaces/plugin_syncExternalStore.ExternalStore.html#set)
+annotated then the plugin calls the
+[`ExternalStore.set`](https://smikhalevski.github.io/react-executor/interfaces/plugin_syncExternalStore.ExternalStore.html#set)
 method on the store.
 
-When executor is [detached](#detach-an-executor) then the plugin calls
-the [`ExternalStore.delete`](https://smikhalevski.github.io/react-executor/interfaces/plugin_syncExternalStore.ExternalStore.html#delete)
+When executor is [detached](#detach-an-executor) then the plugin calls the
+[`ExternalStore.delete`](https://smikhalevski.github.io/react-executor/interfaces/plugin_syncExternalStore.ExternalStore.html#delete)
 method on the store.
 
 Prefer [`syncBrowserStorage`](#syncbrowserstorage) if you want to persist the executor state in a `localStorage`
 or `sessionStorage`.
+
+# Observables
+
+Observables are values that can be passed to any `*When` plugin (`abortWhen`, `invalidateWhen`, `retryWhen`,
+`resolveBy`). They follow a minimal interface: a `subscribe` method that calls a listener whenever the value changes and
+returns an unsubscribe callback. You can pass any object matching this interface — including third-party reactive
+primitives — as an observable.
+
+Four built-in observables are provided out of the box:
+
+## `navigatorOnline`
+
+Emits `true` when the device is connected to the network, and `false` when it is disconnected.
+
+```ts
+import retryWhen from 'react-executor/plugin/retryWhen';
+import navigatorOnline from 'react-executor/observable/navigatorOnline';
+
+const executor = useExecutor('test', heavyTask, [retryWhen(navigatorOnline)]);
+```
+
+## `navigatorOffline`
+
+The inverse of `navigatorOnline`. Emits `true` when the device is disconnected.
+
+```ts
+import abortWhen from 'react-executor/plugin/abortWhen';
+import navigatorOffline from 'react-executor/observable/navigatorOffline';
+
+const executor = useExecutor('test', heavyTask, [abortWhen(navigatorOffline)]);
+```
+
+## `windowFocused`
+
+Emits `true` when the window receives focus, and `false` when it loses focus.
+
+```ts
+import retryWhen from 'react-executor/plugin/retryWhen';
+import windowFocused from 'react-executor/observable/windowFocused';
+
+const executor = useExecutor('test', heavyTask, [retryWhen(windowFocused)]);
+```
+
+## `windowBlurred`
+
+The inverse of `windowFocused`. Emits `true` when the window loses focus.
+
+```ts
+import abortWhen from 'react-executor/plugin/abortWhen';
+import windowBlurred from 'react-executor/observable/windowBlurred';
+
+const executor = useExecutor('test', heavyTask, [abortWhen(windowBlurred)]);
+```
 
 # React integration
 
@@ -1516,8 +1591,8 @@ function User(props: { userId: string }) {
 Every time the executor's state is changed, the component is re-rendered. The executor returned from the hook is
 [activated](#activate-an-executor) after mount and deactivated on unmount.
 
-The hook has the exact same signature as
-the [`ExecutorManager.getOrCreate`](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html#getorcreate)
+The hook has the exact same signature as the
+[`ExecutorManager.getOrCreate`](https://smikhalevski.github.io/react-executor/classes/react-executor.ExecutorManager.html#getorcreate)
 method, described in the [Introduction](#introduction) section.
 
 > [!TIP]\
@@ -1548,8 +1623,8 @@ const executor = manager.get(['user', '28']);
 ```
 
 If you want to have access to an executor in a component, but don't want to re-render the component when the executor's
-state is changed,
-use [`useExecutorManager`](https://smikhalevski.github.io/react-executor/functions/react-executor.useExecutorManager.html)
+state is changed, use
+[`useExecutorManager`](https://smikhalevski.github.io/react-executor/functions/react-executor.useExecutorManager.html)
 hook:
 
 ```ts
@@ -1721,8 +1796,13 @@ response to a particular request.
 [`hasChanges`](https://smikhalevski.github.io/react-executor/classes/ssr.SSRExecutorManager.html#haschanges)
 would resolve with `true` if state of some executors have changed during rendering.
 
-The hydration chunk returned
-by [`nextHydrationChunk`](https://smikhalevski.github.io/react-executor/classes/ssr.SSRExecutorManager.html#nexthydrationchunk)
+> [!WARNING]
+> Plugins that continuously re-execute tasks — such as [`retryFulfilled`](#retryfulfilled) with a short delay —
+> will cause `hasChanges()` to loop indefinitely. Avoid polling plugins in SSR, or pass `maxRetries` to cap the number
+> of iterations.
+
+The hydration chunk returned by
+[`nextHydrationChunk`](https://smikhalevski.github.io/react-executor/classes/ssr.SSRExecutorManager.html#nexthydrationchunk)
 contains the `<script>` tag that hydrates the manager for which
 [`hydrateExecutorManager`](https://smikhalevski.github.io/react-executor/functions/react-executor.hydrateExecutorManager.html)
 was invoked.
@@ -1771,8 +1851,7 @@ server.listen(8080);
 
 In the `App` component, use the combination
 of [`<Suspense>`](https://react.dev/reference/react/Suspense),
-[`useExecutor`](https://smikhalevski.github.io/react-executor/functions/react-executor.useExecutor.html)
-and
+[`useExecutor`](https://smikhalevski.github.io/react-executor/functions/react-executor.useExecutor.html) and
 [`useExecutorSuspense`](https://smikhalevski.github.io/react-executor/functions/react-executor.useExecutorSuspense.html)
 to suspend rendering while executors process their tasks:
 
@@ -1927,7 +2006,8 @@ export default function (props: { children: ReactNode }) {
 # Devtools
 
 To inspect the current state of executors in your app, install the
-[React Executor Devtools](https://chromewebstore.google.com/detail/react-executor-devtools/achlflelpafnlpepfpfhildkahbfhgjc)
+[React Executor
+Devtools](https://chromewebstore.google.com/detail/react-executor-devtools/achlflelpafnlpepfpfhildkahbfhgjc)
 browser extension and open its panel in the Chrome Developer Tools:
 
 <br/>
@@ -2017,6 +2097,31 @@ const shoppingCartExecutor = useExecutor('shoppingCart', async (signal, executor
   // Fetch shopping cart for an account
 });
 ```
+
+## Derived executors
+
+An executor whose result depends on another executor can be re-computed automatically when that dependency changes.
+Combine [`invalidateByPeers`](#invalidatebypeers) and [`retryInvalidated`](#retryinvalidated) to wire this up:
+
+```ts
+import { useExecutor } from 'react-executor';
+import invalidateByPeers from 'react-executor/plugin/invalidateByPeers';
+import retryInvalidated from 'react-executor/plugin/retryInvalidated';
+
+const breadExecutor = useExecutor('bread', fetchBread);
+
+const cheeseExecutor = useExecutor(
+  'cheese',
+  async signal => {
+    const bread = await breadExecutor.getOrAwait();
+    return bestCheeseFor(bread);
+  },
+  [invalidateByPeers([breadExecutor]), retryInvalidated()]
+);
+```
+
+`cheeseExecutor` re-runs whenever `breadExecutor` is fulfilled or invalidated. For bidirectional invalidation — where
+fulfilling either executor invalidates the other — add [`invalidatePeers`](#invalidatepeers) to both.
 
 ## Pagination
 
