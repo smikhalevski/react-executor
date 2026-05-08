@@ -86,18 +86,18 @@ describe('getOrCreate', () => {
   });
 
   test('applies the initial task only once', async () => {
-    const taskMock = vi.fn(() => 111);
+    const callbackMock = vi.fn(() => 111);
 
-    manager.getOrCreate('aaa', taskMock);
+    manager.getOrCreate('aaa', callbackMock);
 
-    const executor = manager.getOrCreate('aaa', taskMock);
+    const executor = manager.getOrCreate('aaa', callbackMock);
 
     expect(executor.isPending).toBe(true);
     expect(executor.isFulfilled).toBe(false);
     expect(executor.isRejected).toBe(false);
     expect(executor.value).toBeUndefined();
     expect(executor.reason).toBeUndefined();
-    expect(taskMock).toHaveBeenCalledTimes(1);
+    expect(callbackMock).toHaveBeenCalledTimes(1);
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
     expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'attached', target: executor, version: 0 });
@@ -116,9 +116,9 @@ describe('getOrCreate', () => {
   });
 
   test('does not apply initial value if executor was resolved from a plugin', () => {
-    const taskMock = vi.fn(() => 111);
+    const callbackMock = vi.fn(() => 111);
 
-    const executor = manager.getOrCreate('aaa', taskMock, [
+    const executor = manager.getOrCreate('aaa', callbackMock, [
       executor => {
         executor.resolve(222);
       },
@@ -130,7 +130,7 @@ describe('getOrCreate', () => {
     expect(executor.value).toBe(222);
     expect(executor.reason).toBeUndefined();
 
-    expect(taskMock).toHaveBeenCalledTimes(0);
+    expect(callbackMock).toHaveBeenCalledTimes(0);
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
     expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'fulfilled', target: executor, version: 1 });
@@ -138,9 +138,9 @@ describe('getOrCreate', () => {
   });
 
   test('does not apply initial value if a task execution was started form a plugin', async () => {
-    const taskMock = vi.fn(() => 111);
+    const callbackMock = vi.fn(() => 111);
 
-    const executor = manager.getOrCreate('aaa', taskMock, [
+    const executor = manager.getOrCreate('aaa', callbackMock, [
       executor => {
         executor.execute(() => 222);
       },
@@ -152,7 +152,7 @@ describe('getOrCreate', () => {
     expect(executor.value).toBeUndefined();
     expect(executor.reason).toBeUndefined();
 
-    expect(taskMock).toHaveBeenCalledTimes(0);
+    expect(callbackMock).toHaveBeenCalledTimes(0);
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
     expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'pending', target: executor, version: 1 });
@@ -350,11 +350,11 @@ describe('hydrate', () => {
       })
     ).toBe(true);
 
-    const task = () => 222;
-    const executor = manager.getOrCreate('xxx', task);
+    const callback = () => 222;
+    const executor = manager.getOrCreate('xxx', callback);
 
     expect(executor.value).toBe(111);
     expect(executor.settledAt).toBe(50);
-    expect(executor.task).toBe(task);
+    expect(executor.task).toStrictEqual({ callback });
   });
 });

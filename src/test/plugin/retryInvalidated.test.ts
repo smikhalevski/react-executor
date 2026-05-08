@@ -12,8 +12,8 @@ beforeEach(() => {
 });
 
 test('retries the invalidated active executor', async () => {
-  const taskMock = vi.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
-  const executor = manager.getOrCreate('xxx', taskMock, [retryInvalidated()]);
+  const callbackMock = vi.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
+  const executor = manager.getOrCreate('xxx', callbackMock, [retryInvalidated()]);
 
   executor.activate();
 
@@ -87,8 +87,8 @@ test('retries the invalidated active executor', async () => {
 });
 
 test('retries the activated and invalidated executor', async () => {
-  const taskMock = vi.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
-  const executor = manager.getOrCreate('xxx', taskMock, [retryInvalidated()]);
+  const callbackMock = vi.fn().mockReturnValueOnce('aaa').mockReturnValueOnce('bbb');
+  const executor = manager.getOrCreate('xxx', callbackMock, [retryInvalidated()]);
 
   await executor.getOrAwait();
 

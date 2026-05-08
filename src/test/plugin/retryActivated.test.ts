@@ -15,8 +15,8 @@ beforeEach(() => {
 });
 
 test('retries an activated executor', async () => {
-  const taskMock = vi.fn();
-  const executor = manager.getOrCreate('xxx', taskMock, [retryActivated()]);
+  const callbackMock = vi.fn();
+  const executor = manager.getOrCreate('xxx', callbackMock, [retryActivated()]);
 
   await executor.getOrAwait();
 
@@ -28,8 +28,8 @@ test('retries an activated executor', async () => {
 });
 
 test('does not retry if executor is not stale yet', async () => {
-  const taskMock = vi.fn();
-  const executor = manager.getOrCreate('xxx', taskMock, [retryActivated({ delayAfterSettled: 5_000 })]);
+  const callbackMock = vi.fn();
+  const executor = manager.getOrCreate('xxx', callbackMock, [retryActivated({ delayAfterSettled: 5_000 })]);
 
   await executor.getOrAwait();
 

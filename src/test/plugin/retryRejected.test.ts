@@ -18,11 +18,11 @@ beforeEach(() => {
 });
 
 test('retries a rejected executor', async () => {
-  const taskMock = vi.fn(() => {
+  const callbackMock = vi.fn(() => {
     throw expectedReason;
   });
 
-  const executor = manager.getOrCreate<any>('xxx', taskMock, [retryRejected({ count: 2, delay: 0 })]);
+  const executor = manager.getOrCreate<any>('xxx', callbackMock, [retryRejected({ count: 2, delay: 0 })]);
 
   executor.activate();
   expect(executor.isPending).toBe(true);
@@ -45,15 +45,15 @@ test('retries a rejected executor', async () => {
   vi.runAllTimers();
   expect(executor.isPending).toBe(false);
 
-  expect(taskMock).toHaveBeenCalledTimes(3);
+  expect(callbackMock).toHaveBeenCalledTimes(3);
 });
 
 test('stops retrying if an executor is aborted', async () => {
-  const taskMock = vi.fn(() => {
+  const callbackMock = vi.fn(() => {
     throw expectedReason;
   });
 
-  const executor = manager.getOrCreate<any>('xxx', taskMock, [retryRejected({ count: 2, delay: 0 })]);
+  const executor = manager.getOrCreate<any>('xxx', callbackMock, [retryRejected({ count: 2, delay: 0 })]);
 
   executor.activate();
   expect(executor.isPending).toBe(true);
@@ -70,15 +70,15 @@ test('stops retrying if an executor is aborted', async () => {
   vi.runAllTimers();
   expect(executor.isPending).toBe(false);
 
-  expect(taskMock).toHaveBeenCalledTimes(2);
+  expect(callbackMock).toHaveBeenCalledTimes(2);
 });
 
 test('stops retrying if an executor is fulfilled', async () => {
-  const taskMock = vi.fn(() => {
+  const callbackMock = vi.fn(() => {
     throw expectedReason;
   });
 
-  const executor = manager.getOrCreate<any>('xxx', taskMock, [retryRejected({ count: 2, delay: 0 })]);
+  const executor = manager.getOrCreate<any>('xxx', callbackMock, [retryRejected({ count: 2, delay: 0 })]);
 
   executor.activate();
   expect(executor.isPending).toBe(true);
@@ -95,15 +95,15 @@ test('stops retrying if an executor is fulfilled', async () => {
   vi.runAllTimers();
   expect(executor.isPending).toBe(false);
 
-  expect(taskMock).toHaveBeenCalledTimes(2);
+  expect(callbackMock).toHaveBeenCalledTimes(2);
 });
 
 test('stops retrying if an executor is deactivated', async () => {
-  const taskMock = vi.fn(() => {
+  const callbackMock = vi.fn(() => {
     throw expectedReason;
   });
 
-  const executor = manager.getOrCreate<any>('xxx', taskMock, [retryRejected({ count: 2, delay: 0 })]);
+  const executor = manager.getOrCreate<any>('xxx', callbackMock, [retryRejected({ count: 2, delay: 0 })]);
 
   const deactivate = executor.activate();
   expect(executor.isPending).toBe(true);
@@ -122,5 +122,5 @@ test('stops retrying if an executor is deactivated', async () => {
   vi.runAllTimers();
   expect(executor.isPending).toBe(false);
 
-  expect(taskMock).toHaveBeenCalledTimes(2);
+  expect(callbackMock).toHaveBeenCalledTimes(2);
 });

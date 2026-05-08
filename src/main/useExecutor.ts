@@ -1,4 +1,4 @@
-import type { Executor, ExecutorPlugin, ExecutorTask, NoInfer } from './types.js';
+import type { Executor, ExecutorPlugin, ExecutorTaskCallback, NoInfer } from './types.js';
 import { useExecutorManager } from './useExecutorManager.js';
 import { useExecutorSubscription } from './useExecutorSubscription.js';
 
@@ -38,7 +38,7 @@ export function useExecutor<Value = any>(
  */
 export function useExecutor<Value = any>(
   key: unknown,
-  initialValue?: ExecutorTask<Value> | PromiseLike<Value> | Value,
+  initialValue?: ExecutorTaskCallback<Value> | PromiseLike<Value> | Value,
   plugins?: Array<ExecutorPlugin<NoInfer<Value>> | null | undefined>
 ): Executor<Value>;
 

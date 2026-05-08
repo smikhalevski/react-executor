@@ -74,14 +74,14 @@ describe('getOrDefault', () => {
 
 describe('execute', () => {
   test('executes a task', async () => {
-    const taskMock = vi.fn((_signal, _executor) => 'aaa');
-    const promise = executor.execute(taskMock);
+    const callbackMock = vi.fn((_signal, _executor) => 'aaa');
+    const promise = executor.execute(callbackMock);
 
-    expect(executor.task).toBe(taskMock);
+    expect(executor.task).toStrictEqual({ callback: callbackMock });
 
-    expect(taskMock).toHaveBeenCalledTimes(1);
-    expect(taskMock.mock.calls[0][0].aborted).toBe(false);
-    expect(taskMock.mock.calls[0][1]).toBe(executor);
+    expect(callbackMock).toHaveBeenCalledTimes(1);
+    expect(callbackMock.mock.calls[0][0].aborted).toBe(false);
+    expect(callbackMock.mock.calls[0][1]).toBe(executor);
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
     expect(listenerMock).toHaveBeenNthCalledWith(1, {
@@ -110,16 +110,16 @@ describe('execute', () => {
   });
 
   test('aborts the pending task if a new task is submitted', async () => {
-    const taskMock1 = vi.fn(_signal => 'aaa');
-    const taskMock2 = vi.fn(_signal => 'bbb');
+    const callbackMock1 = vi.fn(_signal => 'aaa');
+    const callbackMock2 = vi.fn(_signal => 'bbb');
 
-    const promise1 = executor.execute(taskMock1);
+    const promise1 = executor.execute(callbackMock1);
 
-    const promise2 = executor.execute(taskMock2);
+    const promise2 = executor.execute(callbackMock2);
 
-    expect(executor.task).toBe(taskMock2);
-    expect(taskMock1.mock.calls[0][0].aborted).toBe(true);
-    expect(taskMock2.mock.calls[0][0].aborted).toBe(false);
+    expect(executor.task).toStrictEqual({ callback: callbackMock2 });
+    expect(callbackMock1.mock.calls[0][0].aborted).toBe(true);
+    expect(callbackMock2.mock.calls[0][0].aborted).toBe(false);
 
     expect(listenerMock).toHaveBeenCalledTimes(3);
     expect(listenerMock).toHaveBeenNthCalledWith(1, {
@@ -165,10 +165,10 @@ describe('execute', () => {
   });
 
   test('rejects if a task throws an error', async () => {
-    const taskMock = vi.fn(() => {
+    const callbackMock = vi.fn(() => {
       throw expectedReason;
     });
-    const promise = executor.execute(taskMock);
+    const promise = executor.execute(callbackMock);
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
     expect(listenerMock).toHaveBeenNthCalledWith(1, {
@@ -198,17 +198,17 @@ describe('execute', () => {
   });
 
   test('task promise can be aborted', () => {
-    const taskMock = vi.fn((_signal, _executor) => 'aaa');
+    const callbackMock = vi.fn((_signal, _executor) => 'aaa');
 
-    const promise = executor.execute(taskMock);
+    const promise = executor.execute(callbackMock);
 
     promise.abort();
 
-    expect(executor.task).toBe(taskMock);
+    expect(executor.task).toStrictEqual({ callback: callbackMock });
 
-    expect(taskMock).toHaveBeenCalledTimes(1);
-    expect(taskMock.mock.calls[0][0].aborted).toBe(true);
-    expect(taskMock.mock.calls[0][1]).toBe(executor);
+    expect(callbackMock).toHaveBeenCalledTimes(1);
+    expect(callbackMock.mock.calls[0][0].aborted).toBe(true);
+    expect(callbackMock.mock.calls[0][1]).toBe(executor);
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
     expect(listenerMock).toHaveBeenNthCalledWith(1, {
@@ -232,25 +232,25 @@ describe('execute', () => {
   });
 
   test('a new task can be executed from abort event handler if previous task is aborted manually', async () => {
-    const taskMock1 = vi.fn(_signal => 'aaa');
-    const taskMock2 = vi.fn(_signal => 'bbb');
+    const callbackMock1 = vi.fn(_signal => 'aaa');
+    const callbackMock2 = vi.fn(_signal => 'bbb');
 
     executor.subscribe(event => {
       if (event.type === 'aborted') {
-        executor.execute(taskMock2);
+        executor.execute(callbackMock2);
       }
     });
 
-    const promise = executor.execute(taskMock1);
+    const promise = executor.execute(callbackMock1);
 
     promise.abort();
 
-    expect(executor.task).toBe(taskMock2);
+    expect(executor.task).toStrictEqual({ callback: callbackMock2 });
     expect(executor.promise).not.toBeNull();
     expect(executor.promise).not.toBe(promise);
 
-    expect(taskMock1).toHaveBeenCalledTimes(1);
-    expect(taskMock1.mock.calls[0][0].aborted).toBe(true);
+    expect(callbackMock1).toHaveBeenCalledTimes(1);
+    expect(callbackMock1.mock.calls[0][0].aborted).toBe(true);
 
     expect(listenerMock).toHaveBeenCalledTimes(3);
     expect(listenerMock).toHaveBeenNthCalledWith(1, {
@@ -281,29 +281,29 @@ describe('execute', () => {
   });
 
   test('a new task can be executed from abort event handler if a task is replaced', async () => {
-    const taskMock1 = vi.fn(_signal => 'aaa');
-    const taskMock2 = vi.fn(_signal => 'bbb');
-    const taskMock3 = vi.fn(_signal => 'ccc');
+    const callbackMock1 = vi.fn(_signal => 'aaa');
+    const callbackMock2 = vi.fn(_signal => 'bbb');
+    const callbackMock3 = vi.fn(_signal => 'ccc');
 
     listenerMock.mockImplementationOnce(noop).mockImplementationOnce(event => {
       if (event.type === 'aborted') {
-        executor.execute(taskMock3);
+        executor.execute(callbackMock3);
       }
     });
 
-    const promise1 = executor.execute(taskMock1);
+    const promise1 = executor.execute(callbackMock1);
 
-    const promise2 = executor.execute(taskMock2);
+    const promise2 = executor.execute(callbackMock2);
 
-    expect(executor.task).toBe(taskMock3);
+    expect(executor.task).toStrictEqual({ callback: callbackMock3 });
     expect(executor.promise).not.toBeNull();
     expect(executor.promise).not.toBe(promise1);
     expect(executor.promise).not.toBe(promise2);
 
-    expect(taskMock1).toHaveBeenCalledTimes(1);
-    expect(taskMock2).toHaveBeenCalledTimes(1);
-    expect(taskMock1.mock.calls[0][0].aborted).toBe(true);
-    expect(taskMock2.mock.calls[0][0].aborted).toBe(true);
+    expect(callbackMock1).toHaveBeenCalledTimes(1);
+    expect(callbackMock2).toHaveBeenCalledTimes(1);
+    expect(callbackMock1.mock.calls[0][0].aborted).toBe(true);
+    expect(callbackMock2.mock.calls[0][0].aborted).toBe(true);
 
     expect(listenerMock).toHaveBeenCalledTimes(4);
     expect(listenerMock).toHaveBeenNthCalledWith(1, {
@@ -340,21 +340,21 @@ describe('execute', () => {
   });
 
   test('an AbortablePromise returned from a task is aborted when a task is replaced', async () => {
-    const taskMock1 = vi.fn(
+    const callbackMock1 = vi.fn(
       _signal =>
         new AbortablePromise<string>(resolve => {
           resolve('aaa');
         })
     );
-    const taskMock2 = vi.fn(_signal => 'bbb');
+    const callbackMock2 = vi.fn(_signal => 'bbb');
 
-    const promise1 = executor.execute(taskMock1);
-    const promise2 = executor.execute(taskMock2);
+    const promise1 = executor.execute(callbackMock1);
+    const promise2 = executor.execute(callbackMock2);
 
-    expect(executor.task).toBe(taskMock2);
+    expect(executor.task).toStrictEqual({ callback: callbackMock2 });
 
-    expect(taskMock1).toHaveBeenCalledTimes(1);
-    expect(taskMock1.mock.calls[0][0].aborted).toBe(true);
+    expect(callbackMock1).toHaveBeenCalledTimes(1);
+    expect(callbackMock1.mock.calls[0][0].aborted).toBe(true);
 
     await expect(promise1).rejects.toEqual(AbortError('The task was replaced'));
     await expect(promise2).resolves.toBe('bbb');
@@ -425,21 +425,21 @@ describe('resolve', () => {
   });
 
   test('aborts pending task and preserves it as the latest task', () => {
-    const taskMock = vi.fn((_signal, _executor) => 'aaa');
+    const callbackMock = vi.fn((_signal, _executor) => 'aaa');
 
-    executor.execute(taskMock);
+    executor.execute(callbackMock);
     executor.resolve('bbb');
 
-    expect(taskMock).toHaveBeenCalledTimes(1);
-    expect(taskMock.mock.calls[0][0].aborted).toBe(true);
-    expect(taskMock.mock.calls[0][1]).toBe(executor);
+    expect(callbackMock).toHaveBeenCalledTimes(1);
+    expect(callbackMock.mock.calls[0][0].aborted).toBe(true);
+    expect(callbackMock.mock.calls[0][1]).toBe(executor);
 
     expect(executor.isFulfilled).toBe(true);
     expect(executor.isRejected).toBe(false);
     expect(executor.isInvalidated).toBe(false);
     expect(executor.value).toBe('bbb');
     expect(executor.reason).toBeUndefined();
-    expect(executor.task).toBe(taskMock);
+    expect(executor.task).toStrictEqual({ callback: callbackMock });
     expect(executor.promise).toBeNull();
 
     expect(listenerMock).toHaveBeenCalledTimes(3);
@@ -490,7 +490,7 @@ describe('resolve', () => {
     expect(executor.isInvalidated).toBe(false);
     expect(executor.value).toBeUndefined();
     expect(executor.reason).toBeUndefined();
-    expect(executor.task).not.toBeNull();
+    expect(executor.task).toBeNull();
     expect(executor.promise).not.toBeNull();
 
     await executor.promise;
@@ -505,7 +505,7 @@ describe('resolve', () => {
 
     expect(executor.value).toBe('aaa');
     expect(executor.reason).toBeUndefined();
-    expect(executor.task).not.toBeNull();
+    expect(executor.task).toBeNull();
     expect(executor.promise).toBeNull();
   });
 });
@@ -531,21 +531,21 @@ describe('reject', () => {
   });
 
   test('aborts pending task and preserves it as the latest task', () => {
-    const taskMock = vi.fn((_signal, _executor) => 'aaa');
+    const callbackMock = vi.fn((_signal, _executor) => 'aaa');
 
-    executor.execute(taskMock);
+    executor.execute(callbackMock);
     executor.reject('bbb');
 
-    expect(taskMock).toHaveBeenCalledTimes(1);
-    expect(taskMock.mock.calls[0][0].aborted).toBe(true);
-    expect(taskMock.mock.calls[0][1]).toBe(executor);
+    expect(callbackMock).toHaveBeenCalledTimes(1);
+    expect(callbackMock.mock.calls[0][0].aborted).toBe(true);
+    expect(callbackMock.mock.calls[0][1]).toBe(executor);
 
     expect(executor.isFulfilled).toBe(false);
     expect(executor.isRejected).toBe(true);
     expect(executor.isInvalidated).toBe(false);
     expect(executor.value).toBeUndefined();
     expect(executor.reason).toBe('bbb');
-    expect(executor.task).toBe(taskMock);
+    expect(executor.task).toStrictEqual({ callback: callbackMock });
     expect(executor.promise).toBeNull();
 
     expect(listenerMock).toHaveBeenCalledTimes(3);
@@ -589,25 +589,25 @@ describe('retry', () => {
   });
 
   test('no-op if there is a pending task', () => {
-    const task = () => 'aaa';
-    const promise = executor.execute(task);
+    const callback = () => 'aaa';
+    const promise = executor.execute(callback);
 
     executor.retry();
 
-    expect(executor.task).toBe(task);
+    expect(executor.task).toStrictEqual({ callback });
     expect(executor.promise).toBe(promise);
   });
 
   test('executes the latest task', async () => {
-    const taskMock = vi.fn(() => 'aaa');
+    const callbackMock = vi.fn(() => 'aaa');
 
-    await executor.execute(taskMock);
+    await executor.execute(callbackMock);
 
-    expect(taskMock).toHaveBeenCalledTimes(1);
+    expect(callbackMock).toHaveBeenCalledTimes(1);
 
     executor.retry();
 
-    expect(taskMock).toHaveBeenCalledTimes(2);
+    expect(callbackMock).toHaveBeenCalledTimes(2);
   });
 });
 
@@ -757,15 +757,15 @@ describe('abort', () => {
   });
 
   test('aborts the pending task', async () => {
-    const taskMock = vi.fn(_signal => 'aaa');
+    const callbackMock = vi.fn(_signal => 'aaa');
 
-    executor.execute(taskMock);
+    executor.execute(callbackMock);
     executor.abort('bbb');
 
-    expect(executor.task).toBe(taskMock);
+    expect(executor.task).toStrictEqual({ callback: callbackMock });
 
-    expect(taskMock).toHaveBeenCalledTimes(1);
-    expect(taskMock.mock.calls[0][0].aborted).toBe(true);
+    expect(callbackMock).toHaveBeenCalledTimes(1);
+    expect(callbackMock.mock.calls[0][0].aborted).toBe(true);
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
     expect(listenerMock).toHaveBeenNthCalledWith(1, {

@@ -1,14 +1,14 @@
 import { AbortablePromise, PubSub } from 'parallel-universe';
 import type { ExecutorManager } from './ExecutorManager.js';
 import {
-  ExecutionOptions,
   Executor,
   ExecutorEvent,
   ExecutorState,
   ExecutorTask,
+  ExecutorTaskCallback,
   PartialExecutorEvent,
 } from './types.js';
-import { AbortError, emptyObject, isPromiseLike, preventUnhandledRejection } from './utils.js';
+import { AbortError, isPromiseLike, preventUnhandledRejection } from './utils.js';
 
 /**
  * The {@link Executor} implementation returned by the {@link ExecutorManager}.
@@ -110,8 +110,12 @@ export class ExecutorImpl<Value = any> implements Executor {
     });
   };
 
-  execute = (task: ExecutorTask<Value>, options: ExecutionOptions<Value> = emptyObject): AbortablePromise<Value> => {
-    const { placeholderValue, skipTaskReplace } = options;
+  execute = (task: ExecutorTask<Value> | ExecutorTaskCallback<Value>): AbortablePromise<Value> => {
+    if (typeof task === 'function') {
+      task = { callback: task };
+    }
+
+    const { callback, placeholderValue, noTaskReplace } = task;
 
     const handleAbort = () => {
       if (this.promise === promise) {
@@ -130,7 +134,7 @@ export class ExecutorImpl<Value = any> implements Executor {
       signal.addEventListener('abort', handleAbort);
 
       new Promise<Value>(resolve => {
-        const value = task(signal, this);
+        const value = callback(signal, this);
         resolve(value instanceof AbortablePromise ? value.withSignal(signal) : value);
       }).then(
         value => {
@@ -173,7 +177,7 @@ export class ExecutorImpl<Value = any> implements Executor {
       return promise;
     }
 
-    if (!skipTaskReplace) {
+    if (!noTaskReplace) {
       this.task = task;
     }
 
@@ -220,7 +224,7 @@ export class ExecutorImpl<Value = any> implements Executor {
 
   resolve = (value: PromiseLike<Value> | Value, settledAt = Date.now()): void => {
     if (isPromiseLike(value)) {
-      this.execute(() => value, { skipTaskReplace: true });
+      this.execute({ callback: () => value, noTaskReplace: true });
       return;
     }
 

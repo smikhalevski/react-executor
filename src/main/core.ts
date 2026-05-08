@@ -16,7 +16,7 @@ export {
   type ExecutorEvent,
   type ExecutorState,
   type ExecutorPlugin,
-  type ExecutorTask,
+  type ExecutorTaskCallback,
   type Observable,
   type PartialExecutorEvent,
   type ReadonlyExecutor,

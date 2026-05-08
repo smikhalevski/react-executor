@@ -17,14 +17,14 @@ beforeEach(() => {
 test('aborts a deactivated executor', async () => {
   const executor = manager.getOrCreate('xxx', undefined, [abortDeactivated({ delay: 0 })]);
   const deactivate = executor.activate();
-  const taskMock = vi.fn(_signal => delay(100));
-  const promise = executor.execute(taskMock);
+  const callbackMock = vi.fn(_signal => delay(100));
+  const promise = executor.execute(callbackMock);
 
   deactivate();
 
   await expect(promise).rejects.toEqual(AbortError('The executor was aborted'));
 
-  expect(taskMock.mock.calls[0][0].aborted).toBe(true);
+  expect(callbackMock.mock.calls[0][0].aborted).toBe(true);
 
   expect(listenerMock).toHaveBeenCalledTimes(6);
   expect(listenerMock).toHaveBeenNthCalledWith(1, {
@@ -68,15 +68,15 @@ test('aborts a deactivated executor', async () => {
 test('cancels abortion of an activated executor', async () => {
   const executor = manager.getOrCreate('xxx', undefined, [abortDeactivated({ delay: 0 })]);
   const deactivate = executor.activate();
-  const taskMock = vi.fn(_signal => delay(100, 'aaa'));
-  const promise = executor.execute(taskMock);
+  const callbackMock = vi.fn(_signal => delay(100, 'aaa'));
+  const promise = executor.execute(callbackMock);
 
   deactivate();
   executor.activate();
 
   await expect(promise).resolves.toBe('aaa');
 
-  expect(taskMock.mock.calls[0][0].aborted).toBe(false);
+  expect(callbackMock.mock.calls[0][0].aborted).toBe(false);
 
   expect(listenerMock).toHaveBeenCalledTimes(7);
   expect(listenerMock).toHaveBeenNthCalledWith(1, {

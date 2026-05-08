@@ -260,13 +260,13 @@ manager.get(rookyKey) !== manager.getOrCreate({ id: 123 });
 Let's execute a new task:
 
 ```ts
-import { ExecutorManager, ExecutorTask } from 'react-executor';
+import { ExecutorManager, ExecutorTaskCallback } from 'react-executor';
 
 const manager = new ExecutorManager();
 
 const rookyExecutor = manager.getOrCreate('rooky');
 
-const helloTask: ExecutorTask = async (signal, executor) => 'Hello';
+const helloTask: ExecutorTaskCallback = async (signal, executor) => 'Hello';
 
 const helloPromise = rookyExecutor.execute(task);
 // ⮕ AbortablePromise<any>
@@ -418,7 +418,7 @@ For example, if you're fetching data from the server inside a task, you can pass
 a [`fetch`](https://developer.mozilla.org/en-US/docs/Web/API/fetch#signal) option:
 
 ```ts
-const byeTask: ExecutorTask = async (signal, executor) => {
+const byeTask: ExecutorTaskCallback = async (signal, executor) => {
   const response = await fetch('/bye', { signal });
 
   return response.json();
@@ -1329,10 +1329,10 @@ Combine this plugin with [`invalidateByPeers`](#invalidatebypeers) to automatica
 executor on which it depends becomes invalid:
 
 ```ts
-import { ExecutorTask, useExecutor } from 'react-executor';
+import { ExecutorTaskCallback, useExecutor } from 'react-executor';
 import invalidateByPeers from 'react-executor/plugin/invalidateByPeers';
 
-const fetchCheese: ExecutorTask = async (signal, executor) => {
+const fetchCheese: ExecutorTaskCallback = async (signal, executor) => {
   // Wait for the breadExecutor to be created
   const breadExecutor = await executor.manager.getOrAwait('bread');
 

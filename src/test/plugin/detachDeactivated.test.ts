@@ -16,8 +16,8 @@ beforeEach(() => {
 test('detaches a deactivated executor', async () => {
   const executor = manager.getOrCreate('xxx', undefined, [detachDeactivated({ delay: 0 })]);
   const deactivate = executor.activate();
-  const taskMock = vi.fn(_signal => delay(100, 'aaa'));
-  const promise = executor.execute(taskMock);
+  const callbackMock = vi.fn(_signal => delay(100, 'aaa'));
+  const promise = executor.execute(callbackMock);
 
   deactivate();
 
@@ -65,8 +65,8 @@ test('detaches a deactivated executor', async () => {
 test('cancels deactivation of an activated executor', async () => {
   const executor = manager.getOrCreate('xxx', undefined, [detachDeactivated({ delay: 0 })]);
   const deactivate = executor.activate();
-  const taskMock = vi.fn(_signal => delay(100, 'aaa'));
-  const promise = executor.execute(taskMock);
+  const callbackMock = vi.fn(_signal => delay(100, 'aaa'));
+  const promise = executor.execute(callbackMock);
 
   deactivate();
   executor.activate();

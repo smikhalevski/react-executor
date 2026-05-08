@@ -141,7 +141,16 @@ export type ExecutorPlugin<Value = any> = (executor: Executor<Value>) => void;
  * @returns The value that the executor must be fulfilled with.
  * @template Value The value stored by the executor.
  */
-export type ExecutorTask<Value = any> = (signal: AbortSignal, executor: Executor<Value>) => PromiseLike<Value> | Value;
+export type ExecutorTaskCallback<Value = any> = (
+  signal: AbortSignal,
+  executor: Executor<Value>
+) => PromiseLike<Value> | Value;
+
+export interface ExecutorTask<Value = any> {
+  callback: ExecutorTaskCallback<Value>;
+  placeholderValue?: Value;
+  noTaskReplace?: boolean;
+}
 
 /**
  * The minimal serializable state that is required to hydrate the {@link Executor} instance.
@@ -294,11 +303,6 @@ export interface ReadonlyExecutor<Value = any> extends ExecutorState<Value>, Obs
   getStateSnapshot(): ExecutorState<Value>;
 }
 
-export interface ExecutionOptions<Value> {
-  placeholderValue?: Value;
-  skipTaskReplace?: boolean;
-}
-
 /**
  * Manages the async task execution process and provides ways to access execution results, abort or replace a task
  * execution, and subscribe to execution state changes.
@@ -323,11 +327,10 @@ export interface Executor<Value = any> extends ReadonlyExecutor<Value> {
    * If a new task is executed before the returned promise is fulfilled then the signal is aborted and the result is
    * ignored.
    *
-   * @param task The task callback that returns the new result for the executor to store.
-   * @param options Task execution options.
+   * @param task The task object or the task callback that returns the new result for the executor to store.
    * @returns The promise that is resolved with the result of the task.
    */
-  execute(task: ExecutorTask<Value>, options?: ExecutionOptions<Value>): AbortablePromise<Value>;
+  execute(task: ExecutorTask<Value> | ExecutorTaskCallback<Value>): AbortablePromise<Value>;
 
   /**
    * If the executor is not {@link isPending pending}, the {@link task latest task} is {@link execute executed}
