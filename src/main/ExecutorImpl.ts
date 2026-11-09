@@ -168,14 +168,15 @@ export class ExecutorImpl<Value = any> implements Executor {
 
     if (prevPromise !== null) {
       prevPromise.abort(AbortError('The task was replaced'));
-    } else {
-      this.version++;
     }
 
     if (this.promise !== promise) {
       // Task was replaced midflight
       return promise;
     }
+
+    // Replacing a task can roll back or apply a pending value, so the version is bumped even if a task was pending
+    this.version++;
 
     if (!preserveLatestTask) {
       this.task = task;

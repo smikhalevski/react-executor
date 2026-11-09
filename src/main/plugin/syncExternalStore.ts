@@ -50,22 +50,40 @@ export default function syncExternalStore<Value>(store: ExternalStore<ExecutorSt
   return executor => {
     let externalVersion = -1;
 
+    // true while the plugin is being applied to the executor
+    let isInitializing = true;
+
+    // true if the external state has changed while the executor was pending
+    let isExternalStateSkipped = false;
+
+    // true if the executor state has changed while the executor was pending
+    let isExecutorStateSkipped = false;
+
     const setExternalState = () => {
+      if (executor.isPending) {
+        // The state of a pending executor can be rolled back, so it is persisted when the task is settled or aborted
+        isExecutorStateSkipped = true;
+        return;
+      }
       if (externalVersion === (externalVersion = executor.version)) {
         return;
       }
+      isExternalStateSkipped = isExecutorStateSkipped = false;
       store.set?.(executor.getStateSnapshot());
     };
 
     const setExecutorState = (nextState: ExecutorState | null | undefined | void = store.get()) => {
       if (executor.isPending) {
         // The executor would overwrite external state when settled
+        isExternalStateSkipped = true;
         return;
       }
 
+      isExternalStateSkipped = isExecutorStateSkipped = false;
+
       const prevState = executor.getStateSnapshot();
 
-      if (!isExecutorState(nextState) || (nextState.settledAt !== 0 && nextState.settledAt < prevState.settledAt)) {
+      if (!isExecutorState(nextState) || isOutdatedState(nextState, prevState, isInitializing)) {
         // Overwrite the external store because it holds no state or the state is outdated
         externalVersion = -1;
         setExternalState();
@@ -89,7 +107,13 @@ export default function syncExternalStore<Value>(store: ExternalStore<ExecutorSt
           break;
 
         case 'aborted':
-          setExecutorState(store.get());
+          if (isExternalStateSkipped) {
+            // The aborted task won't overwrite the external state that has changed while it was pending
+            setExecutorState();
+          } else if (isExecutorStateSkipped) {
+            // Persist the executor state that has changed while the task was pending
+            setExternalState();
+          }
           break;
 
         case 'detached':
@@ -105,7 +129,26 @@ export default function syncExternalStore<Value>(store: ExternalStore<ExecutorSt
     });
 
     setExecutorState(store.get());
+
+    isInitializing = false;
   };
+}
+
+/**
+ * Returns `true` if the external state is older than the executor state.
+ *
+ * @param nextState The external state.
+ * @param prevState The executor state.
+ * @param isInitializing `true` if the plugin is being applied to the executor.
+ */
+function isOutdatedState(nextState: ExecutorState, prevState: ExecutorState, isInitializing: boolean): boolean {
+  if (nextState.settledAt !== 0) {
+    return nextState.settledAt < prevState.settledAt;
+  }
+
+  // An unsettled state has no timestamp. While the plugin is being applied, a settled executor (for example, hydrated
+  // after SSR) is newer. Afterwards, an unsettled state means that the executor was cleared elsewhere.
+  return isInitializing && prevState.settledAt !== 0;
 }
 
 function publishChanges(executor: ExecutorImpl, prevState: ExecutorState, nextState: ExecutorState): void {

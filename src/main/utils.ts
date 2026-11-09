@@ -13,7 +13,7 @@ export function TimeoutError(message: string): Error {
 }
 
 export function isPromiseLike(value: unknown): value is PromiseLike<any> {
-  return isObjectLike(value) && 'then' in value;
+  return isObjectLike(value) && 'then' in value && typeof value.then === 'function';
 }
 
 export function isObjectLike(value: unknown): value is object {

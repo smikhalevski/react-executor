@@ -18,3 +18,13 @@ test('resolves the executor', () => {
 
   expect(executor.value).toBe('aaa');
 });
+
+test('unsubscribes from the observable when the executor is detached', () => {
+  const pubSub = new PubSub<string>();
+
+  manager.getOrCreate('xxx', undefined, [resolveBy(pubSub)]);
+
+  manager.detach('xxx');
+
+  expect(pubSub.listenerCount).toBe(0);
+});

@@ -21,19 +21,31 @@ export default function invalidateAfter(delay: number): ExecutorPlugin {
   return executor => {
     let timer: ReturnType<typeof setTimeout>;
 
+    const scheduleInvalidation = () => {
+      if (executor.isPending) {
+        // The timeout is restarted when the pending task is settled or aborted
+        return;
+      }
+
+      clearTimeout(timer);
+
+      if (executor.isSettled && !executor.isInvalidated) {
+        // The delay is counted from the settlement, which may have happened before the plugin was applied
+        timer = setTimeout(executor.invalidate, delay - Date.now() + executor.settledAt);
+      }
+    };
+
     if (executor.isSettled && delay - Date.now() + executor.settledAt <= 0) {
       executor.invalidate();
     }
 
     executor.subscribe(event => {
       switch (event.type) {
+        case 'attached':
         case 'fulfilled':
         case 'rejected':
-          clearTimeout(timer);
-
-          if (!executor.isInvalidated && !executor.isPending && executor.isSettled) {
-            timer = setTimeout(executor.invalidate, delay);
-          }
+        case 'aborted':
+          scheduleInvalidation();
           break;
 
         case 'invalidated':

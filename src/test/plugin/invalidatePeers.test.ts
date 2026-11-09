@@ -80,18 +80,31 @@ test('invalidates a peer executor with the matching key if an executor is invali
   expect(executor2.isInvalidated).toBe(true);
 });
 
-test('does not invalidate peers after detach', () => {
-  const executor1 = manager.getOrCreate('xxx', 'aaa', [invalidatePeers(executor => executor.key === 'yyy')]);
-  const executor2 = manager.getOrCreate('yyy', 'bbb');
+test('stops matching peers after an executor is detached', () => {
+  const predicateMock = vi.fn();
+
+  manager.getOrCreate('xxx', 'aaa', [invalidatePeers(predicateMock)]);
+  manager.detach('xxx');
+  manager.getOrCreate('yyy', 'bbb');
+
+  expect(predicateMock).not.toHaveBeenCalled();
+});
+
+test('does not invalidate executors that do not match the predicate', () => {
+  const executor1 = manager.getOrCreate('yyy', 'bbb');
+  const executor2 = manager.getOrCreate('xxx', undefined, [invalidatePeers(() => false)]);
+  const executor3 = manager.getOrCreate('zzz', 'ccc');
+
+  executor2.resolve('aaa');
 
   expect(executor1.isInvalidated).toBe(false);
-  expect(executor2.isInvalidated).toBe(false);
+  expect(executor3.isInvalidated).toBe(false);
+});
 
-  manager.detach(executor1.key);
-  executor1.invalidate();
+test('does not treat an executor as its own peer', () => {
+  const executor = manager.getOrCreate('xxx', 'aaa', [invalidatePeers(executor => executor.key === 'xxx')]);
 
-  expect(executor1.isInvalidated).toBe(true);
-  expect(executor2.isInvalidated).toBe(false);
+  expect(executor.isInvalidated).toBe(false);
 });
 
 test('removes peer after peer is detached', () => {

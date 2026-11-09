@@ -1,5 +1,5 @@
 /**
- * The plugin that retries the latest task if the observable emits `true`.
+ * The plugin that retries the latest task when the observable switches from `false` to `true`.
  *
  * ```ts
  * import retryWhen from 'react-executor/plugin/retryWhen';
@@ -21,7 +21,7 @@ import { emptyObject } from '../utils.js';
  */
 export interface RetryWhenOptions {
   /**
-   * The minimum delay (in milliseconds) after the observable emits `true` and retrying the executor — unless
+   * The minimum delay (in milliseconds) after the observable switches to `true` and retrying the executor — unless
    * the observable emits `false`.
    *
    * @default 0
@@ -37,7 +37,8 @@ export interface RetryWhenOptions {
 }
 
 /**
- * Retries the latest task if the observable emits `true`.
+ * Retries the latest task when the observable switches from `false` to `true`. Repeated `true` values, including
+ * the first value if it is `true`, don't trigger a retry.
  *
  * **Note:** If executor isn't active and retry isn't {@link RetryWhenOptions.isEager eager} then the task is retried
  * after the executor becomes active.
@@ -53,13 +54,25 @@ export default function retryWhen(
 
   return executor => {
     let timer: ReturnType<typeof setTimeout>;
+    let canRetry = false;
     let shouldRetry = false;
 
     const unsubscribe = observable.subscribe(isRetried => {
-      clearTimeout(timer);
-
-      if (!isRetried || executor.isPending) {
+      if (!isRetried) {
+        clearTimeout(timer);
+        canRetry = true;
         shouldRetry = false;
+        return;
+      }
+
+      if (!canRetry) {
+        // The observable didn't switch from false to true
+        return;
+      }
+
+      canRetry = false;
+
+      if (executor.isPending) {
         return;
       }
 

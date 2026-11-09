@@ -1,4 +1,4 @@
-import { beforeEach, expect, Mock, test, vi } from 'vitest';
+import { afterEach, beforeEach, expect, Mock, test, vi } from 'vitest';
 import { delay } from 'parallel-universe';
 import { ExecutorEvent, ExecutorManager } from '../../main/index.js';
 import detachDeactivated from '../../main/plugin/detachDeactivated.js';
@@ -11,6 +11,10 @@ beforeEach(() => {
 
   manager = new ExecutorManager();
   manager.subscribe(listenerMock);
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 test('detaches a deactivated executor', async () => {
@@ -62,7 +66,7 @@ test('detaches a deactivated executor', async () => {
   } satisfies ExecutorEvent);
 });
 
-test('cancels deactivation of an activated executor', async () => {
+test('cancels detachment of a reactivated executor', async () => {
   const executor = manager.getOrCreate('xxx', undefined, [detachDeactivated({ delay: 0 })]);
   const deactivate = executor.activate();
   const callbackMock = vi.fn(_signal => delay(100, 'aaa'));
@@ -116,4 +120,31 @@ test('cancels deactivation of an activated executor', async () => {
     version: 2,
     payload: undefined,
   } satisfies ExecutorEvent);
+});
+
+test('detaches a deactivated executor after 5 seconds by default', () => {
+  vi.useFakeTimers();
+
+  const executor = manager.getOrCreate('xxx', undefined, [detachDeactivated()]);
+  const deactivate = executor.activate();
+
+  deactivate();
+
+  vi.advanceTimersByTime(4_999);
+
+  expect(manager.get('xxx')).toBe(executor);
+
+  vi.advanceTimersByTime(1);
+
+  expect(manager.get('xxx')).toBeUndefined();
+});
+
+test('does not detach an executor that was never activated', () => {
+  vi.useFakeTimers();
+
+  const executor = manager.getOrCreate('xxx', undefined, [detachDeactivated({ delay: 0 })]);
+
+  vi.runAllTimers();
+
+  expect(manager.get('xxx')).toBe(executor);
 });

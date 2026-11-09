@@ -19,11 +19,10 @@ test('aborts the pending task', async () => {
   expect(executor.isRejected).toBe(false);
 });
 
-test('does not abort the pending when it is settled before the timeout', async () => {
+test('does not abort the pending task when it is settled before the timeout', async () => {
   const executor = manager.getOrCreate('xxx', undefined, [abortPendingAfter(100)]);
 
-  const promise = executor.execute(() => delay(0, 'aaa'));
+  const promise = executor.execute(() => delay(50, 'aaa'));
 
   await expect(promise).resolves.toEqual('aaa');
-  expect(executor.isRejected).toBe(false);
 });

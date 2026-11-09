@@ -1,17 +1,32 @@
-import { describe, expect, test, vi } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { SSRExecutorManager } from '../../main/ssr/index.js';
 import { ExecutorState } from '../../main/index.js';
 import { Serializer } from '../../main/types.js';
 import { noop } from '../../main/utils.js';
 
 vi.useFakeTimers();
-vi.setSystemTime(50);
+
+beforeEach(() => {
+  vi.setSystemTime(50);
+});
+
+describe('constructor', () => {
+  test('applies plugins from options', () => {
+    const pluginMock = vi.fn();
+
+    const executor = new SSRExecutorManager({ plugins: [pluginMock] }).getOrCreate('xxx');
+
+    expect(pluginMock).toHaveBeenCalledTimes(1);
+    expect(pluginMock).toHaveBeenNthCalledWith(1, executor);
+  });
+});
 
 describe('nextHydrationScriptSource', () => {
-  test('returns an empty string if there no changes in state', () => {
+  test('returns an empty string if there are no changes in state', () => {
     const manager = new SSRExecutorManager();
 
-    manager.getOrCreate('xxx');
+    manager.getOrCreate('xxx', 111);
+    manager.nextHydrationScriptSource();
 
     expect(manager.nextHydrationScriptSource()).toBe('');
   });
@@ -76,12 +91,12 @@ describe('nextHydrationScriptSource', () => {
     );
   });
 
-  test('returns fulfilled executors by default', async () => {
+  test('does not return rejected executors by default', async () => {
     const manager = new SSRExecutorManager();
 
     await manager
       .getOrCreate('xxx')
-      .execute(() => Promise.reject('expected'))
+      .execute(() => Promise.reject(new Error('expected')))
       .catch(noop);
 
     expect(manager.nextHydrationScriptSource()).toBe('');
@@ -141,7 +156,7 @@ describe('nextHydrationScriptSource', () => {
 });
 
 describe('nextHydrationChunk', () => {
-  test('returns an empty string if there no changes in state', () => {
+  test('returns an empty string if there are no changes in state', () => {
     const manager = new SSRExecutorManager();
 
     manager.getOrCreate('xxx');
@@ -190,22 +205,43 @@ describe('hasChanges', () => {
     expect(executor.value).toBe(111);
   });
 
-  test('waits for pending executors to finish', async () => {
+  test('waits for executors that become pending again', async () => {
     const manager = new SSRExecutorManager();
 
     const executor = manager.getOrCreate('xxx', () => 111, [
       executor => {
         executor.subscribe(event => {
           if (event.type === 'fulfilled' && executor.value === 111) {
-            executor.execute(() => 222);
+            executor.execute(() => new Promise(resolve => setTimeout(resolve, 100, 222)));
           }
         });
       },
     ]);
-    await expect(manager.hasChanges()).resolves.toBe(true);
 
-    expect(executor.isPending).toBe(false);
-    expect(executor.value).toBe(222);
+    // Captures the value at the moment hasChanges resolves
+    const promise = manager.hasChanges().then(() => executor.value);
+
+    await vi.advanceTimersByTimeAsync(100);
+
+    await expect(promise).resolves.toBe(222);
+  });
+
+  test('rejects if executors are still pending after maxRetries', async () => {
+    const manager = new SSRExecutorManager();
+
+    manager.getOrCreate('xxx', () => 111, [
+      executor => {
+        executor.subscribe(event => {
+          if (event.type === 'fulfilled') {
+            executor.execute(() => new Promise(noop));
+          }
+        });
+      },
+    ]);
+
+    await expect(manager.hasChanges(1)).rejects.toThrow(
+      'Too many retries. Ensure SSR plugins do not retry indefinitely, or increase maxRetries.'
+    );
   });
 });
 
@@ -223,5 +259,15 @@ describe('abort', () => {
 
     expect(executor.isPending).toBe(false);
     expect(callbackMock.mock.calls[0][0].aborted).toBe(true);
+  });
+
+  test('rejects pending tasks with the abort reason', async () => {
+    const manager = new SSRExecutorManager();
+
+    const promise = manager.getOrCreate('xxx').execute(() => 111);
+
+    manager.abort(new Error('expected'));
+
+    await expect(promise).rejects.toThrow('expected');
   });
 });

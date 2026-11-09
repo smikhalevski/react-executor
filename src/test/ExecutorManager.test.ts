@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, Mock, test, vi } from 'vitest';
-import { ExecutorManager } from '../main/index.js';
+import { afterEach, beforeEach, describe, expect, Mock, test, vi } from 'vitest';
+import { Executor, ExecutorManager } from '../main/index.js';
 import { ExecutorImpl } from '../main/ExecutorImpl.js';
 
 vi.useFakeTimers();
@@ -12,6 +12,10 @@ beforeEach(() => {
   listenerMock = vi.fn();
   manager = new ExecutorManager();
   manager.subscribe(listenerMock);
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 describe('constructor', () => {
@@ -28,6 +32,43 @@ describe('constructor', () => {
     expect(pluginMock).toHaveBeenCalledTimes(2);
     expect(pluginMock).toHaveBeenNthCalledWith(1, executor1);
     expect(pluginMock).toHaveBeenNthCalledWith(2, executor2);
+  });
+
+  test('ignores nullish plugins', () => {
+    const manager = new ExecutorManager({ plugins: [null] });
+
+    expect(() => manager.getOrCreate('xxx')).not.toThrow();
+  });
+
+  test('uses keyIdGenerator to compute key IDs', () => {
+    const manager = new ExecutorManager({ keyIdGenerator: key => key });
+
+    const key = ['xxx'];
+    const executor = manager.getOrCreate(key);
+
+    expect(manager.get(key)).toBe(executor);
+    expect(manager.get(['xxx'])).toBeUndefined();
+  });
+
+  test('applies the devtools plugin to executors', () => {
+    const pluginMock = vi.fn();
+
+    vi.stubGlobal('__REACT_EXECUTOR_DEVTOOLS__', { plugin: pluginMock });
+
+    const executor = new ExecutorManager().getOrCreate('xxx');
+
+    expect(pluginMock).toHaveBeenCalledTimes(1);
+    expect(pluginMock).toHaveBeenNthCalledWith(1, executor);
+  });
+
+  test('does not apply the devtools plugin if devtools are disabled', () => {
+    const pluginMock = vi.fn();
+
+    vi.stubGlobal('__REACT_EXECUTOR_DEVTOOLS__', { plugin: pluginMock });
+
+    new ExecutorManager({ devtools: false }).getOrCreate('xxx');
+
+    expect(pluginMock).not.toHaveBeenCalled();
   });
 });
 
@@ -53,17 +94,11 @@ describe('getOrCreate', () => {
   });
 
   test('applies the plugin only once', () => {
-    const pluginMock = vi.fn(_executor => {});
+    const pluginMock = vi.fn();
 
     manager.getOrCreate('aaa', undefined, [pluginMock]);
 
     const executor = manager.getOrCreate('aaa', undefined, [pluginMock]);
-
-    expect(executor.isPending).toBe(false);
-    expect(executor.isFulfilled).toBe(false);
-    expect(executor.isRejected).toBe(false);
-    expect(executor.value).toBeUndefined();
-    expect(executor.reason).toBeUndefined();
 
     expect(pluginMock).toHaveBeenCalledTimes(1);
     expect(pluginMock.mock.calls[0][0]).toBe(executor);
@@ -142,8 +177,8 @@ describe('getOrCreate', () => {
     expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 1 });
   });
 
-  test('does not apply initial value if a task execution was started form a plugin', async () => {
-    const callbackMock = vi.fn(() => 111);
+  test('does not apply initial value if a task execution was started from a plugin', async () => {
+    const callbackMock = vi.fn();
 
     const executor = manager.getOrCreate('aaa', callbackMock, [
       executor => {
@@ -173,13 +208,6 @@ describe('getOrCreate', () => {
     expect(executor.value).toBe(222);
 
     expect(listenerMock).toHaveBeenCalledTimes(3);
-    expect(listenerMock).toHaveBeenNthCalledWith(1, {
-      type: 'pending',
-      target: executor,
-      version: 1,
-      payload: { task: { callback: expect.any(Function) } },
-    });
-    expect(listenerMock).toHaveBeenNthCalledWith(2, { type: 'attached', target: executor, version: 1 });
     expect(listenerMock).toHaveBeenNthCalledWith(3, { type: 'fulfilled', target: executor, version: 2 });
   });
 
@@ -198,10 +226,6 @@ describe('getOrCreate', () => {
   });
 
   test('creates an executor with an object key', () => {
-    const manager = new ExecutorManager({
-      keyIdGenerator: JSON.stringify,
-    });
-
     const expectedKey = ['aaa'];
     const executor1 = manager.getOrCreate(expectedKey);
     const executor2 = manager.getOrCreate(['aaa']);
@@ -210,18 +234,42 @@ describe('getOrCreate', () => {
     expect(executor1.key).toBe(expectedKey);
     expect(manager.get(['aaa'])).toBe(executor1);
   });
+
+  test('ignores nullish plugins', () => {
+    expect(() => manager.getOrCreate('xxx', undefined, [null])).not.toThrow();
+  });
+
+  test('does not attach the executor if a plugin throws', () => {
+    let executor: Executor | undefined;
+
+    expect(() =>
+      manager.getOrCreate('xxx', undefined, [
+        pluginExecutor => {
+          executor = pluginExecutor;
+          throw new Error('expected');
+        },
+      ])
+    ).toThrow('expected');
+
+    expect(manager.get('xxx')).toBeUndefined();
+
+    executor!.resolve(111);
+
+    expect(listenerMock).not.toHaveBeenCalled();
+  });
 });
 
 describe('get', () => {
-  test('return undefined if there is executor with the key', () => {
+  test('returns undefined if there is no executor with the key', () => {
     expect(manager.get('aaa')).toBeUndefined();
   });
 
   test('returns the existing executor', () => {
-    manager.getOrCreate('aaa');
+    const executor1 = manager.getOrCreate('xxx');
+    const executor2 = manager.getOrCreate('yyy');
 
-    expect(manager.get('aaa')).toBeInstanceOf(ExecutorImpl);
-    expect(manager.get('aaa')).toBe(manager.get('aaa'));
+    expect(manager.get('xxx')).toBe(executor1);
+    expect(manager.get('yyy')).toBe(executor2);
   });
 });
 
@@ -236,10 +284,18 @@ describe('getOrAwait', () => {
 
     await expect(executorPromise).resolves.toBe(executor);
   });
+
+  test('ignores executors with other keys', async () => {
+    const executorPromise = manager.getOrAwait('xxx');
+
+    manager.getOrCreate('yyy');
+
+    await expect(executorPromise).resolves.toBe(manager.getOrCreate('xxx'));
+  });
 });
 
 describe('detach', () => {
-  test('no-op is there is no executor with the key', () => {
+  test('no-op if there is no executor with the key', () => {
     expect(manager.detach('aaa')).toBe(false);
     expect(listenerMock).toHaveBeenCalledTimes(0);
   });

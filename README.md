@@ -574,14 +574,13 @@ that was executed.
 ## Optimistic updates
 
 Optimistic updates are a UX technique where the UI reflects the result of an action instantly, before the server has
-confirmed it. If the server succeeds, nothing changes visually. If the server fails, the UI rolls back to the state it
-was in before the action.
+confirmed it. If the server succeeds, nothing changes visually. If the server fails, the UI rolls back to the value it
+showed before the action.
 
 In React Executor, optimistic updates are first-class citizens and can be achieved by providing
-[`pendingValue`](https://smikhalevski.github.io/react-executor/interfaces/react-executor.ExecutorTask.html#pendingxalue)
-in executor task. When a task is submitted with a `pendingValue`, the executor resolves to that value instantly
-(before the task callback runs) and stores a checkpoint of the previous state. If the task fails, the checkpoint is
-restored automatically.
+[`pendingValue`](https://smikhalevski.github.io/react-executor/interfaces/react-executor.ExecutorTask.html#pendingvalue)
+in executor task. When a task is submitted with a `pendingValue`, the executor is resolved with that value instantly,
+while the task is pending, and stores a checkpoint of the previous state.
 
 ```ts
 const executor = useExecutor('meaningOfLife');
@@ -590,24 +589,40 @@ const handleClick = () => {
   executor.execute({
     callback: async signal => await getTheMeaningOfLife(signal),
 
-    // 🟡 Executor is resolved with this value before running callback
+    // 🟡 Executor is resolved with this value while the callback is pending
     pendingValue: 42,
   });
 };
 ```
 
-The UI reflects `42` the moment the button is clicked. If `getTheMeaningOfLife` rejects, the executor rolls back
-to the value it held before execute was called — no manual snapshot or error handling required.
+The UI reflects `42` the moment the button is clicked. What happens next depends on the outcome of the task:
 
-The rollback covers three cases depending on what state the executor was in before the optimistic update was applied:
+- If the task is _fulfilled_, then the executor is resolved with the task result.
 
-- If previously _fulfilled_, then the executor is resolved back to the previous value.
+- If the task is _rejected_, then the checkpoint is restored and the executor is rejected with the task error, like
+  after any other failed task. The value that the executor held before `execute` was called is still available as
+  [`executor.value`](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#value),
+  so you can keep rendering it next to the error — no manual snapshot required.
 
-- If previously _rejected_, then the executor is rejected with the previous reason.
-
-- If previously _unsettled_, then the executor is cleared back to its initial state.
+- If the task is _aborted_ or replaced, then the checkpoint is restored as is: the executor gets back the value or
+  the reason it held before, or becomes unsettled if it wasn't settled.
 
 This means `pendingValue` is safe to use regardless of whether the executor has ever successfully fetched data.
+
+> [!NOTE]
+> An optimistic task becomes
+> the [latest task](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#task), so
+> plugins that [retry the latest task](#retry-the-latest-task) would run it again. If the task is a mutation, set
+> [`preserveLatestTask`](https://smikhalevski.github.io/react-executor/interfaces/react-executor.ExecutorTask.html#preservelatesttask)
+> to keep the previous task as the latest one:
+>
+> ```ts
+> executor.execute({
+>   callback: async signal => await saveTheMeaningOfLife(42, signal),
+>   pendingValue: 42,
+>   preserveLatestTask: true,
+> });
+> ```
 
 # Events and lifecycle
 
@@ -1125,9 +1140,9 @@ Combining multiple plugins, you can set up a complex executor behaviour. For exa
 follows these requirements:
 
 1. Executes the task every 5 seconds.
-2. Aborts the pending task if the window loses focus for more than 10 seconds.
+2. Aborts the pending task if the page is hidden for more than 10 seconds.
 3. Aborts instantly if the window goes offline.
-4. Resumes the periodic task execution if window gains focus or goes back online.
+4. Resumes the periodic task execution if the page becomes visible or goes back online.
 
 ```ts
 import { useExecutor } from 'react-executor';
@@ -1146,13 +1161,13 @@ useExecutor('test', heavyTask, [
   // Retry the task every 5 seconds if if succeeds
   retryFulfilled({ delay: 5_000 }),
 
-  // Abort the task if the window loses focus for at least 10 seconds
+  // Abort the task if the page is hidden for at least 10 seconds
   abortWhen(windowBlurred, { delay: 10_000 }),
 
   // Abort the pending task if the device is disconnected from the network
   abortWhen(navigatorOffline),
 
-  // Invalidate results when the window was blurred and then gains focus
+  // Invalidate results when the page was hidden and then becomes visible
   invalidateWhen(windowFocused),
 
   // Invalidate results if the device was disconnected from the network
@@ -1448,11 +1463,11 @@ retryRejected({ isEager: true });
 
 ## `retryWhen`
 
-[Retries the latest task](#retry-the-latest-task) if the
-[observable](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Observable.html) emits `true`.
+[Retries the latest task](#retry-the-latest-task) when the
+[observable](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Observable.html) switches from
+`false` to `true`.
 
-For example, if the window was offline for more than 5 seconds, the executor would retry the `heavyTask` after
-the window is back online:
+For example, the executor would retry the `heavyTask` after the device has been back online for 5 seconds:
 
 <!-- prettier-ignore -->
 ```ts
@@ -1554,7 +1569,8 @@ Observables are values that can be passed to any `*When` plugin (`abortWhen`, `i
 returns an unsubscribe callback. You can pass any object matching this interface — including third-party reactive
 primitives — as an observable.
 
-Four built-in observables are provided out of the box:
+Four built-in observables are provided out of the box. Each of them emits the current state to a listener right after
+it subscribes.
 
 ## `navigatorOnline`
 
@@ -1580,7 +1596,7 @@ const executor = useExecutor('test', heavyTask, [abortWhen(navigatorOffline)]);
 
 ## `windowFocused`
 
-Emits `true` when the window receives focus, and `false` when it loses focus.
+Emits `true` when the page becomes visible or the window receives focus, and `false` when the page becomes hidden.
 
 ```ts
 import retryWhen from 'react-executor/plugin/retryWhen';
@@ -1591,7 +1607,7 @@ const executor = useExecutor('test', heavyTask, [retryWhen(windowFocused)]);
 
 ## `windowBlurred`
 
-The inverse of `windowFocused`. Emits `true` when the window loses focus.
+The inverse of `windowFocused`. Emits `true` when the page becomes hidden.
 
 ```ts
 import abortWhen from 'react-executor/plugin/abortWhen';

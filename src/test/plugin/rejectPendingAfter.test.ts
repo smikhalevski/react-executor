@@ -2,7 +2,7 @@ import { beforeEach, expect, test } from 'vitest';
 import { delay } from 'parallel-universe';
 import { ExecutorManager } from '../../main/index.js';
 import rejectPendingAfter from '../../main/plugin/rejectPendingAfter.js';
-import { TimeoutError } from '../../main/utils.js';
+import { noop, TimeoutError } from '../../main/utils.js';
 
 let manager: ExecutorManager;
 
@@ -20,11 +20,25 @@ test('aborts the pending task and rejects the executor', async () => {
   expect(executor.reason).toEqual(TimeoutError('The task execution took too long'));
 });
 
-test('does not abort the pending and reject the executor when it is settled before the timeout', async () => {
+test('does not abort the pending task and reject the executor when it is settled before the timeout', async () => {
   const executor = manager.getOrCreate('xxx', undefined, [rejectPendingAfter(100)]);
 
-  const promise = executor.execute(() => delay(0, 'aaa'));
+  const promise = executor.execute(() => delay(50, 'aaa'));
 
   await expect(promise).resolves.toEqual('aaa');
+
+  await delay(100);
+
+  expect(executor.isRejected).toBe(false);
+});
+
+test('does not reject the executor if the pending task is aborted', async () => {
+  const executor = manager.getOrCreate('xxx', undefined, [rejectPendingAfter(0)]);
+
+  executor.execute(() => new Promise(noop));
+  executor.abort();
+
+  await delay(0);
+
   expect(executor.isRejected).toBe(false);
 });

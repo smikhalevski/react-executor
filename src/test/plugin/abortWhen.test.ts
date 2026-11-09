@@ -58,6 +58,38 @@ test('aborts the executed task if isSustained is true', () => {
   expect(callbackMock.mock.calls[0][0].aborted).toBe(true);
 });
 
+test('does not abort the executed task if isSustained is true and the observable has pushed false', () => {
+  const pubSub = new PubSub<boolean>();
+
+  const executor = manager.getOrCreate('xxx', undefined, [abortWhen(pubSub, { isSustained: true })]);
+
+  pubSub.publish(true);
+
+  vi.runAllTimers();
+
+  pubSub.publish(false);
+
+  executor.execute(() => new Promise(noop));
+
+  expect(executor.isPending).toBe(true);
+});
+
+test('aborts the pending task after the delay', () => {
+  const pubSub = new PubSub<boolean>();
+
+  const executor = manager.getOrCreate('xxx', () => new Promise(noop), [abortWhen(pubSub, { delay: 5_000 })]);
+
+  pubSub.publish(true);
+
+  vi.advanceTimersByTime(4_999);
+
+  expect(executor.isPending).toBe(true);
+
+  vi.advanceTimersByTime(1);
+
+  expect(executor.isPending).toBe(false);
+});
+
 test('does not abort if the observable has pushed false before the timeout', async () => {
   const pubSub = new PubSub<boolean>();
 
@@ -80,7 +112,7 @@ test('does not abort if the observable has pushed false before the timeout', asy
   expect(callbackMock.mock.calls[0][0].aborted).toBe(false);
 });
 
-test('does not abort if true pushed twice', () => {
+test('does not abort if the observable has pushed false after pushing true twice', () => {
   const pubSub = new PubSub<boolean>();
 
   const callbackMock = vi.fn(_signal => delay(15_000, 'aaa'));
@@ -96,4 +128,28 @@ test('does not abort if true pushed twice', () => {
   vi.advanceTimersToNextTimer();
 
   expect(callbackMock.mock.calls[0][0].aborted).toBe(false);
+});
+
+test('unsubscribes from the observable when the executor is detached', () => {
+  const pubSub = new PubSub<boolean>();
+
+  manager.getOrCreate('xxx', undefined, [abortWhen(pubSub)]);
+
+  manager.detach('xxx');
+
+  expect(pubSub.listenerCount).toBe(0);
+});
+
+test('does not abort the pending task after the executor is detached', () => {
+  const pubSub = new PubSub<boolean>();
+
+  const executor = manager.getOrCreate('xxx', () => new Promise(noop), [abortWhen(pubSub)]);
+
+  pubSub.publish(true);
+
+  manager.detach('xxx');
+
+  vi.runAllTimers();
+
+  expect(executor.isPending).toBe(true);
 });

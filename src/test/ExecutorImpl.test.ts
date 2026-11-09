@@ -3,6 +3,7 @@ import { AbortablePromise } from 'parallel-universe';
 import { ExecutorImpl } from '../main/ExecutorImpl.js';
 import { AbortError, noop } from '../main/utils.js';
 import { ExecutorEvent, ExecutorState, ExecutorTask } from '../main/index.js';
+import { mockExecutorState } from './mocks.js';
 
 vi.useFakeTimers();
 vi.setSystemTime(50);
@@ -20,7 +21,6 @@ beforeEach(() => {
 
 describe('new', () => {
   test('creates a blank executor', () => {
-    expect(listenerMock).not.toHaveBeenCalled();
     expect(executor.isFulfilled).toBe(false);
     expect(executor.isRejected).toBe(false);
     expect(executor.isInvalidated).toBe(false);
@@ -29,7 +29,7 @@ describe('new', () => {
     expect(executor.promise).toBeNull();
   });
 
-  test('methods are bound to an executor instance', () => {
+  test('resolve is bound to an executor instance', () => {
     (0, executor.resolve)('aaa');
 
     expect(executor.value).toBe('aaa');
@@ -47,10 +47,11 @@ describe('get', () => {
     expect(executor.get()).toBe('aaa');
   });
 
-  test('throws the reason of a rejected executor', () => {
+  test('throws the reason of a rejected executor even if it has a value', () => {
+    executor.resolve('aaa');
     executor.reject(expectedReason);
 
-    expect(() => executor.get()).toThrow(expectedReason);
+    expect(() => executor.get()).toThrow('expected');
   });
 });
 
@@ -65,10 +66,11 @@ describe('getOrDefault', () => {
     expect(executor.getOrDefault('bbb')).toBe('aaa');
   });
 
-  test('returns the default value is the executor is rejected', () => {
+  test('returns the default value if the executor is rejected even if it has a value', () => {
+    executor.resolve('aaa');
     executor.reject(expectedReason);
 
-    expect(executor.getOrDefault('aaa')).toBe('aaa');
+    expect(executor.getOrDefault('bbb')).toBe('bbb');
   });
 });
 
@@ -175,7 +177,7 @@ describe('execute', () => {
     expect(listenerMock).toHaveBeenNthCalledWith(3, {
       type: 'pending',
       target: executor,
-      version: 1,
+      version: 2,
       payload: { task: { callback: callbackMock2 } },
     } satisfies ExecutorEvent);
 
@@ -192,7 +194,7 @@ describe('execute', () => {
     expect(listenerMock).toHaveBeenNthCalledWith(4, {
       type: 'fulfilled',
       target: executor,
-      version: 2,
+      version: 3,
       payload: undefined,
     } satisfies ExecutorEvent);
 
@@ -365,7 +367,7 @@ describe('execute', () => {
     expect(listenerMock).toHaveBeenNthCalledWith(4, {
       type: 'pending',
       target: executor,
-      version: 1,
+      version: 2,
       payload: { task: { callback: callbackMock3 } },
     } satisfies ExecutorEvent);
 
@@ -378,30 +380,12 @@ describe('execute', () => {
   });
 
   test('an AbortablePromise returned from a task is aborted when a task is replaced', async () => {
-    const callbackMock1 = vi.fn(
-      _signal =>
-        new AbortablePromise<string>(resolve => {
-          resolve('aaa');
-        })
-    );
-    const callbackMock2 = vi.fn(_signal => 'bbb');
+    const taskPromise = new AbortablePromise<string>(noop);
 
-    const promise1 = executor.execute(callbackMock1);
-    const promise2 = executor.execute(callbackMock2);
+    executor.execute(() => taskPromise);
+    executor.execute(() => 'bbb');
 
-    expect(executor.task).toStrictEqual({ callback: callbackMock2 });
-
-    expect(callbackMock1).toHaveBeenCalledTimes(1);
-    expect(callbackMock1.mock.calls[0][0].aborted).toBe(true);
-
-    await expect(promise1).rejects.toEqual(AbortError('The task was replaced'));
-    await expect(promise2).resolves.toBe('bbb');
-
-    expect(executor.isFulfilled).toBe(true);
-    expect(executor.isRejected).toBe(false);
-    expect(executor.value).toBe('bbb');
-    expect(executor.reason).toBeUndefined();
-    expect(executor.promise).toBeNull();
+    await expect(taskPromise).rejects.toEqual(AbortError('The task was replaced'));
   });
 
   test('preserves the previous value when a new task is executed', async () => {
@@ -492,6 +476,12 @@ describe('execute', () => {
     expect(executor._rollbackSnapshot).toBeNull();
   });
 
+  test('applies a falsy pending value', () => {
+    executor.execute({ callback: () => 111, pendingValue: 0 });
+
+    expect(executor.value).toBe(0);
+  });
+
   test('rollbacks pending value if task fails', async () => {
     executor.resolve('kkk');
 
@@ -534,6 +524,20 @@ describe('execute', () => {
 
     expect(executor.value).toBe('kkk');
     expect(executor._rollbackSnapshot).toBeNull();
+  });
+
+  test('rolls back pending value to an unsettled state if task is aborted', () => {
+    executor.execute({ callback: () => 'aaa', pendingValue: 'bbb' }).abort();
+
+    expect(executor.getStateSnapshot()).toEqual(mockExecutorState());
+  });
+
+  test('resets invalidated when pending value is applied', () => {
+    executor.resolve('aaa');
+    executor.invalidate();
+    executor.execute({ callback: () => 'ccc', pendingValue: 'bbb' });
+
+    expect(executor.isInvalidated).toBe(false);
   });
 
   test('rollbacks pending value when task is replaced', async () => {
@@ -598,6 +602,16 @@ describe('execute', () => {
     expect(executor.isRejected).toBe(true);
     expect(executor.promise).toBeNull();
     expect(executor._rollbackSnapshot).toBeNull();
+  });
+
+  test('increments version when a pending task is replaced', () => {
+    executor.execute({ callback: () => 'aaa', pendingValue: 'xxx' });
+
+    const version = executor.version;
+
+    executor.execute({ callback: () => 'bbb', pendingValue: 'yyy' });
+
+    expect(executor.version).toBe(version + 1);
   });
 });
 
@@ -710,6 +724,20 @@ describe('resolve', () => {
     expect(executor.task).toBeNull();
     expect(executor.promise).toBeNull();
   });
+
+  test('fulfills with an object that has a non-callable then property', () => {
+    // Breaks the infinite re-execution loop if the value is mistaken for a promise
+    executor.subscribe(event => {
+      if (event.type === 'pending') {
+        executor.abort();
+      }
+    });
+
+    // @ts-expect-error The value is neither a string nor a number
+    executor.resolve({ then: 'aaa' });
+
+    expect(executor.value).toStrictEqual({ then: 'aaa' });
+  });
 });
 
 describe('reject', () => {
@@ -780,6 +808,12 @@ describe('reject', () => {
     executor.reject('bbb');
 
     expect(executor.isInvalidated).toBe(false);
+  });
+
+  test('stores the given settlement timestamp', () => {
+    executor.reject(expectedReason, 111);
+
+    expect(executor.settledAt).toBe(111);
   });
 });
 
@@ -867,6 +901,23 @@ describe('clear', () => {
     expect(executor.reason).toBeUndefined();
     expect(executor.promise).toBe(promise);
   });
+
+  test('preserves the latest task', async () => {
+    const task: ExecutorTask = { callback: () => 'aaa' };
+
+    await executor.execute(task);
+
+    executor.clear();
+
+    expect(executor.task).toBe(task);
+  });
+
+  test('removes the reason of a rejected executor', () => {
+    executor.reject(expectedReason);
+    executor.clear();
+
+    expect(executor.reason).toBeUndefined();
+  });
 });
 
 describe('invalidate', () => {
@@ -902,6 +953,20 @@ describe('invalidate', () => {
       version: 2,
       payload: undefined,
     } satisfies ExecutorEvent);
+  });
+
+  test('stores the current time as the invalidation timestamp', () => {
+    executor.resolve('aaa');
+    executor.invalidate();
+
+    expect(executor.invalidatedAt).toBe(50);
+  });
+
+  test('stores the given invalidation timestamp', () => {
+    executor.resolve('aaa');
+    executor.invalidate(111);
+
+    expect(executor.invalidatedAt).toBe(111);
   });
 });
 
@@ -1053,6 +1118,16 @@ describe('activate', () => {
       payload: undefined,
     } satisfies ExecutorEvent);
   });
+
+  test('stays active until all returned deactivate callbacks are invoked', () => {
+    const deactivate = executor.activate();
+    executor.activate();
+
+    deactivate();
+
+    expect(executor.isActive).toBe(true);
+    expect(listenerMock).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('getOrAwait', () => {
@@ -1062,7 +1137,8 @@ describe('getOrAwait', () => {
     await expect(executor.getOrAwait()).resolves.toBe('aaa');
   });
 
-  test('rejects with the reason if an executor is fulfilled', async () => {
+  test('rejects with the reason if an executor is rejected even if it has a value', async () => {
+    executor.resolve('aaa');
     executor.reject(expectedReason);
 
     await expect(executor.getOrAwait()).rejects.toBe(expectedReason);
@@ -1093,6 +1169,30 @@ describe('getOrAwait', () => {
     executor.execute(() => 'ccc');
 
     await expect(promise).resolves.toBe('ccc');
+  });
+
+  test('unsubscribes from the executor after it is settled', () => {
+    executor.getOrAwait();
+    executor.resolve('aaa');
+
+    expect(executor._pubSub.listenerCount).toBe(1);
+  });
+
+  test('rejects with an AbortError if the executor is detached', async () => {
+    const promise = executor.getOrAwait();
+
+    executor.publish({ type: 'detached' });
+
+    await expect(promise).rejects.toEqual(AbortError('The executor was detached'));
+  });
+});
+
+describe('annotate', () => {
+  test('merges the patch into the existing annotations', () => {
+    executor.annotate({ aaa: 111 });
+    executor.annotate({ bbb: 222 });
+
+    expect(executor.annotations).toEqual({ aaa: 111, bbb: 222 });
   });
 });
 

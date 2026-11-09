@@ -1,8 +1,8 @@
-import { beforeEach, expect, Mock, test, vi } from 'vitest';
+import { afterEach, beforeEach, expect, Mock, test, vi } from 'vitest';
 import { delay } from 'parallel-universe';
 import { ExecutorEvent, ExecutorManager } from '../../main/index.js';
 import abortDeactivated from '../../main/plugin/abortDeactivated.js';
-import { AbortError } from '../../main/utils.js';
+import { AbortError, noop } from '../../main/utils.js';
 
 let listenerMock: Mock;
 let manager: ExecutorManager;
@@ -12,6 +12,10 @@ beforeEach(() => {
 
   manager = new ExecutorManager();
   manager.subscribe(listenerMock);
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 test('aborts a deactivated executor', async () => {
@@ -63,6 +67,25 @@ test('aborts a deactivated executor', async () => {
     version: 2,
     payload: undefined,
   } satisfies ExecutorEvent);
+});
+
+test('aborts a deactivated executor after the delay', () => {
+  vi.useFakeTimers();
+
+  const executor = manager.getOrCreate('xxx', undefined, [abortDeactivated({ delay: 5_000 })]);
+  const deactivate = executor.activate();
+
+  executor.execute(() => new Promise(noop));
+
+  deactivate();
+
+  vi.advanceTimersByTime(4_999);
+
+  expect(executor.isPending).toBe(true);
+
+  vi.advanceTimersByTime(1);
+
+  expect(executor.isPending).toBe(false);
 });
 
 test('cancels abortion of an activated executor', async () => {

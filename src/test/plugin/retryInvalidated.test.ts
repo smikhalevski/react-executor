@@ -1,6 +1,7 @@
 import { beforeEach, expect, Mock, test, vi } from 'vitest';
 import { ExecutorEvent, ExecutorManager } from '../../main/index.js';
 import retryInvalidated from '../../main/plugin/retryInvalidated.js';
+import { noop } from '../../main/utils.js';
 
 let listenerMock: Mock;
 let manager: ExecutorManager;
@@ -158,4 +159,24 @@ test('retries the activated and invalidated executor', async () => {
     version: 5,
     payload: undefined,
   } satisfies ExecutorEvent);
+});
+
+test('does not retry the activated executor if it is not invalidated', async () => {
+  const executor = manager.getOrCreate('xxx', noop, [retryInvalidated()]);
+
+  await executor.getOrAwait();
+
+  executor.activate();
+
+  expect(executor.isPending).toBe(false);
+});
+
+test('retries the invalidated non-active executor if isEager is true', async () => {
+  const executor = manager.getOrCreate('xxx', noop, [retryInvalidated({ isEager: true })]);
+
+  await executor.getOrAwait();
+
+  executor.invalidate();
+
+  expect(executor.isPending).toBe(true);
 });

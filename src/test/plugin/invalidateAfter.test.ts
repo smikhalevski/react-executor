@@ -1,6 +1,8 @@
 import { beforeEach, expect, Mock, test, vi } from 'vitest';
-import { ExecutorEvent, ExecutorManager } from '../../main/index.js';
+import { Executor, ExecutorEvent, ExecutorManager } from '../../main/index.js';
 import invalidateAfter from '../../main/plugin/invalidateAfter.js';
+import { noop } from '../../main/utils.js';
+import { mockExecutorState } from '../mocks.js';
 
 vi.useFakeTimers();
 
@@ -25,6 +27,103 @@ test('invalidates the initial value', async () => {
   });
 
   const executor = manager.getOrCreate('xxx', undefined, [invalidateAfter(100)]);
+
+  expect(executor.isInvalidated).toBe(true);
+});
+
+test('invalidates the initial value after a timeout', () => {
+  manager.hydrate('xxx', {
+    isFulfilled: true,
+    value: 111,
+    reason: undefined,
+    annotations: {},
+    settledAt: Date.now() - 50,
+    invalidatedAt: 0,
+  });
+
+  const executor = manager.getOrCreate('xxx', undefined, [invalidateAfter(100)]);
+
+  vi.advanceTimersByTime(49);
+
+  expect(executor.isInvalidated).toBe(false);
+
+  vi.advanceTimersByTime(1);
+
+  expect(executor.isInvalidated).toBe(true);
+});
+
+test('counts the timeout from the settlement', () => {
+  const executor = manager.getOrCreate('xxx', undefined, [invalidateAfter(100)]);
+
+  executor.resolve('aaa', Date.now() - 50);
+
+  vi.advanceTimersByTime(50);
+
+  expect(executor.isInvalidated).toBe(true);
+});
+
+test('does not invalidate an executor if a plugin throws', () => {
+  let executor: Executor | undefined;
+
+  manager.hydrate('xxx', {
+    isFulfilled: true,
+    value: 111,
+    reason: undefined,
+    annotations: {},
+    settledAt: Date.now(),
+    invalidatedAt: 0,
+  });
+
+  expect(() =>
+    manager.getOrCreate('xxx', undefined, [
+      invalidateAfter(100),
+      pluginExecutor => {
+        executor = pluginExecutor;
+        throw new Error('expected');
+      },
+    ])
+  ).toThrow('expected');
+
+  vi.runAllTimers();
+
+  expect(executor!.isInvalidated).toBe(false);
+});
+
+test('does not invalidate an executor that is pending when it is attached', () => {
+  manager.hydrate('xxx', mockExecutorState({ isFulfilled: true, value: 111, settledAt: Date.now() }));
+
+  const executor = manager.getOrCreate('xxx', undefined, [
+    invalidateAfter(100),
+    pluginExecutor => {
+      pluginExecutor.execute(() => new Promise(noop));
+    },
+  ]);
+
+  vi.runAllTimers();
+
+  expect(executor.isInvalidated).toBe(false);
+});
+
+test('invalidates a rejected executor after a timeout', () => {
+  const executor = manager.getOrCreate('xxx', undefined, [invalidateAfter(100)]);
+
+  executor.reject(new Error('expected'));
+
+  vi.advanceTimersByTime(100);
+
+  expect(executor.isInvalidated).toBe(true);
+});
+
+test('invalidates an executor if an optimistic task is aborted after the timeout', () => {
+  const executor = manager.getOrCreate('xxx', 'aaa', [invalidateAfter(100)]);
+
+  const promise = executor.execute({ callback: () => new Promise(noop), pendingValue: 'bbb' });
+
+  vi.advanceTimersByTime(100);
+
+  promise.abort();
+
+  vi.runAllTimers();
 
   expect(executor.isInvalidated).toBe(true);
 });

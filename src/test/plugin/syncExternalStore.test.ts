@@ -1,10 +1,11 @@
 import { beforeEach, expect, Mock, test, vi } from 'vitest';
 import { Executor, ExecutorEvent, ExecutorManager, ExecutorState } from '../../main/index.js';
 import syncExternalStore, { ExternalStore } from '../../main/plugin/syncExternalStore.js';
+import { noop } from '../../main/utils.js';
 import { PubSub } from 'parallel-universe';
+import { mockExecutorState } from '../mocks.js';
 
 vi.useFakeTimers();
-vi.setSystemTime(50);
 
 const storePubSub = new PubSub<ExecutorState>();
 
@@ -20,6 +21,8 @@ let manager: ExecutorManager;
 let executor: Executor;
 
 beforeEach(() => {
+  vi.setSystemTime(50);
+
   listenerMock = vi.fn();
 
   manager = new ExecutorManager();
@@ -170,19 +173,55 @@ test('overwrites invalid stored state', () => {
   } satisfies ExecutorState);
 });
 
-test('uses the stored state as the initial state', () => {
-  storeMock.get.mockReturnValueOnce({
+test('overwrites unsettled stored state if an executor is settled', () => {
+  const storedState = {
+    value: undefined,
+    reason: undefined,
+    annotations: {},
+    settledAt: 0,
+    invalidatedAt: 0,
+    isFulfilled: false,
+  } satisfies ExecutorState;
+
+  manager.hydrate('xxx', {
     value: 111,
     reason: undefined,
     annotations: {},
-    settledAt: 70,
+    settledAt: 50,
     invalidatedAt: 0,
     isFulfilled: true,
-  } satisfies ExecutorState);
+  });
+
+  storeMock.get.mockReturnValue(storedState);
+
+  // The store emits its state on subscribe
+  storeMock.subscribe.mockImplementationOnce(listener => {
+    listener(storedState);
+    return noop;
+  });
 
   executor = manager.getOrCreate('xxx', undefined, [syncExternalStore(storeMock)]);
 
-  expect(executor.isSettled).toBe(true);
+  expect(executor.value).toBe(111);
+
+  expect(storeMock.set).toHaveBeenLastCalledWith({
+    value: 111,
+    reason: undefined,
+    annotations: {},
+    settledAt: 50,
+    invalidatedAt: 0,
+    isFulfilled: true,
+  } satisfies ExecutorState);
+});
+
+test('uses the stored state as the initial state', () => {
+  const storedState = mockExecutorState({ isFulfilled: true, value: 111, settledAt: 70 });
+
+  storeMock.get.mockReturnValueOnce(storedState);
+
+  executor = manager.getOrCreate('xxx', undefined, [syncExternalStore(storeMock)]);
+
+  expect(executor.getStateSnapshot()).toEqual(storedState);
 
   expect(listenerMock).toHaveBeenCalledTimes(3);
   expect(listenerMock).toHaveBeenNthCalledWith(1, {
@@ -462,6 +501,48 @@ test('the store annotates the executor', () => {
   expect(executor.settledAt).toBe(0);
   expect(executor.value).toBe(undefined);
   expect(executor.reason).toBe(undefined);
+});
+
+test('the store clears the executor', () => {
+  executor = manager.getOrCreate('xxx', 111, [syncExternalStore(storeMock)]);
+
+  listenerMock.mockClear();
+
+  storePubSub.publish(mockExecutorState());
+
+  expect(listenerMock).toHaveBeenCalledTimes(1);
+  expect(listenerMock).toHaveBeenNthCalledWith(1, {
+    type: 'cleared',
+    target: executor,
+    version: 2,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+
+  expect(executor.isSettled).toBe(false);
+});
+
+test('does not require a store to implement set and delete', () => {
+  const store = {
+    get: () => null,
+    subscribe: () => noop,
+  } satisfies ExternalStore<ExecutorState>;
+
+  executor = manager.getOrCreate('xxx', 111, [syncExternalStore(store)]);
+
+  manager.detach('xxx');
+
+  // Errors thrown by executor listeners are rethrown asynchronously
+  expect(() => vi.runAllTimers()).not.toThrow();
+});
+
+test('unsubscribes from the store if an executor is detached', () => {
+  executor = manager.getOrCreate('xxx', undefined, [syncExternalStore(storeMock)]);
+
+  manager.detach('xxx');
+
+  storePubSub.publish(mockExecutorState({ isFulfilled: true, value: 111, settledAt: 70 }));
+
+  expect(executor.isSettled).toBe(false);
 });
 
 test('synchronizes the store and the executor', () => {

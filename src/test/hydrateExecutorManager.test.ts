@@ -129,7 +129,7 @@ test('throws if hydration is enabled twice', () => {
 
   hydrateExecutorManager(manager);
 
-  expect(() => hydrateExecutorManager(manager)).toThrow();
+  expect(() => hydrateExecutorManager(manager)).toThrow('Executor manager hydration has already begun');
 });
 
 test('uses a custom serializer', () => {

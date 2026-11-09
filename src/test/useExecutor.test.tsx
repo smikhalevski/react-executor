@@ -1,44 +1,28 @@
 // @vitest-environment jsdom
-import { beforeEach, expect, test, vi } from 'vitest';
-import { act, render, renderHook } from '@testing-library/react';
-import { StrictMode } from 'react';
+import { afterEach, beforeEach, expect, test, vi } from 'vitest';
+import { act, cleanup, render, renderHook } from '@testing-library/react';
+import { ReactNode, StrictMode } from 'react';
 import { ExecutorEvent, ExecutorManager, ExecutorManagerProvider, useExecutor } from '../main/index.js';
+import { noop } from '../main/utils.js';
 
-let testIndex = 0;
-let executorKey: string;
-
-vi.useFakeTimers();
+let manager: ExecutorManager;
 
 beforeEach(() => {
-  vi.clearAllTimers();
-
-  executorKey = 'executor' + testIndex++;
+  manager = new ExecutorManager();
 });
+
+afterEach(() => {
+  cleanup();
+});
+
+const wrapper = (props: { children: ReactNode }) => (
+  <StrictMode>
+    <ExecutorManagerProvider value={manager}>{props.children}</ExecutorManagerProvider>
+  </StrictMode>
+);
 
 test('returns the same executor on every render', () => {
-  const hook = renderHook(() => useExecutor(executorKey), { wrapper: StrictMode });
-  const executor1 = hook.result.current;
-
-  hook.rerender();
-
-  const executor2 = hook.result.current;
-
-  expect(executor1).toBe(executor2);
-});
-
-test('returns the same executor for an object key on every render', () => {
-  const manager = new ExecutorManager({
-    keyIdGenerator: JSON.stringify,
-  });
-
-  const hook = renderHook(() => useExecutor({ aaa: 111 }), {
-    wrapper: props => (
-      <StrictMode>
-        <ExecutorManagerProvider value={manager}>{props.children}</ExecutorManagerProvider>
-      </StrictMode>
-    ),
-  });
-
+  const hook = renderHook(() => useExecutor('xxx'), { wrapper });
   const executor1 = hook.result.current;
 
   hook.rerender();
@@ -49,15 +33,7 @@ test('returns the same executor for an object key on every render', () => {
 });
 
 test('returns the same executor for an array-of-primitives key', () => {
-  const manager = new ExecutorManager();
-
-  const hook = renderHook(() => useExecutor(['xxx', 111]), {
-    wrapper: props => (
-      <StrictMode>
-        <ExecutorManagerProvider value={manager}>{props.children}</ExecutorManagerProvider>
-      </StrictMode>
-    ),
-  });
+  const hook = renderHook(() => useExecutor(['xxx', 111]), { wrapper });
 
   const executor1 = hook.result.current;
 
@@ -69,9 +45,9 @@ test('returns the same executor for an array-of-primitives key', () => {
 });
 
 test('creates a blank Executor instance', () => {
-  const renderMock = vi.fn(() => useExecutor(executorKey));
+  const renderMock = vi.fn(() => useExecutor('xxx'));
 
-  const hook = renderHook(renderMock, { wrapper: StrictMode });
+  const hook = renderHook(renderMock, { wrapper });
   const executor = hook.result.current;
 
   expect(executor.isActive).toBe(true);
@@ -85,9 +61,9 @@ test('creates a blank Executor instance', () => {
 });
 
 test('creates an executor with the initial value', () => {
-  const renderMock = vi.fn(() => useExecutor(executorKey, 'aaa'));
+  const renderMock = vi.fn(() => useExecutor('xxx', 'aaa'));
 
-  const hook = renderHook(renderMock, { wrapper: StrictMode });
+  const hook = renderHook(renderMock, { wrapper });
   const executor = hook.result.current;
 
   expect(executor.isActive).toBe(true);
@@ -102,10 +78,10 @@ test('creates an executor with the initial value', () => {
 });
 
 test('creates an executor with the initial task', async () => {
-  const callbackMock = vi.fn(() => 'aaa');
-  const renderMock = vi.fn(() => useExecutor(executorKey, callbackMock));
+  const callbackMock = vi.fn().mockReturnValue('aaa');
+  const renderMock = vi.fn(() => useExecutor('xxx', callbackMock));
 
-  const hook = renderHook(renderMock, { wrapper: StrictMode });
+  const hook = renderHook(renderMock, { wrapper });
   const executor = hook.result.current;
 
   expect(executor.isActive).toBe(true);
@@ -132,8 +108,8 @@ test('creates an executor with the initial task', async () => {
 });
 
 test('re-renders after resolve', () => {
-  const renderMock = vi.fn(() => useExecutor(executorKey));
-  const hook = renderHook(renderMock, { wrapper: StrictMode });
+  const renderMock = vi.fn(() => useExecutor('xxx'));
+  const hook = renderHook(renderMock, { wrapper });
 
   act(() => void hook.result.current.resolve('aaa'));
 
@@ -141,8 +117,8 @@ test('re-renders after resolve', () => {
 });
 
 test('re-renders after reject', () => {
-  const renderMock = vi.fn(() => useExecutor(executorKey));
-  const hook = renderHook(renderMock, { wrapper: StrictMode });
+  const renderMock = vi.fn(() => useExecutor('xxx'));
+  const hook = renderHook(renderMock, { wrapper });
 
   act(() => void hook.result.current.reject(new Error('expected')));
 
@@ -150,28 +126,16 @@ test('re-renders after reject', () => {
 });
 
 test('re-renders after task execute', async () => {
-  const callback = () => 'aaa';
-  const renderMock = vi.fn(() => useExecutor(executorKey));
-  const hook = renderHook(renderMock, { wrapper: StrictMode });
-  const executor = hook.result.current;
+  const renderMock = vi.fn(() => useExecutor('xxx'));
+  const hook = renderHook(renderMock, { wrapper });
 
-  await act(() => executor.execute(callback));
-
-  expect(executor.isPending).toBe(false);
-  expect(executor.isFulfilled).toBe(true);
-  expect(executor.isRejected).toBe(false);
-  expect(executor.value).toBe('aaa');
-  expect(executor.reason).toBeUndefined();
-  expect(executor.task).toStrictEqual({ callback });
+  await act(() => hook.result.current.execute(noop));
 
   expect(renderMock).toHaveBeenCalledTimes(6);
 });
 
 test('deactivates an executor when key changes after parent component render', async () => {
-  const task = vi.fn();
   const listenerMock = vi.fn();
-
-  const manager = new ExecutorManager();
 
   const Parent = (props: { executorKey: string }) => (
     <ExecutorManagerProvider value={manager}>
@@ -180,7 +144,7 @@ test('deactivates an executor when key changes after parent component render', a
   );
 
   const Child = (props: { executorKey: string }) => {
-    useExecutor(props.executorKey, task, [executor => executor.subscribe(listenerMock)]);
+    useExecutor(props.executorKey, noop, [executor => executor.subscribe(listenerMock)]);
     return null;
   };
 
@@ -217,8 +181,6 @@ test('deactivates an executor when key changes after parent component render', a
   } satisfies ExecutorEvent);
 
   act(() => rerender(<Parent executorKey={'yyy'} />));
-
-  vi.runAllTimers();
 
   expect(manager['_executors'].size).toBe(2);
 

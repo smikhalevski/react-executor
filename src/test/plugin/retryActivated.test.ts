@@ -27,7 +27,7 @@ test('retries an activated executor', async () => {
   expect(executor.isPending).toBe(true);
 });
 
-test('does not retry if executor is not stale yet', async () => {
+test('retries an activated executor only after delayAfterSettled has passed', async () => {
   const callbackMock = vi.fn();
   const executor = manager.getOrCreate('xxx', callbackMock, [retryActivated({ delayAfterSettled: 5_000 })]);
 
