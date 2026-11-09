@@ -1,4 +1,4 @@
-import type { ExecutorPlugin } from './types.js';
+import type { ExecutorPlugin } from './types.ts';
 
 declare global {
   const __REACT_EXECUTOR_DEVTOOLS__: { plugin: ExecutorPlugin } | undefined;

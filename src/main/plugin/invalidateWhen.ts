@@ -13,7 +13,7 @@
  * @module plugin/invalidateWhen
  */
 
-import type { ExecutorPlugin, Observable, PluginConfiguredPayload } from '../types.js';
+import type { ExecutorPlugin, Observable, PluginConfiguredPayload } from '../types.ts';
 
 /**
  * Options of the {@link invalidateWhen} plugin.

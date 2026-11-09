@@ -1,5 +1,5 @@
-import { ExecutorManager, type ExecutorManagerOptions } from '../ExecutorManager.js';
-import type { Executor, Serializer } from '../types.js';
+import { ExecutorManager, type ExecutorManagerOptions } from '../ExecutorManager.ts';
+import type { Executor, Serializer } from '../types.ts';
 
 /**
  * Options provided to the {@link SSRExecutorManager} constructor.

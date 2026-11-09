@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { fireEvent } from '@testing-library/react';
 import { afterEach, expect, onTestFinished, test, vi } from 'vitest';
-import windowBlurred from '../../main/observable/windowBlurred.js';
+import windowBlurred from '../../main/observable/windowBlurred.ts';
 
 vi.useFakeTimers();
 

@@ -1,7 +1,7 @@
-import { beforeEach, expect, Mock, test, vi } from 'vitest';
-import { ExecutorManager } from '../../main/index.js';
-import retryRejected from '../../main/plugin/retryRejected.js';
-import { noop } from '../../main/utils.js';
+import { beforeEach, expect, type Mock, test, vi } from 'vitest';
+import { ExecutorManager } from '../../main/index.ts';
+import retryRejected from '../../main/plugin/retryRejected.ts';
+import { noop } from '../../main/utils.ts';
 
 vi.useFakeTimers();
 

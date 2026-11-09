@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { PubSub } from '../main/PubSub.js';
+import { PubSub } from '../main/PubSub.ts';
 
 let pubSub: PubSub<string>;
 

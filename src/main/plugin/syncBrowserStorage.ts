@@ -10,9 +10,9 @@
  * @module plugin/syncBrowserStorage
  */
 
-import { PubSub } from '../PubSub.js';
-import type { Executor, ExecutorPlugin, ExecutorState, Serializer } from '../types.js';
-import syncExternalStore, { ExternalStore } from './syncExternalStore.js';
+import { PubSub } from '../PubSub.ts';
+import type { Executor, ExecutorPlugin, ExecutorState, Serializer } from '../types.ts';
+import syncExternalStore, { type ExternalStore } from './syncExternalStore.ts';
 
 /**
  * Options of the {@link syncBrowserStorage} plugin.

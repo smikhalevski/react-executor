@@ -15,9 +15,9 @@
  * @module observable/navigatorOnline
  */
 
-import { PubSub } from '../PubSub.js';
-import type { Observable } from '../types.js';
-import { noop } from '../utils.js';
+import { PubSub } from '../PubSub.ts';
+import type { Observable } from '../types.ts';
+import { noop } from '../utils.ts';
 
 const pubSub = new PubSub<boolean>();
 

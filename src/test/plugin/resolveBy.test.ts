@@ -1,7 +1,7 @@
 import { beforeEach, expect, test } from 'vitest';
-import { ExecutorManager } from '../../main/index.js';
-import resolveBy from '../../main/plugin/resolveBy.js';
-import { PubSub } from '../../main/PubSub.js';
+import { ExecutorManager } from '../../main/index.ts';
+import resolveBy from '../../main/plugin/resolveBy.ts';
+import { PubSub } from '../../main/PubSub.ts';
 
 let manager: ExecutorManager;
 

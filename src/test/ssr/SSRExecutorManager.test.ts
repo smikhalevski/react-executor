@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import { ExecutorState } from '../../main/index.js';
-import { SSRExecutorManager } from '../../main/ssr/index.js';
-import { Serializer } from '../../main/types.js';
-import { noop } from '../../main/utils.js';
+import type { ExecutorState } from '../../main/index.ts';
+import { SSRExecutorManager } from '../../main/ssr/index.ts';
+import type { Serializer } from '../../main/types.ts';
+import { noop } from '../../main/utils.ts';
 
 vi.useFakeTimers();
 

@@ -1,7 +1,7 @@
-import { afterEach, beforeEach, expect, Mock, test, vi } from 'vitest';
-import { ExecutorEvent, ExecutorManager } from '../../main/index.js';
-import detachDeactivated from '../../main/plugin/detachDeactivated.js';
-import { sleep } from '../test-utils.js';
+import { afterEach, beforeEach, expect, type Mock, test, vi } from 'vitest';
+import { type ExecutorEvent, ExecutorManager } from '../../main/index.ts';
+import detachDeactivated from '../../main/plugin/detachDeactivated.ts';
+import { sleep } from '../test-utils.ts';
 
 let listenerMock: Mock;
 let manager: ExecutorManager;

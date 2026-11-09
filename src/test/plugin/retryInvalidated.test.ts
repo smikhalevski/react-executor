@@ -1,7 +1,7 @@
-import { beforeEach, expect, Mock, test, vi } from 'vitest';
-import { ExecutorEvent, ExecutorManager } from '../../main/index.js';
-import retryInvalidated from '../../main/plugin/retryInvalidated.js';
-import { noop } from '../../main/utils.js';
+import { beforeEach, expect, type Mock, test, vi } from 'vitest';
+import { type ExecutorEvent, ExecutorManager } from '../../main/index.ts';
+import retryInvalidated from '../../main/plugin/retryInvalidated.ts';
+import { noop } from '../../main/utils.ts';
 
 let listenerMock: Mock;
 let manager: ExecutorManager;

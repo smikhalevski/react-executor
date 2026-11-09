@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { act, cleanup, render, renderHook } from '@testing-library/react';
-import { ReactNode, StrictMode } from 'react';
-import { ExecutorEvent, ExecutorManager, ExecutorManagerProvider, useExecutor } from '../main/index.js';
-import { noop } from '../main/utils.js';
+import { type ReactNode, StrictMode } from 'react';
+import { afterEach, beforeEach, expect, test, vi } from 'vitest';
+import { type ExecutorEvent, ExecutorManager, ExecutorManagerProvider, useExecutor } from '../main/index.ts';
+import { noop } from '../main/utils.ts';
 
 let manager: ExecutorManager;
 

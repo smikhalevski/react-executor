@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { beforeEach, expect, test, vi } from 'vitest';
-import { hydrateExecutorManager, ExecutorManager, ExecutorState } from '../main/index.js';
-import { Serializer } from '../main/types.js';
+import { hydrateExecutorManager, ExecutorManager, type ExecutorState } from '../main/index.ts';
+import type { Serializer } from '../main/types.ts';
 
 beforeEach(() => {
   window.__REACT_EXECUTOR_SSR_STATE__ = undefined;

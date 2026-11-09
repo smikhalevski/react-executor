@@ -1,8 +1,8 @@
-import { beforeEach, expect, Mock, test, vi } from 'vitest';
-import { Executor, ExecutorEvent, ExecutorManager } from '../../main/index.js';
-import invalidateAfter from '../../main/plugin/invalidateAfter.js';
-import { noop } from '../../main/utils.js';
-import { mockExecutorState } from '../mocks.js';
+import { beforeEach, expect, type Mock, test, vi } from 'vitest';
+import { type Executor, type ExecutorEvent, ExecutorManager } from '../../main/index.ts';
+import invalidateAfter from '../../main/plugin/invalidateAfter.ts';
+import { noop } from '../../main/utils.ts';
+import { mockExecutorState } from '../mocks.ts';
 
 vi.useFakeTimers();
 

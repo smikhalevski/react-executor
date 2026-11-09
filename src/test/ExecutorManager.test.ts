@@ -1,7 +1,7 @@
 import { getEventListeners } from 'node:events';
-import { afterEach, beforeEach, describe, expect, Mock, test, vi } from 'vitest';
-import { ExecutorImpl } from '../main/ExecutorImpl.js';
-import { Executor, ExecutorManager } from '../main/index.js';
+import { afterEach, beforeEach, describe, expect, type Mock, test, vi } from 'vitest';
+import { ExecutorImpl } from '../main/ExecutorImpl.ts';
+import { type Executor, ExecutorManager } from '../main/index.ts';
 
 vi.useFakeTimers();
 vi.setSystemTime(50);

@@ -1,5 +1,5 @@
 import { use } from 'react';
-import type { Executor } from './types.js';
+import type { Executor } from './types.ts';
 
 /**
  * Suspends rendering while the executor is pending.

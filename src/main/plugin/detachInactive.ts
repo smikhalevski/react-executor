@@ -12,7 +12,7 @@
  * @module plugin/detachInactive
  */
 
-import type { ExecutorPlugin, PluginConfiguredPayload } from '../types.js';
+import type { ExecutorPlugin, PluginConfiguredPayload } from '../types.ts';
 
 /**
  * Options of the {@link detachInactive} plugin.

@@ -12,7 +12,7 @@
  * @module plugin/retryActivated
  */
 
-import { ExecutorPlugin, type PluginConfiguredPayload } from '../types.js';
+import type { ExecutorPlugin, PluginConfiguredPayload } from '../types.ts';
 
 /**
  * Options of the {@link retryActivated} plugin.

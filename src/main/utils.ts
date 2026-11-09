@@ -1,4 +1,4 @@
-import { Observable } from './types.js';
+import type { Observable } from './types.ts';
 
 export function noop() {}
 

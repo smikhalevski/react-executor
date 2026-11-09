@@ -1,7 +1,7 @@
 import { beforeEach, expect, test, vi } from 'vitest';
-import { ExecutorManager } from '../../main/index.js';
-import invalidateWhen from '../../main/plugin/invalidateWhen.js';
-import { PubSub } from '../../main/PubSub.js';
+import { ExecutorManager } from '../../main/index.ts';
+import invalidateWhen from '../../main/plugin/invalidateWhen.ts';
+import { PubSub } from '../../main/PubSub.ts';
 
 vi.useFakeTimers();
 

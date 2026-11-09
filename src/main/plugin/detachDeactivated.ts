@@ -12,8 +12,8 @@
  * @module plugin/detachDeactivated
  */
 
-import type { ExecutorPlugin } from '../types.js';
-import detachInactive from './detachInactive.js';
+import type { ExecutorPlugin } from '../types.ts';
+import detachInactive from './detachInactive.ts';
 
 /**
  * Options of the {@link detachDeactivated} plugin.

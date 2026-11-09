@@ -1,8 +1,8 @@
 import { beforeEach, expect, test, vi } from 'vitest';
-import { ExecutorManager } from '../../main/index.js';
-import retryWhen from '../../main/plugin/retryWhen.js';
-import { PubSub } from '../../main/PubSub.js';
-import { noop } from '../../main/utils.js';
+import { ExecutorManager } from '../../main/index.ts';
+import retryWhen from '../../main/plugin/retryWhen.ts';
+import { PubSub } from '../../main/PubSub.ts';
+import { noop } from '../../main/utils.ts';
 
 vi.useFakeTimers();
 

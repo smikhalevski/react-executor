@@ -1,8 +1,8 @@
 import { beforeEach, expect, test } from 'vitest';
-import { ExecutorManager } from '../../main/index.js';
-import rejectPendingAfter from '../../main/plugin/rejectPendingAfter.js';
-import { noop, TimeoutError } from '../../main/utils.js';
-import { sleep } from '../test-utils.js';
+import { ExecutorManager } from '../../main/index.ts';
+import rejectPendingAfter from '../../main/plugin/rejectPendingAfter.ts';
+import { noop, TimeoutError } from '../../main/utils.ts';
+import { sleep } from '../test-utils.ts';
 
 let manager: ExecutorManager;
 

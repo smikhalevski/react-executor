@@ -8,4 +8,4 @@
  * @module ssr
  */
 
-export { SSRExecutorManager, type SSRExecutorManagerOptions } from './SSRExecutorManager.js';
+export { SSRExecutorManager, type SSRExecutorManagerOptions } from './SSRExecutorManager.ts';

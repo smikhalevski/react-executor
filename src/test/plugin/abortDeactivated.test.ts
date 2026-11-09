@@ -1,8 +1,8 @@
-import { afterEach, beforeEach, expect, Mock, test, vi } from 'vitest';
-import { ExecutorEvent, ExecutorManager } from '../../main/index.js';
-import abortDeactivated from '../../main/plugin/abortDeactivated.js';
-import { AbortError, noop } from '../../main/utils.js';
-import { sleep } from '../test-utils.js';
+import { afterEach, beforeEach, expect, type Mock, test, vi } from 'vitest';
+import { type ExecutorEvent, ExecutorManager } from '../../main/index.ts';
+import abortDeactivated from '../../main/plugin/abortDeactivated.ts';
+import { AbortError, noop } from '../../main/utils.ts';
+import { sleep } from '../test-utils.ts';
 
 let listenerMock: Mock;
 let manager: ExecutorManager;

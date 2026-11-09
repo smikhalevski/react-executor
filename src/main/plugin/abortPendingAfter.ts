@@ -13,8 +13,8 @@
  * @module plugin/abortPendingAfter
  */
 
-import type { ExecutorPlugin, PluginConfiguredPayload } from '../types.js';
-import { TimeoutError } from '../utils.js';
+import type { ExecutorPlugin, PluginConfiguredPayload } from '../types.ts';
+import { TimeoutError } from '../utils.ts';
 
 /**
  * Aborts the pending task with a {@link !DOMException TimeoutError} if the task takes longer than the delay.

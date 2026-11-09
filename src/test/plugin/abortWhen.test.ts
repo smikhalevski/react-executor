@@ -1,9 +1,9 @@
 import { beforeEach, expect, test, vi } from 'vitest';
-import { ExecutorManager } from '../../main/index.js';
-import abortWhen from '../../main/plugin/abortWhen.js';
-import { PubSub } from '../../main/PubSub.js';
-import { noop } from '../../main/utils.js';
-import { sleep } from '../test-utils.js';
+import { ExecutorManager } from '../../main/index.ts';
+import abortWhen from '../../main/plugin/abortWhen.ts';
+import { PubSub } from '../../main/PubSub.ts';
+import { noop } from '../../main/utils.ts';
+import { sleep } from '../test-utils.ts';
 
 vi.useFakeTimers();
 

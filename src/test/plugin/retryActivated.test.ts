@@ -1,6 +1,6 @@
-import { beforeEach, expect, Mock, test, vi } from 'vitest';
-import { ExecutorManager } from '../../main/index.js';
-import retryActivated from '../../main/plugin/retryActivated.js';
+import { beforeEach, expect, type Mock, test, vi } from 'vitest';
+import { ExecutorManager } from '../../main/index.ts';
+import retryActivated from '../../main/plugin/retryActivated.ts';
 
 vi.useFakeTimers();
 

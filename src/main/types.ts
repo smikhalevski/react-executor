@@ -1,4 +1,4 @@
-import type { ExecutorManager } from './ExecutorManager.js';
+import type { ExecutorManager } from './ExecutorManager.ts';
 
 /**
  * The type of the event.

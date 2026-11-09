@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { fireEvent } from '@testing-library/react';
 import { afterEach, expect, onTestFinished, test, vi } from 'vitest';
-import navigatorOffline from '../../main/observable/navigatorOffline.js';
+import navigatorOffline from '../../main/observable/navigatorOffline.ts';
 
 vi.useFakeTimers();
 

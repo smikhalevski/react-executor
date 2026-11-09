@@ -15,8 +15,8 @@
  * @module observable/windowBlurred
  */
 
-import { negate } from '../utils.js';
-import windowFocused from './windowFocused.js';
+import { negate } from '../utils.ts';
+import windowFocused from './windowFocused.ts';
 
 /**
  * The observable that emits `true` when

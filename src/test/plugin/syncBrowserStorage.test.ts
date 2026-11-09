@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { fireEvent } from '@testing-library/react';
-import { afterEach, beforeEach, expect, Mock, test, vi } from 'vitest';
-import { Executor, ExecutorEvent, ExecutorManager, ExecutorState } from '../../main/index.js';
-import syncBrowserStorage from '../../main/plugin/syncBrowserStorage.js';
-import { noop } from '../../main/utils.js';
-import { mockExecutorState } from '../mocks.js';
+import { afterEach, beforeEach, expect, type Mock, test, vi } from 'vitest';
+import { type Executor, type ExecutorEvent, ExecutorManager, type ExecutorState } from '../../main/index.ts';
+import syncBrowserStorage from '../../main/plugin/syncBrowserStorage.ts';
+import { noop } from '../../main/utils.ts';
+import { mockExecutorState } from '../mocks.ts';
 
 vi.useFakeTimers();
 vi.setSystemTime(50);

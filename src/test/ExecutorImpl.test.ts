@@ -1,9 +1,9 @@
 import { getEventListeners } from 'node:events';
-import { beforeEach, describe, expect, Mock, test, vi } from 'vitest';
-import { ExecutorImpl } from '../main/ExecutorImpl.js';
-import { ExecutorEvent, ExecutorState, ExecutorTask } from '../main/index.js';
-import { AbortError, noop } from '../main/utils.js';
-import { mockExecutorState } from './mocks.js';
+import { beforeEach, describe, expect, type Mock, test, vi } from 'vitest';
+import { ExecutorImpl } from '../main/ExecutorImpl.ts';
+import type { ExecutorEvent, ExecutorState, ExecutorTask } from '../main/index.ts';
+import { AbortError, noop } from '../main/utils.ts';
+import { mockExecutorState } from './mocks.ts';
 
 vi.useFakeTimers();
 vi.setSystemTime(50);

@@ -1,15 +1,15 @@
 // @vitest-environment jsdom
-import { afterEach, expect, test, vi } from 'vitest';
-import '@testing-library/jest-dom/vitest';
 import { act, cleanup, render, renderHook, screen } from '@testing-library/react';
+import '@testing-library/jest-dom/vitest';
 import { Suspense, useEffect } from 'react';
+import { afterEach, expect, test, vi } from 'vitest';
 import {
   ExecutorManager,
   ExecutorManagerProvider,
   useExecutor,
   useExecutorSubscription,
   useExecutorSuspense,
-} from '../main/index.js';
+} from '../main/index.ts';
 
 afterEach(() => {
   cleanup();

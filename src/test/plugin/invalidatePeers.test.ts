@@ -1,6 +1,6 @@
-import { beforeEach, expect, Mock, test, vi } from 'vitest';
-import { ExecutorEvent, ExecutorManager } from '../../main/index.js';
-import invalidatePeers from '../../main/plugin/invalidatePeers.js';
+import { beforeEach, expect, type Mock, test, vi } from 'vitest';
+import { type ExecutorEvent, ExecutorManager } from '../../main/index.ts';
+import invalidatePeers from '../../main/plugin/invalidatePeers.ts';
 
 vi.useFakeTimers();
 

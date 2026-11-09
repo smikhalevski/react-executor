@@ -12,7 +12,7 @@
  * @module plugin/lazyTask
  */
 
-import type { ExecutorPlugin, ExecutorTask, ExecutorTaskCallback, PluginConfiguredPayload } from '../types.js';
+import type { ExecutorPlugin, ExecutorTask, ExecutorTaskCallback, PluginConfiguredPayload } from '../types.ts';
 
 /**
  * Sets the latest task of an executor without executing it. The task can be executed later with

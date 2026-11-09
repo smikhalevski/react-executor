@@ -1,5 +1,5 @@
-import { ExecutorImpl } from './ExecutorImpl.js';
-import { PubSub } from './PubSub.js';
+import { ExecutorImpl } from './ExecutorImpl.ts';
+import { PubSub } from './PubSub.ts';
 import type {
   AsyncOptions,
   Executor,
@@ -9,7 +9,7 @@ import type {
   ExecutorTaskCallback,
   NoInfer,
   Observable,
-} from './types.js';
+} from './types.ts';
 
 /**
  * Options provided to the {@link ExecutorManager} constructor.

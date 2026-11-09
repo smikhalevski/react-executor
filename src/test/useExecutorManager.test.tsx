@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-import { afterEach, expect, test } from 'vitest';
 import { cleanup, renderHook } from '@testing-library/react';
-import { ExecutorManager, useExecutorManager } from '../main/index.js';
+import { afterEach, expect, test } from 'vitest';
+import { ExecutorManager, useExecutorManager } from '../main/index.ts';
 
 afterEach(() => {
   cleanup();

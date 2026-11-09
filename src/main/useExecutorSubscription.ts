@@ -1,5 +1,5 @@
 import { useDebugValue, useEffect, useSyncExternalStore } from 'react';
-import type { Executor, ExecutorState } from './types.js';
+import type { Executor, ExecutorState } from './types.ts';
 
 /**
  * Re-renders the component when the executor state changes.

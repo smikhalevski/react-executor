@@ -1,5 +1,5 @@
-import type { ExecutorManager } from './ExecutorManager.js';
-import type { Serializer } from './types.js';
+import type { ExecutorManager } from './ExecutorManager.ts';
+import type { Serializer } from './types.ts';
 
 /**
  * Options provided to {@link hydrateExecutorManager}.

@@ -1,7 +1,7 @@
 import { expect, test, vi } from 'vitest';
-import { ExecutorManager } from '../../main/index.js';
-import lazyTask from '../../main/plugin/lazyTask.js';
-import { noop } from '../../main/utils.js';
+import { ExecutorManager } from '../../main/index.ts';
+import lazyTask from '../../main/plugin/lazyTask.ts';
+import { noop } from '../../main/utils.ts';
 
 test('sets a task and does not execute it', async () => {
   const callbackMock = vi.fn(() => 'aaa');

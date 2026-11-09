@@ -1,6 +1,6 @@
 import { beforeEach, expect, test, vi } from 'vitest';
-import { ExecutorManager } from '../../main/index.js';
-import detachInactive from '../../main/plugin/detachInactive.js';
+import { ExecutorManager } from '../../main/index.ts';
+import detachInactive from '../../main/plugin/detachInactive.ts';
 
 vi.useFakeTimers();
 

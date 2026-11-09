@@ -1,9 +1,9 @@
-import { beforeEach, expect, Mock, test, vi } from 'vitest';
-import { Executor, ExecutorEvent, ExecutorManager, ExecutorState } from '../../main/index.js';
-import syncExternalStore, { ExternalStore } from '../../main/plugin/syncExternalStore.js';
-import { PubSub } from '../../main/PubSub.js';
-import { noop } from '../../main/utils.js';
-import { mockExecutorState } from '../mocks.js';
+import { beforeEach, expect, type Mock, test, vi } from 'vitest';
+import { type Executor, type ExecutorEvent, ExecutorManager, type ExecutorState } from '../../main/index.ts';
+import syncExternalStore, { type ExternalStore } from '../../main/plugin/syncExternalStore.ts';
+import { PubSub } from '../../main/PubSub.ts';
+import { noop } from '../../main/utils.ts';
+import { mockExecutorState } from '../mocks.ts';
 
 vi.useFakeTimers();
 

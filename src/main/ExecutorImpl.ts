@@ -1,6 +1,6 @@
-import type { ExecutorManager } from './ExecutorManager.js';
-import { PubSub } from './PubSub.js';
-import {
+import type { ExecutorManager } from './ExecutorManager.ts';
+import { PubSub } from './PubSub.ts';
+import type {
   AsyncOptions,
   Executor,
   ExecutorEvent,
@@ -8,8 +8,8 @@ import {
   ExecutorTask,
   ExecutorTaskCallback,
   PartialExecutorEvent,
-} from './types.js';
-import { AbortError, isPromiseLike, preventUnhandledRejection } from './utils.js';
+} from './types.ts';
+import { AbortError, isPromiseLike, preventUnhandledRejection } from './utils.ts';
 
 /**
  * The {@link Executor} implementation returned by the {@link ExecutorManager}.

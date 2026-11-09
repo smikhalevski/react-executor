@@ -1,4 +1,4 @@
-import type { ExecutorState } from '../main/index.js';
+import type { ExecutorState } from '../main/index.ts';
 
 export function mockExecutorState(overrides: Partial<ExecutorState> = {}): ExecutorState {
   return {

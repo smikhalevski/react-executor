@@ -1,6 +1,6 @@
-import type { Executor, ExecutorPlugin, ExecutorTaskCallback, NoInfer } from './types.js';
-import { useExecutorManager } from './useExecutorManager.js';
-import { useExecutorSubscription } from './useExecutorSubscription.js';
+import type { Executor, ExecutorPlugin, ExecutorTaskCallback, NoInfer } from './types.ts';
+import { useExecutorManager } from './useExecutorManager.ts';
+import { useExecutorSubscription } from './useExecutorSubscription.ts';
 
 /**
  * Returns an existing executor or creates a new one using the current {@link ExecutorManager}. Components that use

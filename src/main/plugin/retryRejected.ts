@@ -10,7 +10,7 @@
  * @module plugin/retryRejected
  */
 
-import type { Executor, ExecutorPlugin, PluginConfiguredPayload } from '../types.js';
+import type { Executor, ExecutorPlugin, PluginConfiguredPayload } from '../types.ts';
 
 /**
  * Options of the {@link retryRejected} plugin.

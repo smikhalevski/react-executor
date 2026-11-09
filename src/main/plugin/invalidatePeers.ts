@@ -12,7 +12,7 @@
  * @module plugin/invalidatePeers
  */
 
-import type { Executor, ExecutorPlugin, PluginConfiguredPayload } from '../types.js';
+import type { Executor, ExecutorPlugin, PluginConfiguredPayload } from '../types.ts';
 
 /**
  * Invalidates peer executors if the executor is fulfilled or invalidated.

@@ -10,7 +10,7 @@
  * @module plugin/invalidateAfter
  */
 
-import type { ExecutorPlugin, PluginConfiguredPayload } from '../types.js';
+import type { ExecutorPlugin, PluginConfiguredPayload } from '../types.ts';
 
 /**
  * Invalidates the executor result after a delay. The delay is counted from the moment the executor was settled, and

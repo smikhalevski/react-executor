@@ -1,4 +1,4 @@
-import { isPromiseLike, rethrowAsync } from './utils.js';
+import { isPromiseLike, rethrowAsync } from './utils.ts';
 
 export type Listener<TMessage> = (message: TMessage) => unknown;
 

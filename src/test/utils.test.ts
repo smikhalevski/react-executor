@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { PubSub } from '../main/PubSub.js';
-import { AbortError, isPromiseLike, isShallowEqual, negate, noop, rethrowAsync, TimeoutError } from '../main/utils.js';
+import { PubSub } from '../main/PubSub.ts';
+import { AbortError, isPromiseLike, isShallowEqual, negate, noop, rethrowAsync, TimeoutError } from '../main/utils.ts';
 
 afterEach(() => {
   vi.unstubAllGlobals();
