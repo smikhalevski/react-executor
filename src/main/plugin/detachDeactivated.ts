@@ -13,8 +13,8 @@
  */
 
 import type { ExecutorPlugin } from '../types.js';
-import detachInactive from './detachInactive.js';
 import { emptyObject } from '../utils.js';
+import detachInactive from './detachInactive.js';
 
 /**
  * Options of the {@link detachDeactivated} plugin.

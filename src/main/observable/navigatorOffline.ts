@@ -15,8 +15,8 @@
  * @module observable/navigatorOffline
  */
 
-import navigatorOnline from './navigatorOnline.js';
 import { negate } from '../utils.js';
+import navigatorOnline from './navigatorOnline.js';
 
 /**
  * The observable that emits `true` when

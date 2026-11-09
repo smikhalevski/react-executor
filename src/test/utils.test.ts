@@ -1,6 +1,5 @@
-import { afterEach, describe, expect, test, vi } from 'vitest';
 import { PubSub } from 'parallel-universe';
-
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import { AbortError, isPromiseLike, isShallowEqual, negate, noop, TimeoutError } from '../main/utils.js';
 
 afterEach(() => {

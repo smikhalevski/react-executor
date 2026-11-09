@@ -1,5 +1,5 @@
-import { beforeEach, expect, test, vi } from 'vitest';
 import { delay, PubSub } from 'parallel-universe';
+import { beforeEach, expect, test, vi } from 'vitest';
 import { ExecutorManager } from '../../main/index.js';
 import abortWhen from '../../main/plugin/abortWhen.js';
 import { noop } from '../../main/utils.js';

@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, expect, Mock, test, vi } from 'vitest';
 import { delay } from 'parallel-universe';
+import { afterEach, beforeEach, expect, Mock, test, vi } from 'vitest';
 import { ExecutorEvent, ExecutorManager } from '../../main/index.js';
 import detachDeactivated from '../../main/plugin/detachDeactivated.js';
 

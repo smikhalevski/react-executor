@@ -12,9 +12,9 @@
  * @module plugin/syncExternalStore
  */
 
+import type { ExecutorImpl } from '../ExecutorImpl.js';
 import type { ExecutorPlugin, ExecutorState, Observable, PluginConfiguredPayload } from '../types.js';
 import { isObjectLike, isShallowEqual } from '../utils.js';
-import type { ExecutorImpl } from '../ExecutorImpl.js';
 
 /**
  * The external store that holds a value and notifies subscribers when the value changes.

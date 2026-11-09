@@ -148,7 +148,7 @@ test('deactivates an executor when key changes after parent component render', a
     return null;
   };
 
-  const { rerender } = await act(() => render(<Parent executorKey={'xxx'} />));
+  const { rerender } = await act(async () => render(<Parent executorKey={'xxx'} />));
 
   expect(manager['_executors'].size).toBe(1);
 
@@ -180,14 +180,14 @@ test('deactivates an executor when key changes after parent component render', a
     payload: undefined,
   } satisfies ExecutorEvent);
 
-  act(() => rerender(<Parent executorKey={'yyy'} />));
+  await act(async () => rerender(<Parent executorKey={'yyy'} />));
 
   expect(manager['_executors'].size).toBe(2);
 
   expect(manager.get('xxx')!.isActive).toBe(false);
   expect(manager.get('yyy')!.isActive).toBe(true);
 
-  expect(listenerMock).toHaveBeenCalledTimes(8);
+  expect(listenerMock).toHaveBeenCalledTimes(9);
   expect(listenerMock).toHaveBeenNthCalledWith(5, {
     type: 'attached',
     target: manager.get('yyy')!,
@@ -210,6 +210,12 @@ test('deactivates an executor when key changes after parent component render', a
     type: 'activated',
     target: manager.get('yyy')!,
     version: 1,
+    payload: undefined,
+  } satisfies ExecutorEvent);
+  expect(listenerMock).toHaveBeenNthCalledWith(9, {
+    type: 'fulfilled',
+    target: manager.get('yyy')!,
+    version: 2,
     payload: undefined,
   } satisfies ExecutorEvent);
 });

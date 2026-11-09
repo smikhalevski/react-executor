@@ -96,15 +96,17 @@ test('respects a predicate', async () => {
     return executor.value;
   };
 
-  const result = render(
-    <ExecutorManagerProvider value={manager}>
-      <Suspense>
-        <Component />
-      </Suspense>
-    </ExecutorManagerProvider>
+  const result = await act(() =>
+    render(
+      <ExecutorManagerProvider value={manager}>
+        <Suspense>
+          <Component />
+        </Suspense>
+      </ExecutorManagerProvider>
+    )
   );
 
-  expect(await result.findByText('bbb')).toBeInTheDocument();
+  expect(result.getByText('bbb')).toBeInTheDocument();
 
   expect(captureMock).toHaveBeenCalledTimes(2);
   expect(captureMock).toHaveBeenNthCalledWith(1, 'aaa');

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import { SSRExecutorManager } from '../../main/ssr/index.js';
 import { ExecutorState } from '../../main/index.js';
+import { SSRExecutorManager } from '../../main/ssr/index.js';
 import { Serializer } from '../../main/types.js';
 import { noop } from '../../main/utils.js';
 

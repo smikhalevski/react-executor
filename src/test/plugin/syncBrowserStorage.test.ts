@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, expect, Mock, test, vi } from 'vitest';
 import { fireEvent } from '@testing-library/react';
+import { afterEach, beforeEach, expect, Mock, test, vi } from 'vitest';
 import { Executor, ExecutorEvent, ExecutorManager, ExecutorState } from '../../main/index.js';
 import syncBrowserStorage from '../../main/plugin/syncBrowserStorage.js';
 import { noop } from '../../main/utils.js';

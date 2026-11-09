@@ -1,8 +1,8 @@
+import { PubSub } from 'parallel-universe';
 import { beforeEach, expect, Mock, test, vi } from 'vitest';
 import { Executor, ExecutorEvent, ExecutorManager, ExecutorState } from '../../main/index.js';
 import syncExternalStore, { ExternalStore } from '../../main/plugin/syncExternalStore.js';
 import { noop } from '../../main/utils.js';
-import { PubSub } from 'parallel-universe';
 import { mockExecutorState } from '../mocks.js';
 
 vi.useFakeTimers();

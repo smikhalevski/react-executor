@@ -1,5 +1,5 @@
-import { beforeEach, expect, test } from 'vitest';
 import { delay } from 'parallel-universe';
+import { beforeEach, expect, test } from 'vitest';
 import { ExecutorManager } from '../../main/index.js';
 import rejectPendingAfter from '../../main/plugin/rejectPendingAfter.js';
 import { noop, TimeoutError } from '../../main/utils.js';

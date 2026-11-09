@@ -1,5 +1,5 @@
-import { beforeEach, expect, test, vi } from 'vitest';
 import { PubSub } from 'parallel-universe';
+import { beforeEach, expect, test, vi } from 'vitest';
 import { ExecutorManager } from '../../main/index.js';
 import retryWhen from '../../main/plugin/retryWhen.js';
 import { noop } from '../../main/utils.js';

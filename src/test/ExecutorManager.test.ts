@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, Mock, test, vi } from 'vitest';
-import { Executor, ExecutorManager } from '../main/index.js';
 import { ExecutorImpl } from '../main/ExecutorImpl.js';
+import { Executor, ExecutorManager } from '../main/index.js';
 
 vi.useFakeTimers();
 vi.setSystemTime(50);

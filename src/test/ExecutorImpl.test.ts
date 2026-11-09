@@ -1,8 +1,8 @@
-import { beforeEach, describe, expect, Mock, test, vi } from 'vitest';
 import { AbortablePromise } from 'parallel-universe';
+import { beforeEach, describe, expect, Mock, test, vi } from 'vitest';
 import { ExecutorImpl } from '../main/ExecutorImpl.js';
-import { AbortError, noop } from '../main/utils.js';
 import { ExecutorEvent, ExecutorState, ExecutorTask } from '../main/index.js';
+import { AbortError, noop } from '../main/utils.js';
 import { mockExecutorState } from './mocks.js';
 
 vi.useFakeTimers();

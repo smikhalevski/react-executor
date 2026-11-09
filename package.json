@@ -39,6 +39,9 @@
     "build": "tsc --project tsconfig.build.json && cp package.json README.md LICENSE.txt lib/ && cd lib && npm pkg delete scripts devDependencies",
     "clean": "rimraf lib docs coverage",
     "test": "NODE_OPTIONS=--no-webstorage vitest run",
+    "typecheck": "tsc",
+    "lint": "oxlint --tsconfig tsconfig.json src/main",
+    "format": "oxfmt 'src/**/*.{ts,js}'",
     "docs": "typedoc"
   },
   "repository": {
@@ -62,6 +65,8 @@
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
     "jsdom": "^29.1.1",
+    "oxfmt": "^0.78.0",
+    "oxlint": "^1.93.0",
     "prettier": "^3.8.3",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { afterEach, expect, onTestFinished, test, vi } from 'vitest';
 import { fireEvent } from '@testing-library/react';
+import { afterEach, expect, onTestFinished, test, vi } from 'vitest';
 import navigatorOnline from '../../main/observable/navigatorOnline.js';
 import { noop } from '../../main/utils.js';
 
