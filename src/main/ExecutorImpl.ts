@@ -1,7 +1,7 @@
 import type { ExecutorManager } from './ExecutorManager.ts';
 import { PubSub } from './PubSub.ts';
 import type {
-  AsyncOptions,
+  AbortableOptions,
   Executor,
   ExecutorEvent,
   ExecutorState,
@@ -83,7 +83,7 @@ export class ExecutorImpl<Value = any> implements Executor {
     return this.isFulfilled ? this.value : defaultValue;
   };
 
-  getOrAwait = (options: AsyncOptions = {}): Promise<Value> => {
+  getOrAwait = (options: AbortableOptions = {}): Promise<Value> => {
     const { signal } = options;
 
     return new Promise((resolve, reject) => {
@@ -130,7 +130,10 @@ export class ExecutorImpl<Value = any> implements Executor {
     });
   };
 
-  execute = (task: ExecutorTask<Value> | ExecutorTaskCallback<Value>, options: AsyncOptions = {}): Promise<Value> => {
+  execute = (
+    task: ExecutorTask<Value> | ExecutorTaskCallback<Value>,
+    options: AbortableOptions = {}
+  ): Promise<Value> => {
     const { signal } = options;
 
     if (signal?.aborted) {
@@ -320,7 +323,13 @@ export class ExecutorImpl<Value = any> implements Executor {
     }
 
     return () => {
-      if (isActive && ((isActive = false), --this._activationCount === 0)) {
+      if (!isActive) {
+        return;
+      }
+
+      isActive = false;
+
+      if (--this._activationCount === 0) {
         this.publish({ type: 'deactivated' });
       }
     };

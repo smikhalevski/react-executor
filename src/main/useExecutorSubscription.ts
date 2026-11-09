@@ -21,12 +21,18 @@ export function useExecutorSubscription<Value>(executor: Executor<Value>): Execu
   return executor;
 }
 
-const executorIds = new WeakMap<Executor, number>();
+const executorIdMap = new WeakMap<Executor, number>();
 
 let executorCount = 0;
 
 function getExecutorId(executor: Executor): number {
-  return executorIds.get(executor) || (executorIds.set(executor, ++executorCount), executorCount);
+  let id = executorIdMap.get(executor);
+
+  if (id === undefined) {
+    id = ++executorCount;
+    executorIdMap.set(executor, id);
+  }
+  return id;
 }
 
 function getExecutorStateSnapshot(executor: Executor): ExecutorState {

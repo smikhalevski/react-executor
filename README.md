@@ -670,8 +670,9 @@ The executor was created, plugins were applied to it, and it was attached to the
 <dt>detached</dt>
 <dd>
 
-The executor was detached: it was removed from the manager and all of its subscribers were unsubscribed. Read more in
-the [Detach an executor](#detach-an-executor) section.
+The executor was detached: it was removed from the manager and all of its subscribers were unsubscribed. Also published
+if a plugin throws while the executor is being created, so plugins that were already applied can release their
+resources. Read more in the [Detach an executor](#detach-an-executor) section.
 
 </dd>
 
@@ -892,6 +893,9 @@ const manager = new ExecutorManager({
 });
 ```
 
+If a plugin throws, the executor isn't added to the manager, and the error is rethrown. The pending task of the executor
+is aborted, and the `detached` event is published, so plugins that were already applied can release their resources.
+
 > [!IMPORTANT]
 > Plugins are applied in array order. When combining plugins that react to the same events, order matters. A good rule
 > of thumb: plugins that _read_ state (e.g. [`syncBrowserStorage`](#syncbrowserstorage)) should come before plugins that
@@ -1083,6 +1087,10 @@ const cheeseExecutor = useExecutor('cheese', 'Burrata', [
 breadExecutor.resolve('Ciabatta');
 ```
 
+> [!WARNING]
+> Peers must not invalidate each other in a cycle, otherwise their tasks can re-run forever. Read more in
+> [Derived executors](#derived-executors).
+
 ## `invalidatePeers`
 
 Invalidates peer executors if the executor is fulfilled or invalidated.
@@ -1114,6 +1122,10 @@ const cheeseExecutor = useExecutor('cheese', undefined, [
 // breadExecutor is invalidated
 cheeseExecutor.resolve('Mozzarella');
 ```
+
+> [!WARNING]
+> Peers must not invalidate each other in a cycle, otherwise their tasks can re-run forever. Read more in
+> [Derived executors](#derived-executors).
 
 ## `invalidateWhen`
 
@@ -2153,8 +2165,15 @@ const cheeseExecutor = useExecutor(
 );
 ```
 
-`cheeseExecutor` re-runs whenever `breadExecutor` is fulfilled or invalidated. For bidirectional invalidation — where
-fulfilling either executor invalidates the other — add [`invalidatePeers`](#invalidatepeers) to both.
+`cheeseExecutor` re-runs whenever `breadExecutor` is fulfilled or invalidated.
+
+> [!WARNING]
+> Peer invalidation must not form a cycle, for example when two executors invalidate each other with
+> [`invalidatePeers`](#invalidatepeers) or [`invalidateByPeers`](#invalidatebypeers). Invalidation is passed on when an
+> executor is fulfilled or invalidated, so in a cycle it comes back to the executor that started it, and that executor
+> is invalidated right after it was fulfilled. With [`retryInvalidated`](#retryinvalidated), the executors then keep
+> re-running their tasks forever. If two executors must refresh each other, invalidate the other executor explicitly
+> where the data is changed, or derive both from a shared executor.
 
 ## Pagination
 

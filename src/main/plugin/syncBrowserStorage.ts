@@ -12,6 +12,7 @@
 
 import { PubSub } from '../PubSub.ts';
 import type { Executor, ExecutorPlugin, ExecutorState, Serializer } from '../types.ts';
+import { rethrowAsync } from '../utils.ts';
 import syncExternalStore, { type ExternalStore } from './syncExternalStore.ts';
 
 /**
@@ -96,10 +97,8 @@ class BrowserStore implements ExternalStore<ExecutorState> {
     try {
       return this.serializer.parse(storedValue);
     } catch (error) {
-      setTimeout(() => {
-        // Throw unhandled error
-        throw error;
-      }, 0);
+      // Report the error, and treat the malformed item as missing
+      rethrowAsync(error);
       return null;
     }
   }

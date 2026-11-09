@@ -17,6 +17,9 @@ import type { Executor, ExecutorPlugin, PluginConfiguredPayload } from '../types
 /**
  * Invalidates peer executors if the executor is fulfilled or invalidated.
  *
+ * **Note:** Peers must not invalidate each other in a cycle. In a cycle, invalidation comes back to the executor that
+ * started it, and with `retryInvalidated` the executors keep re-running their tasks forever.
+ *
  * @param predicate A collection of peer executors, or a callback that returns a truthy value for a peer executor.
  */
 export default function invalidatePeers(predicate: Iterable<Executor> | ((executor: Executor) => any)): ExecutorPlugin {

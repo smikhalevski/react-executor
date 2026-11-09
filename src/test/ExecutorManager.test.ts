@@ -2,6 +2,7 @@ import { getEventListeners } from 'node:events';
 import { afterEach, beforeEach, describe, expect, type Mock, test, vi } from 'vitest';
 import { ExecutorImpl } from '../main/ExecutorImpl.ts';
 import { type Executor, ExecutorManager } from '../main/index.ts';
+import { noop } from '../main/utils.ts';
 
 vi.useFakeTimers();
 vi.setSystemTime(50);
@@ -240,23 +241,48 @@ describe('getOrCreate', () => {
     expect(() => manager.getOrCreate('xxx', undefined, [null])).not.toThrow();
   });
 
-  test('does not attach the executor if a plugin throws', () => {
+  test('detaches the executor if a plugin throws', () => {
+    const executorListenerMock = vi.fn();
     let executor: Executor | undefined;
 
     expect(() =>
       manager.getOrCreate('xxx', undefined, [
         pluginExecutor => {
           executor = pluginExecutor;
+          executor.subscribe(executorListenerMock);
+        },
+        () => {
           throw new Error('expected');
         },
       ])
     ).toThrow('expected');
 
-    expect(manager.get('xxx')).toBeUndefined();
-
     executor!.resolve(111);
 
-    expect(listenerMock).not.toHaveBeenCalled();
+    expect(manager.get('xxx')).toBeUndefined();
+
+    expect(executorListenerMock).toHaveBeenCalledTimes(1);
+    expect(executorListenerMock).toHaveBeenNthCalledWith(1, { type: 'detached', target: executor, version: 0 });
+
+    expect(listenerMock).toHaveBeenCalledTimes(1);
+    expect(listenerMock).toHaveBeenNthCalledWith(1, { type: 'detached', target: executor, version: 0 });
+  });
+
+  test('aborts the pending task if a plugin throws', () => {
+    const callbackMock = vi.fn(_signal => new Promise(noop));
+
+    expect(() =>
+      manager.getOrCreate('xxx', undefined, [
+        executor => {
+          executor.execute(callbackMock);
+        },
+        () => {
+          throw new Error('expected');
+        },
+      ])
+    ).toThrow('expected');
+
+    expect(callbackMock.mock.calls[0][0].aborted).toBe(true);
   });
 });
 

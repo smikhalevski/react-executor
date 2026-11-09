@@ -1,7 +1,7 @@
 import { ExecutorImpl } from './ExecutorImpl.ts';
 import { PubSub } from './PubSub.ts';
 import type {
-  AsyncOptions,
+  AbortableOptions,
   Executor,
   ExecutorEvent,
   ExecutorPlugin,
@@ -125,6 +125,9 @@ export class ExecutorManager implements Iterable<Executor>, Observable<ExecutorE
   /**
    * Returns an existing executor or creates a new one.
    *
+   * If a plugin throws, the pending task of the new executor is aborted, the {@link ExecutorEvent detached} event is
+   * published, and the error is rethrown.
+   *
    * @param key The unique executor key.
    * @param initialValue The initial value of a new executor: a value, a promise, or a task callback to execute.
    * It isn't applied if plugins have already settled the executor or started a task.
@@ -138,6 +141,9 @@ export class ExecutorManager implements Iterable<Executor>, Observable<ExecutorE
 
   /**
    * Returns an existing executor or creates a new one.
+   *
+   * If a plugin throws, the pending task of the new executor is aborted, the {@link ExecutorEvent detached} event is
+   * published, and the error is rethrown.
    *
    * @param key The unique executor key.
    * @param initialValue The initial value of a new executor: a value, a promise, or a task callback to execute.
@@ -166,7 +172,7 @@ export class ExecutorManager implements Iterable<Executor>, Observable<ExecutorE
       executor.task = { callback: initialValue as ExecutorTaskCallback };
     }
 
-    const unsubscribe = executor.subscribe(event => {
+    executor.subscribe(event => {
       this._pubSub.publish(event);
     });
 
@@ -181,7 +187,10 @@ export class ExecutorManager implements Iterable<Executor>, Observable<ExecutorE
         }
       }
     } catch (error) {
-      unsubscribe();
+      // The executor is never attached, so plugins that were already applied must release their resources
+      executor.abort();
+      executor.publish({ type: 'detached' });
+      executor._pubSub.unsubscribeAll();
       throw error;
     }
 
@@ -209,7 +218,7 @@ export class ExecutorManager implements Iterable<Executor>, Observable<ExecutorE
    * @param key The unique executor key.
    * @param options Options with the signal that aborts waiting.
    */
-  getOrAwait(key: unknown, options: AsyncOptions = {}): Promise<Executor> {
+  getOrAwait(key: unknown, options: AbortableOptions = {}): Promise<Executor> {
     const { signal } = options;
 
     return new Promise((resolve, reject) => {

@@ -32,7 +32,8 @@ export type ExecutorEventType =
  *   <dt><i>"detached"</i></dt>
  *   <dd>
  *   The executor was {@link ExecutorManager.detach detached}: it was removed from the manager and all of its
- *   subscribers were unsubscribed.
+ *   subscribers were unsubscribed. Also published if a plugin throws while the executor is being created, so plugins
+ *   that were already applied can release their resources.
  *   </dd>
  *
  *   <dt><i>"activated"</i></dt>
@@ -318,7 +319,7 @@ export interface ReadonlyExecutor<Value = any> extends ExecutorState<Value>, Obs
    *
    * @param options Options with the signal that aborts waiting.
    */
-  getOrAwait(options?: AsyncOptions): Promise<Value>;
+  getOrAwait(options?: AbortableOptions): Promise<Value>;
 
   /**
    * Returns a snapshot of the executor state.
@@ -353,7 +354,7 @@ export interface Executor<Value = any> extends ReadonlyExecutor<Value> {
    * @returns The promise that is resolved with the result of the task, or rejected if the task fails, is aborted, or
    * is replaced.
    */
-  execute(task: ExecutorTask<Value> | ExecutorTaskCallback<Value>, options?: AsyncOptions): Promise<Value>;
+  execute(task: ExecutorTask<Value> | ExecutorTaskCallback<Value>, options?: AbortableOptions): Promise<Value>;
 
   /**
    * Executes the {@link task latest task} again, unless a task is pending or there's no latest task.
@@ -442,11 +443,11 @@ export interface Observable<T> {
 }
 
 /**
- * Options of an asynchronous operation.
+ * Options of an operation that can be aborted.
  *
  * @inline
  */
-export interface AsyncOptions {
+export interface AbortableOptions {
   /**
    * The signal that aborts the operation.
    */

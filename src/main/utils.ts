@@ -11,10 +11,10 @@ export function TimeoutError(message: string): Error {
 }
 
 export function isPromiseLike(value: unknown): value is PromiseLike<any> {
-  return isObjectLike(value) && 'then' in value && typeof value.then === 'function';
+  return isObjectLike(value) && typeof value.then === 'function';
 }
 
-export function isObjectLike(value: unknown): value is object {
+export function isObjectLike(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object';
 }
 

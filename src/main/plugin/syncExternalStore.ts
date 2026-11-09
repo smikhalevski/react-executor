@@ -35,7 +35,8 @@ export interface ExternalStore<Value = any> extends Observable<Value | null | un
   set?(value: Value): void;
 
   /**
-   * Deletes the stored value. Called when the executor is detached. Read-only stores can omit this method.
+   * Deletes the stored value. Called when the executor is detached, but not if a plugin throws while the executor is
+   * being created. Read-only stores can omit this method.
    */
   delete?(): void;
 }
@@ -53,6 +54,9 @@ export default function syncExternalStore<Value>(store: ExternalStore<ExecutorSt
 
     // true while the plugin is being applied to the executor
     let isInitializing = true;
+
+    // true if the executor was attached to the manager
+    let isAttached = false;
 
     // true if the external state has changed while the executor was pending
     let isExternalStateSkipped = false;
@@ -117,8 +121,14 @@ export default function syncExternalStore<Value>(store: ExternalStore<ExecutorSt
           }
           break;
 
+        case 'attached':
+          isAttached = true;
+          break;
+
         case 'detached':
-          store.delete?.();
+          if (isAttached) {
+            store.delete?.();
+          }
           unsubscribe();
           break;
       }

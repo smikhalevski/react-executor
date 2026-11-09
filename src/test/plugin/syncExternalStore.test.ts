@@ -535,6 +535,28 @@ test('does not require a store to implement set and delete', () => {
   expect(() => vi.runAllTimers()).not.toThrow();
 });
 
+test('deletes the store if an executor is detached', () => {
+  manager.getOrCreate('xxx', undefined, [syncExternalStore(storeMock)]);
+
+  manager.detach('xxx');
+
+  expect(storeMock.delete).toHaveBeenCalledTimes(1);
+});
+
+test('unsubscribes from the store without deleting it if a plugin throws', () => {
+  expect(() =>
+    manager.getOrCreate('xxx', undefined, [
+      syncExternalStore(storeMock),
+      () => {
+        throw new Error('expected');
+      },
+    ])
+  ).toThrow('expected');
+
+  expect(storePubSub.listenerCount).toBe(0);
+  expect(storeMock.delete).not.toHaveBeenCalled();
+});
+
 test('unsubscribes from the store if an executor is detached', () => {
   executor = manager.getOrCreate('xxx', undefined, [syncExternalStore(storeMock)]);
 
