@@ -38,7 +38,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: '25'
+          node-version: '26'
           cache: npm
           registry-url: 'https://registry.npmjs.org'
 
@@ -51,6 +51,8 @@ jobs:
 
       - run: npm ci
       - run: npm run build
+      - run: npm run lint
+      - run: npm run typecheck
       - run: npm test
 
       - name: Publish package
