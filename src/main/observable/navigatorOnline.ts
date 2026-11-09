@@ -29,6 +29,8 @@ function handleChange(): void {
  * The observable that emits `true` if
  * [the device is _connected_ to the network](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/onLine), and
  * emits `false` if the device is disconnected from the network.
+ *
+ * The current state is emitted to a listener right after it subscribes.
  */
 const navigatorOnline: Observable<boolean> = {
   subscribe(listener) {
@@ -43,9 +45,11 @@ const navigatorOnline: Observable<boolean> = {
 
     const unsubscribe = pubSub.subscribe(listener);
 
-    setTimeout(handleChange, 0);
+    // Emit the current state to this listener only, other listeners have already received it
+    const timer = setTimeout(() => listener(window.navigator.onLine), 0);
 
     return () => {
+      clearTimeout(timer);
       unsubscribe();
 
       if (pubSub.listenerCount === 0) {

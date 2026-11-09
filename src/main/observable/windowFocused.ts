@@ -1,7 +1,7 @@
 /**
  * The observable that emits `true` when
- * [the window receives focus](https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState), and emits
- * `false` when the window loses focus.
+ * [the page becomes visible](https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState) or the window
+ * receives focus, and emits `false` when the page becomes hidden.
  *
  * ```ts
  * import retryWhen from 'react-executor/plugin/retryWhen';
@@ -21,14 +21,20 @@ import { noop } from '../utils.js';
 
 const pubSub = new PubSub<boolean>();
 
+function isDocumentVisible(): boolean {
+  return document.visibilityState === 'visible';
+}
+
 function handleChange(): void {
-  pubSub.publish(document.visibilityState === 'visible');
+  pubSub.publish(isDocumentVisible());
 }
 
 /**
  * The observable that emits `true` when
- * [the window receives focus](https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState), and emits
- * `false` when the window loses focus.
+ * [the page becomes visible](https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState) or the window
+ * receives focus, and emits `false` when the page becomes hidden.
+ *
+ * The current state is emitted to a listener right after it subscribes.
  */
 const windowFocused: Observable<boolean> = {
   subscribe(listener) {
@@ -43,9 +49,11 @@ const windowFocused: Observable<boolean> = {
 
     const unsubscribe = pubSub.subscribe(listener);
 
-    setTimeout(handleChange, 0);
+    // Emit the current state to this listener only, other listeners have already received it
+    const timer = setTimeout(() => listener(isDocumentVisible()), 0);
 
     return () => {
+      clearTimeout(timer);
       unsubscribe();
 
       if (pubSub.listenerCount === 0) {
