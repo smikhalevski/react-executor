@@ -20,6 +20,6 @@
     "./src/main/observable/*.ts"
   ],
   "sortEntryPoints": false,
-  "intentionallyNotExported": ["ExecutorImpl", "NoInfer"],
+  "intentionallyNotExported": ["ExecutorImpl", "NoInfer", "PubSub"],
   "plugin": ["typedoc-plugin-mdn-links"]
 }

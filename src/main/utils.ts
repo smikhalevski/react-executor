@@ -55,3 +55,15 @@ export function preventUnhandledRejection<T extends PromiseLike<any>>(promise: T
   promise.then(noop, noop);
   return promise;
 }
+
+/**
+ * Rethrows an error asynchronously, so it's reported as an uncaught error without interrupting the caller.
+ *
+ * The timer isn't unref'ed: browsers return a number from `setTimeout`, and an unref'ed timer can be dropped if the
+ * process exits before it fires.
+ */
+export function rethrowAsync(error: unknown): void {
+  setTimeout(() => {
+    throw error;
+  }, 0);
+}

@@ -1,8 +1,8 @@
-import { delay } from 'parallel-universe';
 import { beforeEach, expect, test } from 'vitest';
 import { ExecutorManager } from '../../main/index.js';
 import abortPendingAfter from '../../main/plugin/abortPendingAfter.js';
 import { TimeoutError } from '../../main/utils.js';
+import { sleep } from '../test-utils.js';
 
 let manager: ExecutorManager;
 
@@ -13,7 +13,7 @@ beforeEach(() => {
 test('aborts the pending task', async () => {
   const executor = manager.getOrCreate('xxx', undefined, [abortPendingAfter(0)]);
 
-  const promise = executor.execute(() => delay(100));
+  const promise = executor.execute(() => sleep(100));
 
   await expect(promise).rejects.toEqual(TimeoutError('The task execution took too long'));
   expect(executor.isRejected).toBe(false);
@@ -22,7 +22,7 @@ test('aborts the pending task', async () => {
 test('does not abort the pending task when it is settled before the timeout', async () => {
   const executor = manager.getOrCreate('xxx', undefined, [abortPendingAfter(100)]);
 
-  const promise = executor.execute(() => delay(50, 'aaa'));
+  const promise = executor.execute(() => sleep(50, 'aaa'));
 
   await expect(promise).resolves.toEqual('aaa');
 });

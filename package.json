@@ -83,8 +83,5 @@
     "react": {
       "optional": true
     }
-  },
-  "dependencies": {
-    "parallel-universe": "^6.1.2"
   }
 }

@@ -10,7 +10,7 @@
  * @module plugin/syncBrowserStorage
  */
 
-import { PubSub } from 'parallel-universe';
+import { PubSub } from '../PubSub.js';
 import type { Executor, ExecutorPlugin, ExecutorState, Serializer } from '../types.js';
 import syncExternalStore, { ExternalStore } from './syncExternalStore.js';
 

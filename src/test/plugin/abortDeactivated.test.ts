@@ -1,8 +1,8 @@
-import { delay } from 'parallel-universe';
 import { afterEach, beforeEach, expect, Mock, test, vi } from 'vitest';
 import { ExecutorEvent, ExecutorManager } from '../../main/index.js';
 import abortDeactivated from '../../main/plugin/abortDeactivated.js';
 import { AbortError, noop } from '../../main/utils.js';
+import { sleep } from '../test-utils.js';
 
 let listenerMock: Mock;
 let manager: ExecutorManager;
@@ -21,7 +21,7 @@ afterEach(() => {
 test('aborts a deactivated executor', async () => {
   const executor = manager.getOrCreate('xxx', undefined, [abortDeactivated({ delay: 0 })]);
   const deactivate = executor.activate();
-  const callbackMock = vi.fn(_signal => delay(100));
+  const callbackMock = vi.fn(_signal => sleep(100));
   const promise = executor.execute(callbackMock);
 
   deactivate();
@@ -91,7 +91,7 @@ test('aborts a deactivated executor after the delay', () => {
 test('cancels abortion of an activated executor', async () => {
   const executor = manager.getOrCreate('xxx', undefined, [abortDeactivated({ delay: 0 })]);
   const deactivate = executor.activate();
-  const callbackMock = vi.fn(_signal => delay(100, 'aaa'));
+  const callbackMock = vi.fn(_signal => sleep(100, 'aaa'));
   const promise = executor.execute(callbackMock);
 
   deactivate();

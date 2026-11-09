@@ -1,8 +1,9 @@
-import { delay, PubSub } from 'parallel-universe';
 import { beforeEach, expect, test, vi } from 'vitest';
 import { ExecutorManager } from '../../main/index.js';
 import abortWhen from '../../main/plugin/abortWhen.js';
+import { PubSub } from '../../main/PubSub.js';
 import { noop } from '../../main/utils.js';
+import { sleep } from '../test-utils.js';
 
 vi.useFakeTimers();
 
@@ -93,7 +94,7 @@ test('aborts the pending task after the delay', () => {
 test('does not abort if the observable has pushed false before the timeout', async () => {
   const pubSub = new PubSub<boolean>();
 
-  const callbackMock = vi.fn(_signal => delay(15_000, 'aaa'));
+  const callbackMock = vi.fn(_signal => sleep(15_000, 'aaa'));
 
   const executor = manager.getOrCreate('xxx', undefined, [abortWhen(pubSub, { delay: 10_000 })]);
 
@@ -115,7 +116,7 @@ test('does not abort if the observable has pushed false before the timeout', asy
 test('does not abort if the observable has pushed false after pushing true twice', () => {
   const pubSub = new PubSub<boolean>();
 
-  const callbackMock = vi.fn(_signal => delay(15_000, 'aaa'));
+  const callbackMock = vi.fn(_signal => sleep(15_000, 'aaa'));
 
   const executor = manager.getOrCreate('xxx', undefined, [abortWhen(pubSub)]);
 

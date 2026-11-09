@@ -1,7 +1,7 @@
-import { PubSub } from 'parallel-universe';
 import { beforeEach, expect, test, vi } from 'vitest';
 import { ExecutorManager } from '../../main/index.js';
 import invalidateWhen from '../../main/plugin/invalidateWhen.js';
+import { PubSub } from '../../main/PubSub.js';
 
 vi.useFakeTimers();
 

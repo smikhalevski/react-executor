@@ -1,5 +1,5 @@
-import { PubSub } from 'parallel-universe';
 import type { ExecutorManager } from './ExecutorManager.js';
+import { PubSub } from './PubSub.js';
 import {
   AsyncOptions,
   Executor,

@@ -1,7 +1,7 @@
-import { PubSub } from 'parallel-universe';
 import { beforeEach, expect, Mock, test, vi } from 'vitest';
 import { Executor, ExecutorEvent, ExecutorManager, ExecutorState } from '../../main/index.js';
 import syncExternalStore, { ExternalStore } from '../../main/plugin/syncExternalStore.js';
+import { PubSub } from '../../main/PubSub.js';
 import { noop } from '../../main/utils.js';
 import { mockExecutorState } from '../mocks.js';
 

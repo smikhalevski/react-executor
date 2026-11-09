@@ -1,9 +1,11 @@
-import { PubSub } from 'parallel-universe';
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { AbortError, isPromiseLike, isShallowEqual, negate, noop, TimeoutError } from '../main/utils.js';
+import { PubSub } from '../main/PubSub.js';
+import { AbortError, isPromiseLike, isShallowEqual, negate, noop, rethrowAsync, TimeoutError } from '../main/utils.js';
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.useRealTimers();
+  vi.restoreAllMocks();
 });
 
 describe('negate', () => {
@@ -77,5 +79,27 @@ describe('TimeoutError', () => {
     vi.stubGlobal('DOMException', undefined);
 
     expect(TimeoutError('aaa')).toEqual(new Error('aaa'));
+  });
+});
+
+describe('rethrowAsync', () => {
+  test('throws the error asynchronously', () => {
+    vi.useFakeTimers();
+
+    rethrowAsync(new Error('expected'));
+
+    expect(() => vi.runAllTimers()).toThrow('expected');
+  });
+
+  test('throws the error asynchronously if setTimeout returns a number', () => {
+    // Browsers return a number from setTimeout, while Node.js returns an object
+    const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout').mockReturnValue(
+      // @ts-expect-error Node.js typings expect a Timeout object
+      111
+    );
+
+    rethrowAsync(new Error('expected'));
+
+    expect(setTimeoutSpy.mock.calls[0][0]).toThrow('expected');
   });
 });

@@ -1,7 +1,7 @@
-import { PubSub } from 'parallel-universe';
 import { beforeEach, expect, test } from 'vitest';
 import { ExecutorManager } from '../../main/index.js';
 import resolveBy from '../../main/plugin/resolveBy.js';
+import { PubSub } from '../../main/PubSub.js';
 
 let manager: ExecutorManager;
 
