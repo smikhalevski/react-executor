@@ -265,7 +265,7 @@ const rookyExecutor = manager.getOrCreate('rooky');
 const helloTask: ExecutorTaskCallback = async (signal, executor) => 'Hello';
 
 const helloPromise = rookyExecutor.execute(helloTask);
-// ⮕ AbortablePromise<any>
+// ⮕ Promise<any>
 ```
 
 `helloTask` receives an [`AbortSignal`](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal)
@@ -379,25 +379,27 @@ rookyExecutor.value;
 
 ## Abort a task
 
-The promise returned by
+To abort a task prematurely, pass a signal to
 the [`execute`](https://smikhalevski.github.io/react-executor/interfaces/react-executor.Executor.html#execute)
-method is [abortable](https://smikhalevski.github.io/parallel-universe/classes/AbortablePromise.html),
-so the task can be aborted prematurely. Results of the aborted task are discarded:
+method. Results of the aborted task are discarded, and the returned promise is rejected with the abort reason:
 
 ```ts
-const helloPromise = rookyExecutor.execute(async () => 'Hello');
+const abortController = new AbortController();
+
+rookyExecutor.execute(async () => 'Hello', { signal: abortController.signal });
 
 rookyExecutor.isPending;
 // ⮕ true
 
-helloPromise.abort();
+abortController.abort();
 
 rookyExecutor.isPending;
 // ⮕ false
 ```
 
-It isn't always convenient to keep the reference to the task execution promise, and you can abort the pending task by
-aborting the whole executor:
+If the signal is already aborted, the task isn't executed.
+
+You can also abort the pending task by aborting the executor itself:
 
 ```ts
 rookyExecutor.abort();
@@ -454,15 +456,15 @@ const planetPromise = planetExecutor.getOrAwait();
 
 const marsPromise = planetExecutor.execute(async signal => 'Mars');
 
-// 🟡 marsPromise is aborted, because the task was replaced
+// 🟡 marsPromise is rejected, because the task was replaced
 const venusPromise = planetExecutor.execute(async signal => 'Venus');
 
 await planetPromise;
 // ⮕ 'Venus'
 ```
 
-In this example, `marsPromise` is aborted, and `planetPromise` is resolved only after the executor itself is settled
-and has no pending task.
+In this example, `marsPromise` is rejected with an `AbortError`, and `planetPromise` is resolved only after the executor
+itself is settled and has no pending task.
 
 Here's another example, where the executor waits to be settled:
 
@@ -476,6 +478,8 @@ printerExecutor.getOrAwait().then(value => {
 // Prints "Hello" to console
 printerExecutor.execute(() => 'Hello');
 ```
+
+To stop waiting, pass a signal to `getOrAwait`. If the signal is aborted, the promise is rejected with the abort reason.
 
 ## Retry the latest task
 
@@ -1388,10 +1392,10 @@ import invalidateByPeers from 'react-executor/plugin/invalidateByPeers';
 
 const fetchCheese: ExecutorTaskCallback = async (signal, executor) => {
   // Wait for the breadExecutor to be created
-  const breadExecutor = await executor.manager.getOrAwait('bread');
+  const breadExecutor = await executor.manager.getOrAwait('bread', { signal });
 
   // Wait for the breadExecutor to be settled
-  const bread = await breadExecutor.getOrAwait();
+  const bread = await breadExecutor.getOrAwait({ signal });
 
   // Choose the best cheese for this bread
   return bread === 'Ciabatta' ? 'Mozzarella' : 'Burrata';
@@ -2112,7 +2116,8 @@ the [react-executor-devtools](https://github.com/smikhalevski/react-executor-dev
 
 ## Dependent tasks
 
-Pause a task until another executor is settled:
+Pause a task until another executor is settled. Pass the task signal to `getOrAwait`, so the task stops waiting if it
+is aborted:
 
 ```ts
 const accountExecutor = useExecutor('account', async signal => {
@@ -2120,7 +2125,7 @@ const accountExecutor = useExecutor('account', async signal => {
 });
 
 const shoppingCartExecutor = useExecutor('shoppingCart', async signal => {
-  const account = await accountExecutor.getOrAwait();
+  const account = await accountExecutor.getOrAwait({ signal });
 
   // Fetch shopping cart for an account
 });
@@ -2132,10 +2137,10 @@ their state is changed. To avoid unnecessary re-renders, you can acquire an exec
 ```tsx
 const shoppingCartExecutor = useExecutor('shoppingCart', async (signal, executor) => {
   // 1️⃣ Wait for the account executor to be created
-  const accountExecutor = await executor.manager.getOrAwait('account');
+  const accountExecutor = await executor.manager.getOrAwait('account', { signal });
 
   // 2️⃣ Wait for the account executor to be settled
-  const account = await accountExecutor.getOrAwait();
+  const account = await accountExecutor.getOrAwait({ signal });
 
   // Fetch shopping cart for an account
 });
@@ -2156,7 +2161,7 @@ const breadExecutor = useExecutor('bread', fetchBread);
 const cheeseExecutor = useExecutor(
   'cheese',
   async signal => {
-    const bread = await breadExecutor.getOrAwait();
+    const bread = await breadExecutor.getOrAwait({ signal });
     return bestCheeseFor(bread);
   },
   [invalidateByPeers([breadExecutor]), retryInvalidated()]

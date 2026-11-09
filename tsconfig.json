@@ -11,13 +11,9 @@
     "jsx": "react-jsx",
     "target": "ES6",
     "module": "NodeNext",
-    "lib": [
-      "DOM",
-      "ES2020"
-    ],
+    "lib": ["DOM", "ES2020"],
+    "types": ["node"],
     "outDir": "./lib"
   },
-  "include": [
-    "./src/**/*"
-  ]
+  "include": ["./src/**/*"]
 }

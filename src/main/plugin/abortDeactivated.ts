@@ -13,7 +13,6 @@
  */
 
 import type { ExecutorPlugin, PluginConfiguredPayload } from '../types.js';
-import { emptyObject } from '../utils.js';
 
 /**
  * Options of the {@link abortDeactivated} plugin.
@@ -35,7 +34,7 @@ export interface AbortDeactivatedOptions {
  *
  * @param options Plugin options.
  */
-export default function abortDeactivated(options: AbortDeactivatedOptions = emptyObject): ExecutorPlugin {
+export default function abortDeactivated(options: AbortDeactivatedOptions = {}): ExecutorPlugin {
   const { delay = 0 } = options;
 
   return executor => {

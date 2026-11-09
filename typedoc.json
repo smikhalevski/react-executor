@@ -21,10 +21,5 @@
   ],
   "sortEntryPoints": false,
   "intentionallyNotExported": ["ExecutorImpl", "NoInfer"],
-  "plugin": ["typedoc-plugin-mdn-links"],
-  "externalSymbolLinkMappings": {
-    "parallel-universe": {
-      "AbortablePromise": "https://smikhalevski.github.io/parallel-universe/classes/AbortablePromise.html"
-    }
-  }
+  "plugin": ["typedoc-plugin-mdn-links"]
 }

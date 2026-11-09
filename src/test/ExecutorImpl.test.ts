@@ -1,4 +1,4 @@
-import { AbortablePromise } from 'parallel-universe';
+import { getEventListeners } from 'node:events';
 import { beforeEach, describe, expect, Mock, test, vi } from 'vitest';
 import { ExecutorImpl } from '../main/ExecutorImpl.js';
 import { ExecutorEvent, ExecutorState, ExecutorTask } from '../main/index.js';
@@ -237,17 +237,18 @@ describe('execute', () => {
     expect(executor.promise).toBeNull();
   });
 
-  test('task promise can be aborted', () => {
+  test('aborts the task if the signal is aborted', async () => {
     const callbackMock = vi.fn((_signal, _executor) => 'aaa');
+    const abortController = new AbortController();
 
-    const promise = executor.execute(callbackMock);
+    const promise = executor.execute(callbackMock, { signal: abortController.signal });
 
-    promise.abort();
+    abortController.abort(expectedReason);
 
     expect(executor.task).toStrictEqual({ callback: callbackMock });
 
     expect(callbackMock).toHaveBeenCalledTimes(1);
-    expect(callbackMock.mock.calls[0][0].aborted).toBe(true);
+    expect(callbackMock.mock.calls[0][0].reason).toBe(expectedReason);
     expect(callbackMock.mock.calls[0][1]).toBe(executor);
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
@@ -269,6 +270,67 @@ describe('execute', () => {
     expect(executor.value).toBeUndefined();
     expect(executor.reason).toBeUndefined();
     expect(executor.promise).toBeNull();
+
+    await expect(promise).rejects.toBe(expectedReason);
+  });
+
+  test('does not execute a task if the signal is already aborted', async () => {
+    const callbackMock = vi.fn();
+    const abortController = new AbortController();
+
+    const pendingPromise = executor.execute(() => 'aaa');
+
+    abortController.abort(expectedReason);
+
+    const promise = executor.execute(callbackMock, { signal: abortController.signal });
+
+    expect(callbackMock).not.toHaveBeenCalled();
+    expect(executor.promise).toBe(pendingPromise);
+    expect(listenerMock).toHaveBeenCalledTimes(1);
+
+    await expect(promise).rejects.toBe(expectedReason);
+  });
+
+  test('aborts the task if the signal is aborted by the task callback', async () => {
+    const abortController = new AbortController();
+
+    const promise = executor.execute(
+      () => {
+        abortController.abort(expectedReason);
+        return 'aaa';
+      },
+      { signal: abortController.signal }
+    );
+
+    expect(executor.isPending).toBe(false);
+
+    await expect(promise).rejects.toBe(expectedReason);
+  });
+
+  test('removes the abort listener from the signal after the task is settled', async () => {
+    const abortController = new AbortController();
+
+    await executor.execute(() => 'aaa', { signal: abortController.signal });
+
+    await executor
+      .execute(
+        () => {
+          throw expectedReason;
+        },
+        { signal: abortController.signal }
+      )
+      .catch(noop);
+
+    expect(getEventListeners(abortController.signal, 'abort')).toHaveLength(0);
+  });
+
+  test('removes the abort listener from the signal after the task is replaced', () => {
+    const abortController = new AbortController();
+
+    executor.execute(() => 'aaa', { signal: abortController.signal });
+    executor.execute(() => 'bbb');
+
+    expect(getEventListeners(abortController.signal, 'abort')).toHaveLength(0);
   });
 
   test('a new task can be executed from abort event handler if previous task is aborted manually', async () => {
@@ -283,7 +345,7 @@ describe('execute', () => {
 
     const promise = executor.execute(callbackMock1);
 
-    promise.abort();
+    executor.abort();
 
     expect(executor.task).toStrictEqual({ callback: callbackMock2 });
     expect(executor.promise).not.toBeNull();
@@ -377,15 +439,6 @@ describe('execute', () => {
     expect(executor.isRejected).toBe(false);
     expect(executor.value).toBe('ccc');
     expect(executor.reason).toBeUndefined();
-  });
-
-  test('an AbortablePromise returned from a task is aborted when a task is replaced', async () => {
-    const taskPromise = new AbortablePromise<string>(noop);
-
-    executor.execute(() => taskPromise);
-    executor.execute(() => 'bbb');
-
-    await expect(taskPromise).rejects.toEqual(AbortError('The task was replaced'));
   });
 
   test('preserves the previous value when a new task is executed', async () => {
@@ -518,7 +571,7 @@ describe('execute', () => {
 
     const promise = executor.execute({ callback: () => 'aaa', pendingValue: 'xxx' });
 
-    promise.abort();
+    executor.abort();
 
     await promise.catch(noop);
 
@@ -527,7 +580,8 @@ describe('execute', () => {
   });
 
   test('rolls back pending value to an unsettled state if task is aborted', () => {
-    executor.execute({ callback: () => 'aaa', pendingValue: 'bbb' }).abort();
+    executor.execute({ callback: () => 'aaa', pendingValue: 'bbb' });
+    executor.abort();
 
     expect(executor.getStateSnapshot()).toEqual(mockExecutorState());
   });
@@ -978,11 +1032,9 @@ describe('abort', () => {
   });
 
   test('no-op after task is successfully completed', async () => {
-    const promise = executor.execute(() => 111);
+    await executor.execute(() => 111);
 
-    await promise;
-
-    promise.abort();
+    executor.abort();
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
     expect(listenerMock).toHaveBeenNthCalledWith(1, {
@@ -1000,13 +1052,13 @@ describe('abort', () => {
   });
 
   test('no-op after task has failed', async () => {
-    const promise = executor.execute(() => {
-      throw new Error('expected');
-    });
+    await executor
+      .execute(() => {
+        throw new Error('expected');
+      })
+      .catch(noop);
 
-    await promise.catch(noop);
-
-    promise.abort();
+    executor.abort();
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
     expect(listenerMock).toHaveBeenNthCalledWith(1, {
@@ -1184,6 +1236,35 @@ describe('getOrAwait', () => {
     executor.publish({ type: 'detached' });
 
     await expect(promise).rejects.toEqual(AbortError('The executor was detached'));
+  });
+
+  test('rejects with the abort reason if the signal is already aborted', async () => {
+    const abortController = new AbortController();
+
+    abortController.abort(expectedReason);
+
+    await expect(executor.getOrAwait({ signal: abortController.signal })).rejects.toBe(expectedReason);
+  });
+
+  test('unsubscribes from the executor and rejects if the signal is aborted', async () => {
+    const abortController = new AbortController();
+
+    const promise = executor.getOrAwait({ signal: abortController.signal });
+
+    abortController.abort(expectedReason);
+
+    expect(executor._pubSub.listenerCount).toBe(1);
+
+    await expect(promise).rejects.toBe(expectedReason);
+  });
+
+  test('removes the abort listener from the signal after the executor is settled', () => {
+    const abortController = new AbortController();
+
+    executor.getOrAwait({ signal: abortController.signal });
+    executor.resolve('aaa');
+
+    expect(getEventListeners(abortController.signal, 'abort')).toHaveLength(0);
   });
 });
 

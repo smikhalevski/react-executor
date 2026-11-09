@@ -634,7 +634,7 @@ test('syncs state if task is aborted', () => {
 test('sets storage item to the rolled back state if an optimistic task is aborted', () => {
   executor = manager.getOrCreate('xxx', 'aaa', [syncBrowserStorage()]);
 
-  const promise = executor.execute({ callback: () => new Promise(noop), pendingValue: 'bbb' });
+  executor.execute({ callback: () => new Promise(noop), pendingValue: 'bbb' });
 
   executor.annotate({ xxx: 'yyy' });
 
@@ -642,7 +642,7 @@ test('sets storage item to the rolled back state if an optimistic task is aborte
     '{"isFulfilled":true,"value":"aaa","annotations":{},"settledAt":50,"invalidatedAt":0}'
   );
 
-  promise.abort();
+  executor.abort();
 
   expect(localStorage.getItem('"xxx"')).toBe(
     '{"isFulfilled":true,"value":"aaa","annotations":{"xxx":"yyy"},"settledAt":50,"invalidatedAt":0}'

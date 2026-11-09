@@ -11,7 +11,6 @@
  */
 
 import type { Executor, ExecutorPlugin, PluginConfiguredPayload } from '../types.js';
-import { emptyObject } from '../utils.js';
 
 /**
  * Options of the {@link retryFulfilled} plugin.
@@ -48,9 +47,7 @@ export interface RetryFulfilledOptions<Value> {
  * @param options Plugin options.
  * @template Value The value stored by the executor.
  */
-export default function retryFulfilled<Value = any>(
-  options: RetryFulfilledOptions<Value> = emptyObject
-): ExecutorPlugin<Value> {
+export default function retryFulfilled<Value = any>(options: RetryFulfilledOptions<Value> = {}): ExecutorPlugin<Value> {
   const { count = Infinity, delay = 5000, isEager = false } = options;
 
   return executor => {

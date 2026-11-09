@@ -13,7 +13,6 @@
  */
 
 import { ExecutorPlugin, type PluginConfiguredPayload } from '../types.js';
-import { emptyObject } from '../utils.js';
 
 /**
  * Options of the {@link retryActivated} plugin.
@@ -33,7 +32,7 @@ export interface RetryActivatedOptions {
  *
  * @param options Plugin options.
  */
-export default function retryActivated(options: RetryActivatedOptions = emptyObject): ExecutorPlugin {
+export default function retryActivated(options: RetryActivatedOptions = {}): ExecutorPlugin {
   const { delayAfterSettled = 0 } = options;
 
   return executor => {

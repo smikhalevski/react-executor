@@ -14,7 +14,6 @@
  */
 
 import type { ExecutorPlugin, Observable, PluginConfiguredPayload } from '../types.js';
-import { emptyObject } from '../utils.js';
 
 /**
  * Options of the {@link retryWhen} plugin.
@@ -46,10 +45,7 @@ export interface RetryWhenOptions {
  * @param observable The observable that triggers the retry.
  * @param options Plugin options.
  */
-export default function retryWhen(
-  observable: Observable<boolean>,
-  options: RetryWhenOptions = emptyObject
-): ExecutorPlugin {
+export default function retryWhen(observable: Observable<boolean>, options: RetryWhenOptions = {}): ExecutorPlugin {
   const { delay = 0, isEager = false } = options;
 
   return executor => {

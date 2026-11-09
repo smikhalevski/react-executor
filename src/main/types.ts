@@ -1,4 +1,3 @@
-import type { AbortablePromise } from 'parallel-universe';
 import type { ExecutorManager } from './ExecutorManager.js';
 
 /**
@@ -284,10 +283,11 @@ export interface ReadonlyExecutor<Value = any> extends ExecutorState<Value>, Obs
   /**
    * The promise of the pending task, or `null` if there's no pending task.
    *
-   * **Note:** This promise is aborted if [the task is replaced](https://megastack.dev/react-executor#replace-a-task).
-   * Use {@link getOrAwait} to wait until the executor is {@link isSettled settled}.
+   * **Note:** This promise is rejected if the task is aborted or
+   * [replaced](https://megastack.dev/react-executor#replace-a-task). Use {@link getOrAwait} to wait until the executor
+   * is {@link isSettled settled}.
    */
-  readonly promise: AbortablePromise<Value> | null;
+  readonly promise: Promise<Value> | null;
 
   /**
    * Returns the {@link value} if the executor is {@link isFulfilled fulfilled}, throws the {@link reason} if it's
@@ -313,9 +313,12 @@ export interface ReadonlyExecutor<Value = any> extends ExecutorState<Value>, Obs
    * with the {@link value} if the executor is {@link isFulfilled fulfilled}, or rejected with the {@link reason} if
    * it's {@link isRejected rejected}.
    *
-   * If the executor is detached while waiting, the promise is rejected with an {@link !DOMException AbortError}.
+   * If the executor is detached while waiting, the promise is rejected with an {@link !DOMException AbortError}. If
+   * the signal is aborted, the promise is rejected with the abort reason.
+   *
+   * @param options Options with the signal that aborts waiting.
    */
-  getOrAwait(): AbortablePromise<Value>;
+  getOrAwait(options?: AsyncOptions): Promise<Value>;
 
   /**
    * Returns a snapshot of the executor state.
@@ -342,10 +345,15 @@ export interface Executor<Value = any> extends ReadonlyExecutor<Value> {
    * The task callback is called synchronously. If another task is pending, it is aborted and replaced. If this task
    * is aborted or replaced before it settles, the signal passed to the callback is aborted, and the result is ignored.
    *
+   * If the signal from options is aborted, the task is aborted, and the returned promise is rejected with the abort
+   * reason. If the signal is already aborted, the task isn't executed.
+   *
    * @param task The task, or the task callback, to execute.
-   * @returns The promise that is resolved with the result of the task.
+   * @param options Options with the signal that aborts the task.
+   * @returns The promise that is resolved with the result of the task, or rejected if the task fails, is aborted, or
+   * is replaced.
    */
-  execute(task: ExecutorTask<Value> | ExecutorTaskCallback<Value>): AbortablePromise<Value>;
+  execute(task: ExecutorTask<Value> | ExecutorTaskCallback<Value>, options?: AsyncOptions): Promise<Value>;
 
   /**
    * Executes the {@link task latest task} again, unless a task is pending or there's no latest task.
@@ -431,6 +439,18 @@ export interface Observable<T> {
    * @returns The callback that unsubscribes the listener.
    */
   subscribe(listener: (value: T) => void): () => void;
+}
+
+/**
+ * Options of an asynchronous operation.
+ *
+ * @inline
+ */
+export interface AsyncOptions {
+  /**
+   * The signal that aborts the operation.
+   */
+  signal?: AbortSignal;
 }
 
 /**

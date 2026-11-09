@@ -12,7 +12,6 @@
 
 import { PubSub } from 'parallel-universe';
 import type { Executor, ExecutorPlugin, ExecutorState, Serializer } from '../types.js';
-import { emptyObject } from '../utils.js';
 import syncExternalStore, { ExternalStore } from './syncExternalStore.js';
 
 /**
@@ -49,7 +48,7 @@ export interface SyncBrowserStorageOptions {
  *
  * @param options Plugin options.
  */
-export default function syncBrowserStorage(options: SyncBrowserStorageOptions = emptyObject): ExecutorPlugin {
+export default function syncBrowserStorage(options: SyncBrowserStorageOptions = {}): ExecutorPlugin {
   const { storageType = 'local', storageKey, serializer = JSON } = options;
 
   return executor => {

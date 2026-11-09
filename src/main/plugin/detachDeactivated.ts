@@ -13,7 +13,6 @@
  */
 
 import type { ExecutorPlugin } from '../types.js';
-import { emptyObject } from '../utils.js';
 import detachInactive from './detachInactive.js';
 
 /**
@@ -37,7 +36,7 @@ export interface DetachDeactivatedOptions {
  * @param options Plugin options.
  * @see {@link detachInactive}
  */
-export default function detachDeactivated(options: DetachDeactivatedOptions = emptyObject): ExecutorPlugin {
+export default function detachDeactivated(options: DetachDeactivatedOptions = {}): ExecutorPlugin {
   const { delay = 5_000 } = options;
 
   return detachInactive({ delayAfterDeactivated: delay });

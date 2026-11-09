@@ -14,7 +14,6 @@
  */
 
 import type { ExecutorPlugin, Observable, PluginConfiguredPayload } from '../types.js';
-import { emptyObject } from '../utils.js';
 
 /**
  * Options of the {@link abortWhen} plugin.
@@ -43,10 +42,7 @@ export interface AbortWhenOptions {
  * @param observable The observable that triggers the abort.
  * @param options Plugin options.
  */
-export default function abortWhen(
-  observable: Observable<boolean>,
-  options: AbortWhenOptions = emptyObject
-): ExecutorPlugin {
+export default function abortWhen(observable: Observable<boolean>, options: AbortWhenOptions = {}): ExecutorPlugin {
   const { delay = 0, isSustained = false } = options;
 
   return executor => {

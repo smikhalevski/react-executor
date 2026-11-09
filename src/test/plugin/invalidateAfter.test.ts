@@ -117,11 +117,11 @@ test('invalidates a rejected executor after a timeout', () => {
 test('invalidates an executor if an optimistic task is aborted after the timeout', () => {
   const executor = manager.getOrCreate('xxx', 'aaa', [invalidateAfter(100)]);
 
-  const promise = executor.execute({ callback: () => new Promise(noop), pendingValue: 'bbb' });
+  executor.execute({ callback: () => new Promise(noop), pendingValue: 'bbb' });
 
   vi.advanceTimersByTime(100);
 
-  promise.abort();
+  executor.abort();
 
   vi.runAllTimers();
 

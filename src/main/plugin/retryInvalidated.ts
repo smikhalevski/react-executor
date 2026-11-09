@@ -11,7 +11,6 @@
  */
 
 import type { ExecutorPlugin, PluginConfiguredPayload } from '../types.js';
-import { emptyObject } from '../utils.js';
 
 /**
  * Options of the {@link retryInvalidated} plugin.
@@ -30,7 +29,7 @@ export interface RetryInvalidatedOptions {
  *
  * @param options Plugin options.
  */
-export default function retryInvalidated(options: RetryInvalidatedOptions = emptyObject): ExecutorPlugin {
+export default function retryInvalidated(options: RetryInvalidatedOptions = {}): ExecutorPlugin {
   const { isEager = false } = options;
 
   return executor => {

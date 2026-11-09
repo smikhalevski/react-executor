@@ -1,6 +1,7 @@
-import { AbortablePromise, PubSub } from 'parallel-universe';
+import { PubSub } from 'parallel-universe';
 import { ExecutorImpl } from './ExecutorImpl.js';
 import type {
+  AsyncOptions,
   Executor,
   ExecutorEvent,
   ExecutorPlugin,
@@ -9,7 +10,6 @@ import type {
   NoInfer,
   Observable,
 } from './types.js';
-import { emptyObject } from './utils.js';
 
 /**
  * Options provided to the {@link ExecutorManager} constructor.
@@ -73,7 +73,7 @@ export class ExecutorManager implements Iterable<Executor>, Observable<ExecutorE
    *
    * @param options Manager options.
    */
-  constructor(options: ExecutorManagerOptions = emptyObject) {
+  constructor(options: ExecutorManagerOptions = {}) {
     this.keyIdGenerator = options.keyIdGenerator || (value => JSON.stringify(value));
 
     if (options.devtools === undefined || options.devtools) {
@@ -204,10 +204,20 @@ export class ExecutorManager implements Iterable<Executor>, Observable<ExecutorE
   /**
    * Resolves with the executor that has the key, and waits for the executor to be created if it doesn't exist yet.
    *
+   * If the signal is aborted, the promise is rejected with the abort reason.
+   *
    * @param key The unique executor key.
+   * @param options Options with the signal that aborts waiting.
    */
-  getOrAwait(key: unknown): AbortablePromise<Executor> {
-    return new AbortablePromise((resolve, _reject, signal) => {
+  getOrAwait(key: unknown, options: AsyncOptions = {}): Promise<Executor> {
+    const { signal } = options;
+
+    return new Promise((resolve, reject) => {
+      if (signal?.aborted) {
+        reject(signal.reason);
+        return;
+      }
+
       const keyId = this.keyIdGenerator(key);
       const executor = this._executors.get(keyId);
 
@@ -216,14 +226,20 @@ export class ExecutorManager implements Iterable<Executor>, Observable<ExecutorE
         return;
       }
 
+      const handleAbort = () => {
+        unsubscribe();
+        reject(signal!.reason);
+      };
+
       const unsubscribe = this.subscribe(event => {
         if (event.type === 'attached' && this.keyIdGenerator(event.target.key) === keyId) {
           unsubscribe();
+          signal?.removeEventListener('abort', handleAbort);
           resolve(event.target);
         }
       });
 
-      signal.addEventListener('abort', unsubscribe);
+      signal?.addEventListener('abort', handleAbort);
     });
   }
 

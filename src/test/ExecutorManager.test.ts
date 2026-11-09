@@ -1,3 +1,4 @@
+import { getEventListeners } from 'node:events';
 import { afterEach, beforeEach, describe, expect, Mock, test, vi } from 'vitest';
 import { ExecutorImpl } from '../main/ExecutorImpl.js';
 import { Executor, ExecutorManager } from '../main/index.js';
@@ -291,6 +292,35 @@ describe('getOrAwait', () => {
     manager.getOrCreate('yyy');
 
     await expect(executorPromise).resolves.toBe(manager.getOrCreate('xxx'));
+  });
+
+  test('rejects with the abort reason if the signal is already aborted', async () => {
+    const abortController = new AbortController();
+
+    abortController.abort(new Error('expected'));
+
+    await expect(manager.getOrAwait('aaa', { signal: abortController.signal })).rejects.toThrow('expected');
+  });
+
+  test('unsubscribes from the manager and rejects if the signal is aborted', async () => {
+    const abortController = new AbortController();
+
+    const executorPromise = manager.getOrAwait('aaa', { signal: abortController.signal });
+
+    abortController.abort(new Error('expected'));
+
+    expect(manager['_pubSub'].listenerCount).toBe(1);
+
+    await expect(executorPromise).rejects.toThrow('expected');
+  });
+
+  test('removes the abort listener from the signal after the executor is attached', () => {
+    const abortController = new AbortController();
+
+    manager.getOrAwait('aaa', { signal: abortController.signal });
+    manager.getOrCreate('aaa');
+
+    expect(getEventListeners(abortController.signal, 'abort')).toHaveLength(0);
   });
 });
 

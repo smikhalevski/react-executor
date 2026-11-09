@@ -14,7 +14,6 @@
  */
 
 import type { ExecutorPlugin, Observable, PluginConfiguredPayload } from '../types.js';
-import { emptyObject } from '../utils.js';
 
 /**
  * Options of the {@link invalidateWhen} plugin.
@@ -37,7 +36,7 @@ export interface InvalidateWhenOptions {
  */
 export default function invalidateWhen(
   observable: Observable<boolean>,
-  options: InvalidateWhenOptions = emptyObject
+  options: InvalidateWhenOptions = {}
 ): ExecutorPlugin {
   const { delay = 0 } = options;
 

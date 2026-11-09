@@ -1,7 +1,5 @@
 import { Observable } from './types.js';
 
-export const emptyObject = {};
-
 export function noop() {}
 
 export function AbortError(message: string): Error {

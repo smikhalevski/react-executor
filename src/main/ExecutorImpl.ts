@@ -1,6 +1,7 @@
-import { AbortablePromise, PubSub } from 'parallel-universe';
+import { PubSub } from 'parallel-universe';
 import type { ExecutorManager } from './ExecutorManager.js';
 import {
+  AsyncOptions,
   Executor,
   ExecutorEvent,
   ExecutorState,
@@ -24,7 +25,12 @@ export class ExecutorImpl<Value = any> implements Executor {
   isFulfilled = false;
   annotations: Record<PropertyKey, any> = {};
   version = 0;
-  promise: AbortablePromise<Value> | null = null;
+  promise: Promise<Value> | null = null;
+
+  /**
+   * The controller that aborts the pending task, or `null` if there's no pending task.
+   */
+  _abortController: AbortController | null = null;
 
   /**
    * The number of times the executor was activated.
@@ -77,8 +83,15 @@ export class ExecutorImpl<Value = any> implements Executor {
     return this.isFulfilled ? this.value : defaultValue;
   };
 
-  getOrAwait = (): AbortablePromise<Value> => {
-    return new AbortablePromise((resolve, reject, signal) => {
+  getOrAwait = (options: AsyncOptions = {}): Promise<Value> => {
+    const { signal } = options;
+
+    return new Promise((resolve, reject) => {
+      if (signal?.aborted) {
+        reject(signal.reason);
+        return;
+      }
+
       if (this.isSettled && !this.isPending) {
         if (this.isFulfilled) {
           resolve(this.value!);
@@ -88,15 +101,22 @@ export class ExecutorImpl<Value = any> implements Executor {
         return;
       }
 
+      const handleAbort = () => {
+        unsubscribe();
+        reject(signal!.reason);
+      };
+
       const unsubscribe = this.subscribe(event => {
         if (event.type === 'detached') {
           unsubscribe();
+          signal?.removeEventListener('abort', handleAbort);
           reject(AbortError('The executor was detached'));
           return;
         }
 
         if (this.isSettled && !this.isPending) {
           unsubscribe();
+          signal?.removeEventListener('abort', handleAbort);
 
           if (this.isFulfilled) {
             resolve(this.value!);
@@ -106,54 +126,71 @@ export class ExecutorImpl<Value = any> implements Executor {
         }
       });
 
-      signal.addEventListener('abort', unsubscribe);
+      signal?.addEventListener('abort', handleAbort);
     });
   };
 
-  execute = (task: ExecutorTask<Value> | ExecutorTaskCallback<Value>): AbortablePromise<Value> => {
+  execute = (task: ExecutorTask<Value> | ExecutorTaskCallback<Value>, options: AsyncOptions = {}): Promise<Value> => {
+    const { signal } = options;
+
+    if (signal?.aborted) {
+      return preventUnhandledRejection(Promise.reject(signal.reason));
+    }
+
     if (typeof task === 'function') {
       task = { callback: task };
     }
 
     const { callback, pendingValue, preserveLatestTask } = task;
 
-    const handleAbort = () => {
-      if (this.promise === promise) {
-        this._rollback();
-        this.promise = null;
-        this.version++;
-      }
+    const abortController = new AbortController();
+    const taskSignal = abortController.signal;
 
-      this.publish({ type: 'aborted' });
+    const handleAbort = () => {
+      abortController.abort(signal!.reason);
     };
 
     // Rollback pending execution if any
     this._rollback();
 
-    const promise = new AbortablePromise<Value>((resolve, reject, signal) => {
-      signal.addEventListener('abort', handleAbort);
+    const promise = new Promise<Value>((resolve, reject) => {
+      taskSignal.addEventListener('abort', () => {
+        signal?.removeEventListener('abort', handleAbort);
+
+        reject(taskSignal.reason);
+
+        if (this._abortController === abortController) {
+          this._rollback();
+          this._abortController = null;
+          this.promise = null;
+          this.version++;
+        }
+
+        this.publish({ type: 'aborted' });
+      });
 
       new Promise<Value>(resolve => {
-        const value = callback(signal, this);
-        resolve(value instanceof AbortablePromise ? value.withSignal(signal) : value);
+        resolve(callback(taskSignal, this));
       }).then(
         value => {
-          signal.removeEventListener('abort', handleAbort);
+          signal?.removeEventListener('abort', handleAbort);
 
-          if (signal.aborted) {
+          if (taskSignal.aborted) {
             return;
           }
+          this._abortController = null;
           this.promise = null;
           this.resolve(value);
           resolve(value);
         },
 
         error => {
-          signal.removeEventListener('abort', handleAbort);
+          signal?.removeEventListener('abort', handleAbort);
 
-          if (signal.aborted) {
+          if (taskSignal.aborted) {
             return;
           }
+          this._abortController = null;
           this.promise = null;
           this.reject(error);
           reject(error);
@@ -163,14 +200,16 @@ export class ExecutorImpl<Value = any> implements Executor {
 
     preventUnhandledRejection(promise);
 
-    const prevPromise = this.promise;
+    const prevAbortController = this._abortController;
+
+    this._abortController = abortController;
     this.promise = promise;
 
-    if (prevPromise !== null) {
-      prevPromise.abort(AbortError('The task was replaced'));
+    if (prevAbortController !== null) {
+      prevAbortController.abort(AbortError('The task was replaced'));
     }
 
-    if (this.promise !== promise) {
+    if (this._abortController !== abortController) {
       // Task was replaced midflight
       return promise;
     }
@@ -190,7 +229,14 @@ export class ExecutorImpl<Value = any> implements Executor {
       this.invalidatedAt = 0;
     }
 
+    signal?.addEventListener('abort', handleAbort);
+
     this.publish({ type: 'pending', payload: { task } });
+
+    if (signal?.aborted) {
+      // The signal was aborted while the task was being started, before the abort listener was added
+      handleAbort();
+    }
 
     return promise;
   };
@@ -212,7 +258,7 @@ export class ExecutorImpl<Value = any> implements Executor {
   };
 
   abort = (reason: unknown = AbortError('The executor was aborted')): void => {
-    this.promise?.abort(reason);
+    this._abortController?.abort(reason);
   };
 
   invalidate = (invalidatedAt = Date.now()): void => {
@@ -231,10 +277,12 @@ export class ExecutorImpl<Value = any> implements Executor {
 
     this._rollback();
 
-    const prevPromise = this.promise;
+    const prevAbortController = this._abortController;
+
+    this._abortController = null;
     this.promise = null;
 
-    prevPromise?.abort();
+    prevAbortController?.abort();
 
     this.isFulfilled = true;
     this.value = value;
@@ -248,10 +296,12 @@ export class ExecutorImpl<Value = any> implements Executor {
   reject = (reason: any, settledAt = Date.now()): void => {
     this._rollback();
 
-    const prevPromise = this.promise;
+    const prevAbortController = this._abortController;
+
+    this._abortController = null;
     this.promise = null;
 
-    prevPromise?.abort();
+    prevAbortController?.abort();
 
     this.isFulfilled = false;
     this.reason = reason;

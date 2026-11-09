@@ -11,7 +11,6 @@
  */
 
 import type { Executor, ExecutorPlugin, PluginConfiguredPayload } from '../types.js';
-import { emptyObject } from '../utils.js';
 
 /**
  * Options of the {@link retryRejected} plugin.
@@ -48,9 +47,7 @@ export interface RetryRejectedOptions<Value> {
  * @param options Plugin options.
  * @template Value The value stored by the executor.
  */
-export default function retryRejected<Value = any>(
-  options: RetryRejectedOptions<Value> = emptyObject
-): ExecutorPlugin<Value> {
+export default function retryRejected<Value = any>(options: RetryRejectedOptions<Value> = {}): ExecutorPlugin<Value> {
   const { count = 3, delay = exponentialBackoff, isEager = false } = options;
 
   return executor => {
