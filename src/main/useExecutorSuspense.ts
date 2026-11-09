@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { use } from 'react';
 import type { Executor } from './types.js';
 
 /**
@@ -35,12 +35,7 @@ export function useExecutorSuspense<Value>(executor: Executor<Value>, shouldSusp
     return executor;
   }
 
-  // Backward compatibility
-  if (typeof React.use !== 'function') {
-    throw executor.getOrAwait();
-  }
-
-  React.use(executor.getOrAwait());
+  use(executor.getOrAwait());
   return executor;
 }
 
