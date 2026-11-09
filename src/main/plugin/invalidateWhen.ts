@@ -1,5 +1,5 @@
 /**
- * The plugin that invalidates the settled executor result when the observable emits `true`.
+ * The plugin that invalidates the executor result when the observable switches from `false` to `true`.
  *
  * ```ts
  * import invalidateWhen from 'react-executor/plugin/invalidateWhen';
@@ -21,8 +21,8 @@ import { emptyObject } from '../utils.js';
  */
 export interface InvalidateWhenOptions {
   /**
-   * The minimum delay (in milliseconds) after the observable emits `false` before the executor is invalidated when
-   * the observable emits `true`.
+   * The minimum time (in milliseconds) that the observable must stay `false` before its switch to `true`
+   * invalidates the executor.
    *
    * @default 0
    */
@@ -30,10 +30,10 @@ export interface InvalidateWhenOptions {
 }
 
 /**
- * Invalidates the settled executor result when the observable emits `true`.
+ * Invalidates the executor result when the observable switches from `false` to `true`.
  *
- * @param observable The observable that triggers the invalidation of the executor result.
- * @param options Invalidate options.
+ * @param observable The observable that triggers the invalidation.
+ * @param options Plugin options.
  */
 export default function invalidateWhen(
   observable: Observable<boolean>,

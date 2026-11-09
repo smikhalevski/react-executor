@@ -21,15 +21,15 @@ import { emptyObject } from '../utils.js';
  */
 export interface RetryWhenOptions {
   /**
-   * The minimum delay (in milliseconds) after the observable switches to `true` and retrying the executor — unless
-   * the observable emits `false`.
+   * The minimum delay (in milliseconds) between the observable switching to `true` and the retry. If the
+   * observable emits `false` during this delay, the task isn't retried.
    *
    * @default 0
    */
   delay?: number;
 
   /**
-   * If `true` then executor is retried even if it isn't active.
+   * If `true`, the executor is retried even if it isn't {@link react-executor!Executor.isActive active}.
    *
    * @default false
    */
@@ -40,11 +40,11 @@ export interface RetryWhenOptions {
  * Retries the latest task when the observable switches from `false` to `true`. Repeated `true` values, including
  * the first value if it is `true`, don't trigger a retry.
  *
- * **Note:** If executor isn't active and retry isn't {@link RetryWhenOptions.isEager eager} then the task is retried
- * after the executor becomes active.
+ * If the executor isn't active and the retry isn't {@link RetryWhenOptions.isEager eager}, the task is retried
+ * after the executor is activated.
  *
- * @param observable The observable that triggers the retry of the latest task.
- * @param options Retry options.
+ * @param observable The observable that triggers the retry.
+ * @param options Plugin options.
  */
 export default function retryWhen(
   observable: Observable<boolean>,

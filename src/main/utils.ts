@@ -43,9 +43,9 @@ export function isShallowEqual(a: any, b: any): boolean {
 }
 
 /**
- * Returns the observable that inverses boolean values emitted by another observable.
+ * Returns the observable that inverts boolean values emitted by another observable.
  *
- * @param observable The observable to inverse.
+ * @param observable The observable to invert.
  */
 export function negate(observable: Observable<any>): Observable<boolean> {
   return {

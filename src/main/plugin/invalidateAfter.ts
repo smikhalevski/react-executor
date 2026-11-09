@@ -1,5 +1,5 @@
 /**
- * The plugin that invalidates the settled executor after a delay.
+ * The plugin that invalidates the executor result after a delay.
  *
  * ```ts
  * import invalidateAfter from 'react-executor/plugin/invalidateAfter';
@@ -13,9 +13,10 @@
 import type { ExecutorPlugin, PluginConfiguredPayload } from '../types.js';
 
 /**
- * Invalidates the settled executor after a delay.
+ * Invalidates the executor result after a delay. The delay is counted from the moment the executor was settled, and
+ * restarts every time the executor is settled again.
  *
- * @param delay The delay in milliseconds after which the executor result is invalidated.
+ * @param delay The delay (in milliseconds) after which the executor result is invalidated.
  */
 export default function invalidateAfter(delay: number): ExecutorPlugin {
   return executor => {

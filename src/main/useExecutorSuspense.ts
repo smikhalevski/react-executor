@@ -2,7 +2,7 @@ import { use } from 'react';
 import type { Executor } from './types.js';
 
 /**
- * Suspends rendering until an executor satisfies a predicate.
+ * Suspends rendering while the executor is pending.
  *
  * @example
  * // Suspend while the executor is pending, then get the settled value
@@ -17,15 +17,13 @@ import type { Executor } from './types.js';
  * useExecutorSuspense(breadExecutor);
  *
  * @example
- * // Only suspend if the executor has never been fulfilled before (allow stale values through)
+ * // Only suspend if the executor has never been settled before (allow stale values through)
  * useExecutorSuspense(executor, executor => !executor.isSettled);
  *
  * @param executor The executor to suspend on.
- * @param shouldSuspend A predicate called on a {@link Executor.isPending pending} executor. If it returns `true`,
- * rendering is suspended until the executor settles. If it returns `false`, rendering continues immediately with
- * whatever state the executor currently holds. Only called when the executor is pending — non-pending executors
- * never trigger suspension regardless of this predicate.
- * Defaults to suspending whenever the executor is pending and not yet {@link Executor.isFulfilled fulfilled}.
+ * @param shouldSuspend A predicate that is called if the executor is {@link Executor.isPending pending}. If it
+ * returns `true`, rendering is suspended until the executor settles. By default, rendering is suspended if the
+ * executor isn't {@link Executor.isFulfilled fulfilled}.
  * @returns The executor, for chaining with {@link ReadonlyExecutor.get get} or
  * {@link ReadonlyExecutor.getOrDefault getOrDefault}.
  * @template Value The value stored by the executor.

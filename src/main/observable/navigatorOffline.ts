@@ -1,7 +1,7 @@
 /**
- * The observable that emits `true` if
+ * The observable that emits `true` when
  * [the device is disconnected from the network](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/onLine),
- * and emits `false` if the device if connected to the network.
+ * and `false` when it is connected.
  *
  * ```ts
  * import abortWhen from 'react-executor/plugin/abortWhen';
@@ -19,9 +19,11 @@ import navigatorOnline from './navigatorOnline.js';
 import { negate } from '../utils.js';
 
 /**
- * The observable that emits `true` if
+ * The observable that emits `true` when
  * [the device is disconnected from the network](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/onLine),
- * and emits `false` if the device if connected to the network.
+ * and `false` when it is connected.
+ *
+ * The current state is emitted to a listener right after it subscribes.
  */
 const navigatorOffline = negate(navigatorOnline);
 

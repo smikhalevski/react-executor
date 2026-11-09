@@ -1,6 +1,7 @@
 /**
- * The plugin that detaches a deactivated executor after a delay. The executor must be activated at least once
- * for this plugin to have an effect.
+ * The plugin that detaches a deactivated executor after a delay.
+ *
+ * The executor must be activated at least once for this plugin to have an effect.
  *
  * ```ts
  * import detachDeactivated from 'react-executor/plugin/detachDeactivated';
@@ -20,8 +21,8 @@ import { emptyObject } from '../utils.js';
  */
 export interface DetachDeactivatedOptions {
   /**
-   * The minimum delay (in milliseconds) between executor deactivation and detachment. If the executor is reactivated
-   * during this delay, it won't be detached.
+   * The minimum delay (in milliseconds) between the executor deactivation and detachment. If the executor is
+   * reactivated during this delay, it isn't detached.
    *
    * @default 5_000
    */
@@ -29,10 +30,11 @@ export interface DetachDeactivatedOptions {
 }
 
 /**
- * Detaches a deactivated executor after a {@link DetachDeactivatedOptions.delay delay}. The executor must be activated
- * at least once for this plugin to have an effect.
+ * Detaches a deactivated executor after a {@link DetachDeactivatedOptions.delay delay}.
  *
- * @param options Detach options.
+ * The executor must be activated at least once for this plugin to have an effect.
+ *
+ * @param options Plugin options.
  * @see {@link detachInactive}
  */
 export default function detachDeactivated(options: DetachDeactivatedOptions = emptyObject): ExecutorPlugin {

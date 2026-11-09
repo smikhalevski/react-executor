@@ -1,5 +1,5 @@
 /**
- * The plugin that retries the last task if the executor is invalidated.
+ * The plugin that retries the latest task if the executor is invalidated.
  *
  * ```ts
  * import retryInvalidated from 'react-executor/plugin/retryInvalidated';
@@ -18,7 +18,7 @@ import { emptyObject } from '../utils.js';
  */
 export interface RetryInvalidatedOptions {
   /**
-   * If `true` then executor is retried even if it isn't {@link react-executor!Executor.isActive active}.
+   * If `true`, the executor is retried even if it isn't {@link react-executor!Executor.isActive active}.
    *
    * @default false
    */
@@ -26,7 +26,9 @@ export interface RetryInvalidatedOptions {
 }
 
 /**
- * Retries the last task if the executor is invalidated.
+ * Retries the latest task if the executor is invalidated.
+ *
+ * @param options Plugin options.
  */
 export default function retryInvalidated(options: RetryInvalidatedOptions = emptyObject): ExecutorPlugin {
   const { isEager = false } = options;

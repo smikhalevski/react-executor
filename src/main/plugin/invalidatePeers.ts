@@ -1,5 +1,5 @@
 /**
- * The plugin that invalidates peer executors with matching keys if the executor is fulfilled or invalidated.
+ * The plugin that invalidates peer executors if the executor is fulfilled or invalidated.
  *
  * ```ts
  * import invalidatePeers from 'react-executor/plugin/invalidatePeers';
@@ -15,9 +15,9 @@
 import type { Executor, ExecutorPlugin, PluginConfiguredPayload } from '../types.js';
 
 /**
- * Invalidates peer executors with matching keys if the executor is fulfilled or invalidated.
+ * Invalidates peer executors if the executor is fulfilled or invalidated.
  *
- * @param predicate The callback that returns a truthy value for a matching peer executor.
+ * @param predicate A collection of peer executors, or a callback that returns a truthy value for a peer executor.
  */
 export default function invalidatePeers(predicate: Iterable<Executor> | ((executor: Executor) => any)): ExecutorPlugin {
   return executor => {

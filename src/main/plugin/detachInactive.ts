@@ -1,5 +1,5 @@
 /**
- * The plugin that detaches an executor that isn't active after a delay.
+ * The plugin that detaches an inactive executor after a delay.
  *
  * ```ts
  * import detachInactive from 'react-executor/plugin/detachInactive';
@@ -19,27 +19,26 @@ import type { ExecutorPlugin, PluginConfiguredPayload } from '../types.js';
  */
 export interface DetachInactiveOptions {
   /**
-   * The maximum delay (in milliseconds) allowed between executor creation and activation before it is detached.
+   * The delay (in milliseconds) after which an executor that was never activated is detached. Use it for executors
+   * that are created ahead of time and may never be used.
    *
-   * Use this when creating an executor prematurely and unsure if it will be used.
-   *
-   * By default, executor isn't detached if it wasn't activated.
+   * By default, an executor that was never activated isn't detached.
    */
   delayBeforeActivated?: number;
 
   /**
-   * The minimum delay (in milliseconds) between executor deactivation and detachment. If the executor is reactivated
-   * during this delay, it won't be detached.
+   * The minimum delay (in milliseconds) between the executor deactivation and detachment. If the executor is
+   * reactivated during this delay, it isn't detached.
    *
-   * By default, executor isn't detached if it was deactivated.
+   * By default, a deactivated executor isn't detached.
    */
   delayAfterDeactivated?: number;
 }
 
 /**
- * Detaches an executor that isn't active after a delay.
+ * Detaches an inactive executor after a delay.
  *
- * @param options Detach options.
+ * @param options Plugin options.
  */
 export default function detachInactive(options: DetachInactiveOptions): ExecutorPlugin {
   const { delayBeforeActivated, delayAfterDeactivated } = options;

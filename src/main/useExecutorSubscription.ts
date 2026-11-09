@@ -2,11 +2,12 @@ import { useDebugValue, useEffect, useSyncExternalStore } from 'react';
 import type { Executor, ExecutorState } from './types.js';
 
 /**
- * Re-renders the component when an executor's state is changed.
+ * Re-renders the component when the executor state changes.
  *
  * The executor is activated after mount and deactivated before unmount.
  *
  * @param executor The executor to subscribe to.
+ * @returns The executor.
  */
 export function useExecutorSubscription<Value>(executor: Executor<Value>): Executor<Value> {
   useDebugValue(executor, getExecutorStateSnapshot);

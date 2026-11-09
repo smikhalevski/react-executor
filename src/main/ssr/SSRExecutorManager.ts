@@ -13,12 +13,10 @@ export interface SSRExecutorManagerOptions extends ExecutorManagerOptions {
   serializer?: Serializer;
 
   /**
-   * Predicate that executors must satisfy to be hydrated on the client with the state accumulated during SSR.
-   *
-   * By default, only executors that were fulfilled during SSR are hydrated on the client.
+   * Selects executors whose state is sent to the client. By default, only fulfilled executors are sent.
    *
    * @param executor The executor to check.
-   * @returns `true` if the executor must be hydrated on the client, or `false` otherwise.
+   * @returns `true` if the executor state must be sent to the client, or `false` otherwise.
    */
   executorPredicate?: (executor: Executor) => boolean;
 
@@ -30,7 +28,7 @@ export interface SSRExecutorManagerOptions extends ExecutorManagerOptions {
 }
 
 /**
- * The base implementation of the executor manager that supports client hydration after SSR.
+ * The executor manager that sends executor states to the client during server-side rendering.
  */
 export class SSRExecutorManager extends ExecutorManager {
   /**
@@ -44,7 +42,7 @@ export class SSRExecutorManager extends ExecutorManager {
   protected _serializer;
 
   /**
-   * Predicate that executors must satisfy to be hydrated on the client with the state accumulated during SSR.
+   * Selects executors whose state is sent to the client.
    */
   protected _executorPredicate;
 
@@ -55,9 +53,9 @@ export class SSRExecutorManager extends ExecutorManager {
   nonce;
 
   /**
-   * Creates a new {@link SSRExecutorManager} instance.
+   * Creates a new SSR executor manager.
    *
-   * @param options Additional options.
+   * @param options Manager options.
    */
   constructor(options: SSRExecutorManagerOptions = {}) {
     const { serializer = JSON, executorPredicate = executor => executor.isFulfilled } = options;
@@ -71,13 +69,14 @@ export class SSRExecutorManager extends ExecutorManager {
   }
 
   /**
-   * Resolves with `true` if the {@link nextHydrationChunk} is non-empty.
+   * Waits until no executors are pending, and resolves with `true` if the state of any executor has changed since
+   * this method was called, or `false` otherwise. Use it to re-render the app on the server until all data is loaded.
    *
-   * @param maxRetries The maximum number of times to re-check for pending executors before throwing.
-   * Increase this if your SSR data-fetching involves many sequential async steps.
+   * The returned promise is rejected if executors are still pending after `maxRetries` attempts. This usually means
+   * that a plugin keeps re-executing tasks during SSR.
    *
-   * @throws {Error} If pending executors are still found after `maxRetries` attempts. This usually indicates
-   * a plugin that continuously re-executes tasks during SSR.
+   * @param maxRetries The maximum number of times to wait for executors that become pending again. Increase it if
+   * data is loaded in many sequential steps.
    */
   hasChanges(maxRetries = 10): Promise<boolean> {
     const getVersion = () => Array.from(this).reduce((version, executor) => version + executor.version, 0);
@@ -102,8 +101,8 @@ export class SSRExecutorManager extends ExecutorManager {
   }
 
   /**
-   * Returns an inline `<script>` tag with source that hydrates the client with the state accumulated during SSR,
-   * or an empty string if there are no state changes since the last time {@link nextHydrationScriptSource} was called.
+   * Returns a `<script>` tag that sends the client the states of executors that have changed since they were last
+   * sent, or an empty string if there are no such changes.
    */
   nextHydrationChunk(): string {
     const source = this.nextHydrationScriptSource();
@@ -116,8 +115,8 @@ export class SSRExecutorManager extends ExecutorManager {
   }
 
   /**
-   * Returns a script source that hydrates the client with the state accumulated during SSR, or an empty string if there
-   * are no state changes since the last time {@link nextHydrationScriptSource} was called.
+   * Returns the source of a script that sends the client the states of executors that have changed since they were
+   * last sent, or an empty string if there are no such changes.
    */
   nextHydrationScriptSource(): string {
     const sources = [];
@@ -145,9 +144,9 @@ export class SSRExecutorManager extends ExecutorManager {
   }
 
   /**
-   * Instantly aborts all pending executors and preserves their available results as is.
+   * Aborts the pending tasks of all executors. The executor results are preserved as is.
    *
-   * @param reason The abort reason that is used for rejection of the pending task promises.
+   * @param reason The reason that rejects the aborted task promises.
    */
   abort(reason?: unknown): void {
     for (const executor of this) {

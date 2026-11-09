@@ -1,5 +1,5 @@
 /**
- * The plugin that retries the last task if it has failed.
+ * The plugin that retries the latest task after a delay if the executor is rejected.
  *
  * ```ts
  * import retryRejected from 'react-executor/plugin/retryRejected';
@@ -20,21 +20,22 @@ import { emptyObject } from '../utils.js';
  */
 export interface RetryRejectedOptions<Value> {
   /**
-   * The number of retries.
+   * The maximum number of consecutive retries.
    *
    * @default 3
    */
   count?: number;
 
   /**
-   * The delay (in milliseconds) between retries.
+   * The delay (in milliseconds) between the rejection and the next retry, or a callback that receives the index of
+   * the retry and the executor, and returns the delay.
    *
-   * By default, an exponential backoff is used.
+   * By default, an exponential backoff is used: 1000, 1800, 3240 milliseconds, and so on.
    */
   delay?: number | ((index: number, executor: Executor<Value>) => number);
 
   /**
-   * If `true` then executor is retried even if it isn't {@link Executor.isActive active}.
+   * If `true`, the executor is retried even if it isn't {@link Executor.isActive active}.
    *
    * @default false
    */
@@ -42,9 +43,9 @@ export interface RetryRejectedOptions<Value> {
 }
 
 /**
- * Retries the last task if it has failed.
+ * Retries the latest task after a delay if the executor is rejected.
  *
- * @param options Retry options.
+ * @param options Plugin options.
  * @template Value The value stored by the executor.
  */
 export default function retryRejected<Value = any>(

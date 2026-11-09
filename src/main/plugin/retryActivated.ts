@@ -20,7 +20,7 @@ import { emptyObject } from '../utils.js';
  */
 export interface RetryActivatedOptions {
   /**
-   * The minimum delay (in milliseconds) between the executor activation and the last settlement before retrying
+   * The minimum time (in milliseconds) that must pass after the executor was settled for an activation to retry
    * the latest task.
    *
    * @default 0
@@ -31,7 +31,7 @@ export interface RetryActivatedOptions {
 /**
  * Retries the latest task if the executor is activated.
  *
- * @param options Retry options.
+ * @param options Plugin options.
  */
 export default function retryActivated(options: RetryActivatedOptions = emptyObject): ExecutorPlugin {
   const { delayAfterSettled = 0 } = options;

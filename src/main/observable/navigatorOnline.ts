@@ -1,7 +1,7 @@
 /**
- * The observable that emits `true` if
- * [the device is _connected_ to the network](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/onLine), and
- * emits `false` if the device is disconnected from the network.
+ * The observable that emits `true` when
+ * [the device is connected to the network](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/onLine), and
+ * `false` when it is disconnected.
  *
  * ```ts
  * import retryWhen from 'react-executor/plugin/retryWhen';
@@ -26,9 +26,9 @@ function handleChange(): void {
 }
 
 /**
- * The observable that emits `true` if
- * [the device is _connected_ to the network](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/onLine), and
- * emits `false` if the device is disconnected from the network.
+ * The observable that emits `true` when
+ * [the device is connected to the network](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/onLine), and
+ * `false` when it is disconnected.
  *
  * The current state is emitted to a listener right after it subscribes.
  */

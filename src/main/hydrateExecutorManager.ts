@@ -14,12 +14,14 @@ export interface HydrateExecutorManagerOptions {
 }
 
 /**
- * Enables the SSR hydration for the given executor.
+ * Enables SSR hydration for the executor manager: the executor states that the server sent during SSR are applied to
+ * executors of this manager.
  *
- * **Note:** SSR hydration can be enabled only for one executor manager.
+ * **Note:** Only one executor manager can be hydrated on a page.
  *
- * @param manager The executor manager for which SSR hydration must be enabled.
- * @param options Additional options.
+ * @param manager The executor manager to hydrate.
+ * @param options Hydration options.
+ * @throws {Error} If hydration was already enabled on this page.
  */
 export function hydrateExecutorManager(manager: ExecutorManager, options: HydrateExecutorManagerOptions = {}): void {
   const { serializer = JSON } = options;

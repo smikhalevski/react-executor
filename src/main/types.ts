@@ -28,28 +28,27 @@ export type ExecutorEventType =
  *
  * <dl>
  *   <dt><i>"attached"</i></dt>
- *   <dd>The executor was just created, plugins were applied to it, and it was attached to the manager.</dd>
+ *   <dd>The executor was created, plugins were applied to it, and it was attached to the manager.</dd>
  *
  *   <dt><i>"detached"</i></dt>
  *   <dd>
- *   The executor was just {@link ExecutorManager.detach detached}: it was removed from the manager and all of its
+ *   The executor was {@link ExecutorManager.detach detached}: it was removed from the manager and all of its
  *   subscribers were unsubscribed.
  *   </dd>
  *
  *   <dt><i>"activated"</i></dt>
  *   <dd>
- *   The executor was inactive and became {@link Executor.isActive active}. This means that there are consumers that
- *   observe the state of the executor.
+ *   The executor was inactive and became {@link Executor.isActive active}: a consumer started to observe its state.
  *   </dd>
  *
  *   <dt><i>"deactivated"</i></dt>
  *   <dd>
- *   The executor was {@link Executor.isActive active} and became inactive. This means that there are no consumers
- *   that observe the state of the executor.
+ *   The executor was {@link Executor.isActive active} and became inactive: the last consumer stopped observing its
+ *   state.
  *   </dd>
  *
  *   <dt><i>"pending"</i></dt>
- *   <dd>The executor started an {@link Executor.task} execution.</dd>
+ *   <dd>The executor started to execute a {@link Executor.task task}.</dd>
  *
  *   <dt><i>"fulfilled"</i></dt>
  *   <dd>The executor was {@link Executor.isFulfilled fulfilled} with a {@link Executor.value value}.</dd>
@@ -59,27 +58,25 @@ export type ExecutorEventType =
  *
  *   <dt><i>"aborted"</i></dt>
  *   <dd>
- *   The {@link Executor.task latest task} was aborted.
+ *   The pending task was aborted. If the executor is still {@link Executor.isPending pending} when this event is
+ *   published, the aborted task was replaced with a new one.
  *
- *   If executor is still {@link Executor.isPending pending} when abort event is published then the currently pending
- *   task is being replaced with a new task.
- *
- *   Calling {@link Executor.execute} when handling an abort event may lead to stack overflow. If you need to
- *   do this anyway, execute a new task from async context using
- *   [`queueMicrotask`](https://developer.mozilla.org/en-US/docs/Web/API/queueMicrotask) or similar API.
+ *   Calling {@link Executor.execute} when handling this event may lead to a stack overflow. If you need to do so,
+ *   execute the new task asynchronously, for example with
+ *   [`queueMicrotask`](https://developer.mozilla.org/en-US/docs/Web/API/queueMicrotask).
  *   </dd>
  *
  *   <dt><i>"cleared"</i></dt>
- *   <dd>The executor was cleared and now isn't {@link Executor.isSettled settled}.</dd>
+ *   <dd>The executor was {@link Executor.clear cleared} and isn't {@link Executor.isSettled settled} anymore.</dd>
  *
  *   <dt><i>"invalidated"</i></dt>
- *   <dd>The result stored in the executor was {@link Executor.invalidate invalidated}.</dd>
+ *   <dd>The executor result was {@link Executor.invalidate invalidated}.</dd>
  *
  *   <dt><i>"annotated"</i></dt>
- *   <dd>{@link Executor.annotations Annotations} associated with the executor were patched.</dd>
+ *   <dd>The {@link Executor.annotations annotations} of the executor were changed.</dd>
  *
  *   <dt><i>"plugin_configured"</i></dt>
- *   <dd>The configuration of the plugin associated with the executor was updated.</dd>
+ *   <dd>The configuration of a plugin applied to the executor was changed.</dd>
  * </dl>
  *
  * @template Value The value stored by the executor.
@@ -93,12 +90,12 @@ export interface ExecutorEvent<Value = any> {
   type: ExecutorEventType;
 
   /**
-   * The executor for which the lifecycle event has occurred.
+   * The executor that published the event.
    */
   target: Executor<Value>;
 
   /**
-   * The {@link Executor.version version of the executor} for which this event was published.
+   * The {@link Executor.version version} of the executor state when the event was published.
    */
   version: number;
 
@@ -109,7 +106,7 @@ export interface ExecutorEvent<Value = any> {
 }
 
 /**
- * The details of an event that can be published by an executor.
+ * The event to publish with {@link Executor.publish}.
  */
 export interface PartialExecutorEvent {
   /**
@@ -126,7 +123,7 @@ export interface PartialExecutorEvent {
 }
 
 /**
- * The plugin callback that is invoked when the executor is created by the {@link ExecutorManager}.
+ * The plugin that is called when the {@link ExecutorManager} creates an executor.
  *
  * @param executor The executor that was just created.
  * @template Value The value stored by the executor.
@@ -134,11 +131,11 @@ export interface PartialExecutorEvent {
 export type ExecutorPlugin<Value = any> = (executor: Executor<Value>) => void;
 
 /**
- * The task callback that can be executed by an {@link Executor}.
+ * The callback of a task that is executed by an {@link Executor}.
  *
- * @param signal The {@link AbortSignal} that is aborted if task was discarded.
+ * @param signal The signal that is aborted if the task is aborted or replaced.
  * @param executor The executor that executes the task.
- * @returns The value that the executor must be fulfilled with.
+ * @returns The value, or a promise of the value, to fulfill the executor with.
  * @template Value The value stored by the executor.
  */
 export type ExecutorTaskCallback<Value = any> = (
@@ -153,24 +150,26 @@ export type ExecutorTaskCallback<Value = any> = (
  */
 export interface ExecutorTask<Value = any> {
   /**
-   * The task callback that can be executed by an {@link Executor}.
+   * The callback that is called when the task is executed.
    */
   callback: ExecutorTaskCallback<Value>;
 
   /**
-   * The value to resolve the executor with immediately while {@link callback} is pending.
-   * Acts as an optimistic result — the UI can render with this value before the task settles.
-   * Replaced by the real result on fulfillment, or discarded and rolled back on rejection.
+   * The value that the executor is fulfilled with while the {@link callback} is pending. Use it for optimistic
+   * updates: the UI shows this value before the task settles.
    *
-   * If `undefined`, the executor remains in its current state while the task is pending.
+   * If the task is fulfilled, this value is replaced with the task result. If the task is rejected, the previous
+   * state is restored and the executor is rejected with the task error. If the task is aborted or replaced, the
+   * previous state is restored.
+   *
+   * If `undefined`, the executor state doesn't change while the task is pending.
    */
   pendingValue?: Value;
 
   /**
-   * If `true`, {@link Executor.task} is not overwritten by this task upon execution.
-   *
-   * Useful when the task is the canonical source of truth for the executor and should not be silently replaced by
-   * a one-off execution — for example, a polling task or a task submitted by a plugin.
+   * If `true`, executing this task doesn't replace the {@link Executor.task latest task}, so
+   * {@link Executor.retry retries} still execute the previous task. Use it for one-off tasks, such as mutations, that
+   * must not be retried.
    *
    * @default false
    */
@@ -178,7 +177,7 @@ export interface ExecutorTask<Value = any> {
 }
 
 /**
- * The minimal serializable state that is required to hydrate the {@link Executor} instance.
+ * The minimal serializable state of an {@link Executor}, which is enough to hydrate or persist it.
  *
  * @template Value The value stored by the executor.
  */
@@ -189,12 +188,12 @@ export interface ExecutorState<Value = any> {
   readonly value: Value | undefined;
 
   /**
-   * The reason of the latest failure.
+   * The reason of the latest rejection.
    */
   readonly reason: any;
 
   /**
-   * The map of annotations associated with the executor.
+   * The annotations of the executor.
    */
   readonly annotations: Record<PropertyKey, any>;
 
@@ -204,7 +203,7 @@ export interface ExecutorState<Value = any> {
   readonly settledAt: number;
 
   /**
-   * The timestamp when the executor was invalidated, or 0 if the executor isn't invalidated.
+   * The timestamp when the executor was invalidated, or 0 if it isn't invalidated.
    */
   readonly invalidatedAt: number;
 
@@ -215,36 +214,34 @@ export interface ExecutorState<Value = any> {
 }
 
 /**
- * Provides access to execution results and allows subscribing to execution state changes.
+ * The read-only view of an executor: provides access to the executor state and allows subscribing to its events.
  *
  * @template Value The value stored by the executor.
  */
 export interface ReadonlyExecutor<Value = any> extends ExecutorState<Value>, Observable<ExecutorEvent<Value>> {
   /**
-   * The key of this executor, unique in scope of the {@link manager}.
+   * The key of the executor, unique within the {@link manager}.
    */
   readonly key: any;
 
   /**
    * The value of the latest fulfillment.
    *
-   * **Note:** An executor may still have a value even if it was {@link isRejected rejected}. Use {@link get},
-   * {@link getOrDefault}, or {@link getOrAwait} to retrieve the value of a {@link Executor.isFulfilled fulfilled}
-   * executor.
+   * **Note:** A rejected executor may still have a value from an earlier fulfillment. Use {@link get},
+   * {@link getOrDefault}, or {@link getOrAwait} to read the value of a {@link isFulfilled fulfilled} executor.
    */
   readonly value: Value | undefined;
 
   /**
-   * The reason of the latest failure.
+   * The reason of the latest rejection.
    *
-   * **Note:** An executor may still have a rejection reason even if it was {@link Executor.isFulfilled fulfilled}.
-   * Check {@link isRejected} to ensure that an executor is actually rejected.
+   * **Note:** A fulfilled executor may still have a reason from an earlier rejection. Check {@link isRejected} to
+   * find out if the executor is rejected.
    */
   readonly reason: any;
 
   /**
-   * The integer version of {@link ExecutorState the state of this executor} that is incremented every time the executor
-   * is mutated.
+   * The version of the executor state. It is incremented every time the executor changes.
    */
   readonly version: number;
 
@@ -264,18 +261,18 @@ export interface ReadonlyExecutor<Value = any> extends ExecutorState<Value>, Obs
   readonly isSettled: boolean;
 
   /**
-   * `true` if the executor was {@link Executor.activate activated} more times than deactivated.
+   * `true` if the executor has active consumers, or `false` otherwise. See {@link Executor.activate}.
    */
   readonly isActive: boolean;
 
   /**
-   * `true` if the execution is currently pending, or `false` otherwise.
+   * `true` if a task is pending, or `false` otherwise.
    */
   readonly isPending: boolean;
 
   /**
-   * `true` if {@link Executor.invalidate invalidate} was called on a {@link isSettled settled} executor and
-   * a new settlement hasn't occurred yet.
+   * `true` if the executor result was {@link Executor.invalidate invalidated} and the executor hasn't been settled
+   * since, or `false` otherwise.
    */
   readonly isInvalidated: boolean;
 
@@ -285,27 +282,26 @@ export interface ReadonlyExecutor<Value = any> extends ExecutorState<Value>, Obs
   readonly task: ExecutorTask<Value> | null;
 
   /**
-   * The promise of the pending {@link task} execution, or `null` if there's no pending task execution.
+   * The promise of the pending task, or `null` if there's no pending task.
    *
-   * **Note:** This promise is aborted if
-   * [the task is replaced](https://megastack.dev/react-executor#replace-a-task).
-   * Use {@link getOrAwait} to wait until the executor becomes {@link isSettled settled}.
+   * **Note:** This promise is aborted if [the task is replaced](https://megastack.dev/react-executor#replace-a-task).
+   * Use {@link getOrAwait} to wait until the executor is {@link isSettled settled}.
    */
   readonly promise: AbortablePromise<Value> | null;
 
   /**
-   * Returns a {@link value} if the executor is {@link isFulfilled fulfilled}. Throws a {@link reason} if the executor
-   * is {@link isRejected rejected}. Otherwise, throws an {@link !Error}.
+   * Returns the {@link value} if the executor is {@link isFulfilled fulfilled}, throws the {@link reason} if it's
+   * {@link isRejected rejected}, or throws an {@link !Error} if it isn't settled.
    */
   get(): Value;
 
   /**
-   * Returns a {@link value} if the executor is {@link isFulfilled fulfilled}. Otherwise, returns `undefined`.
+   * Returns the {@link value} if the executor is {@link isFulfilled fulfilled}, or `undefined` otherwise.
    */
   getOrDefault(): Value | undefined;
 
   /**
-   * Returns a {@link value} if the executor is {@link isFulfilled fulfilled}. Otherwise, returns the default value.
+   * Returns the {@link value} if the executor is {@link isFulfilled fulfilled}, or the default value otherwise.
    *
    * @param defaultValue The default value.
    * @template DefaultValue The type of the default value.
@@ -313,24 +309,22 @@ export interface ReadonlyExecutor<Value = any> extends ExecutorState<Value>, Obs
   getOrDefault<DefaultValue>(defaultValue: DefaultValue): Value | DefaultValue;
 
   /**
-   * Waits for the executor to become {@link isSettled settled} and non-{@link isPending pending}. The returned
-   * promise is then resolved with a {@link value} if the executor is {@link isFulfilled fulfilled}, or rejected
-   * with a {@link reason} if the executor is {@link isRejected rejected}.
+   * Waits until the executor is {@link isSettled settled} and has no pending task. The returned promise is resolved
+   * with the {@link value} if the executor is {@link isFulfilled fulfilled}, or rejected with the {@link reason} if
+   * it's {@link isRejected rejected}.
    *
-   * If the executor is detached during this operation, the returned promise is rejected with an
-   * {@link !DOMException AbortError}.
+   * If the executor is detached while waiting, the promise is rejected with an {@link !DOMException AbortError}.
    */
   getOrAwait(): AbortablePromise<Value>;
 
   /**
-   * Captures the snapshot of the current executor state.
+   * Returns a snapshot of the executor state.
    */
   getStateSnapshot(): ExecutorState<Value>;
 }
 
 /**
- * Manages the async task execution process and provides ways to access execution results, abort or replace a task
- * execution, and subscribe to execution state changes.
+ * Executes tasks, stores their results, and publishes events when its state changes.
  *
  * @template Value The value stored by the executor.
  */
@@ -338,81 +332,74 @@ export interface Executor<Value = any> extends ReadonlyExecutor<Value> {
   /**
    * The latest task that was {@link execute executed}, or `null` if the executor hasn't executed any tasks.
    *
-   * **Note:** Unlike {@link ReadonlyExecutor.task}, this property is writable to allow plugins and advanced
-   * use cases to replace the stored task reference directly.
+   * **Note:** Unlike {@link ReadonlyExecutor.task}, this property is writable, so plugins can replace the latest task.
    */
   task: ExecutorTask<Value> | null;
 
   /**
-   * Executes a task and populates the executor with the returned result.
+   * Executes a task and stores its result in the executor.
    *
-   * Instantly aborts pending execution (if any), marks the executor as {@link isPending pending} and then invokes the
-   * task callback.
+   * The task callback is called synchronously. If another task is pending, it is aborted and replaced. If this task
+   * is aborted or replaced before it settles, the signal passed to the callback is aborted, and the result is ignored.
    *
-   * If a new task is executed before the returned promise is fulfilled then the signal is aborted and the result is
-   * ignored.
-   *
-   * @param task The task object or the task callback that returns the new result for the executor to store.
+   * @param task The task, or the task callback, to execute.
    * @returns The promise that is resolved with the result of the task.
    */
   execute(task: ExecutorTask<Value> | ExecutorTaskCallback<Value>): AbortablePromise<Value>;
 
   /**
-   * If the executor is not {@link isPending pending}, the {@link task latest task} is {@link execute executed}
-   * again. If there's no task then this is a no-op.
+   * Executes the {@link task latest task} again, unless a task is pending or there's no latest task.
    */
   retry(): void;
 
   /**
-   * Clears available results and doesn't affect the pending task execution.
-   *
-   * The {@link task latest task} can still be {@link retry retried} after the executor is cleared.
+   * Clears the value and the reason, so the executor isn't {@link isSettled settled} anymore. A pending task isn't
+   * affected, and the {@link task latest task} can still be {@link retry retried}.
    */
   clear(): void;
 
   /**
-   * Instantly aborts pending execution and preserves available results as-is. The value (or error) returned from
-   * the pending task callback is ignored, and the signal passed to the task callback is aborted.
+   * Aborts the pending task. The signal passed to the task callback is aborted, and the task result is ignored.
    *
-   * **Note:** This method only affects the pending task promise, not the executor's settled state. To also
-   * clear or reject the executor's value, call {@link clear} or {@link reject} afterwards.
+   * The executor state is preserved, except that a {@link ExecutorTask.pendingValue pending value} is rolled back.
+   * To change the state, call {@link clear} or {@link reject} afterwards.
    *
-   * @param reason The abort reason used to reject the pending task promise.
+   * @param reason The reason that rejects the task promise.
    */
   abort(reason?: unknown): void;
 
   /**
-   * If the executor is settled, marks the result as {@link isInvalidated invalidated}.
+   * Marks the executor result as {@link isInvalidated invalidated}, if the executor is settled.
    *
-   * @param invalidatedAt The timestamp to record as the invalidation time. Defaults to `Date.now()`.
+   * @param invalidatedAt The timestamp of the invalidation. Defaults to `Date.now()`.
    */
   invalidate(invalidatedAt?: number): void;
 
   /**
-   * Aborts pending execution and fulfills the executor with the value.
+   * Aborts the pending task, and fulfills the executor with the value.
    *
-   * **Note:** If the value is a `PromiseLike`, it is wrapped internally and the {@link task} is updated to
-   * reflect the pending resolution. This differs from passing a plain value, where settlement is immediate.
+   * If the value is a promise, the executor stays pending until the promise settles, and then it is fulfilled or
+   * rejected with the promise result. The {@link task latest task} isn't changed.
    *
-   * @param value The value.
-   * @param settledAt The timestamp when the value was acquired. Ignored if value is a `PromiseLike`.
+   * @param value The value, or a promise of the value.
+   * @param settledAt The timestamp when the value was acquired. Ignored if the value is a promise. Defaults to
+   * `Date.now()`.
    */
   resolve(value: PromiseLike<Value> | Value, settledAt?: number): void;
 
   /**
-   * Instantly aborts pending execution and rejects the executor with the reason.
+   * Aborts the pending task, and rejects the executor with the reason.
    *
-   * @param reason The reason of failure.
+   * @param reason The reason of the rejection.
    * @param settledAt The timestamp when the reason was acquired. Defaults to `Date.now()`.
    */
   reject(reason: any, settledAt?: number): void;
 
   /**
-   * Marks the executor as being actively monitored by an external consumer.
+   * Marks the executor as observed by a consumer. The executor stays {@link isActive active} until all consumers
+   * are removed.
    *
-   * An activated executor stays {@link isActive active} until all returned deactivate callbacks are invoked.
-   *
-   * @returns The callback that deactivates the executor if there are no more active consumers.
+   * @returns The callback that removes the consumer. The executor is deactivated when its last consumer is removed.
    */
   activate(): () => void;
 
@@ -424,9 +411,9 @@ export interface Executor<Value = any> extends ReadonlyExecutor<Value> {
   publish(event: PartialExecutorEvent): void;
 
   /**
-   * Merges the patch into the {@link annotations existing annotations}.
+   * Merges the patch into the {@link annotations}.
    *
-   * @param patch The patch containing new annotations.
+   * @param patch The annotations to add or replace.
    */
   annotate(patch: Record<PropertyKey, any>): void;
 }
@@ -434,13 +421,14 @@ export interface Executor<Value = any> extends ReadonlyExecutor<Value> {
 /**
  * The observable that allows subscribing to a stream of values.
  *
- * @template T The value pushed by the observable.
+ * @template T The value emitted by the observable.
  */
 export interface Observable<T> {
   /**
-   * Subscribes the listener to changes of the observed value.
+   * Subscribes the listener to values emitted by the observable.
    *
    * @param listener The listener to subscribe.
+   * @returns The callback that unsubscribes the listener.
    */
   subscribe(listener: (value: T) => void): () => void;
 }

@@ -21,16 +21,16 @@ import { emptyObject } from '../utils.js';
  */
 export interface AbortWhenOptions {
   /**
-   * The minimum delay (in milliseconds) after the observable emits `true` and aborting the executor — unless
-   * the executor is settled or the observable emits `false`.
+   * The minimum delay (in milliseconds) between the observable emitting `true` and the abort. If the observable
+   * emits `false` during this delay, the task isn't aborted.
    *
    * @default 0
    */
   delay?: number;
 
   /**
-   * If `true`, every new task is immediately aborted if the last value emitted by the observable was `true` and
-   * the {@link delay} has expired.
+   * If `true`, then after the {@link delay} has passed, every new task is aborted as soon as it starts, until the
+   * observable emits `false`.
    *
    * @default false
    */
@@ -40,8 +40,8 @@ export interface AbortWhenOptions {
 /**
  * Aborts the pending task if the observable emits `true`.
  *
- * @param observable The observable that trigger the abort of the executor.
- * @param options Abort options.
+ * @param observable The observable that triggers the abort.
+ * @param options Plugin options.
  */
 export default function abortWhen(
   observable: Observable<boolean>,

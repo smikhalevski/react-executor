@@ -1,5 +1,5 @@
 /**
- * The plugin that resolves the executor with values pushed by an observable.
+ * The plugin that resolves the executor with values emitted by an observable.
  *
  * ```ts
  * import resolveBy from 'react-executor/plugin/resolveBy';
@@ -15,9 +15,10 @@
 import type { ExecutorPlugin, Observable, PluginConfiguredPayload } from '../types.js';
 
 /**
- * Resolves the executor with values pushed by an observable.
+ * Resolves the executor with values emitted by an observable. If the observable emits a promise, the executor is
+ * resolved with its result.
  *
- * @param observable The observable that pushes values.
+ * @param observable The observable that emits values or promises.
  * @template Value The value stored by the executor.
  */
 export default function resolveBy<Value>(observable: Observable<PromiseLike<Value> | Value>): ExecutorPlugin<Value> {

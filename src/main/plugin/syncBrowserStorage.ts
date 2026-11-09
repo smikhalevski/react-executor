@@ -20,21 +20,22 @@ import { PubSub } from 'parallel-universe';
  */
 export interface SyncBrowserStorageOptions {
   /**
-   * The storage where executor state is persisted.
+   * The storage where the executor state is persisted: `localStorage` or `sessionStorage`.
    *
    * @default "local"
    */
   storageType?: 'local' | 'session';
 
   /**
-   * A storage item key, or a callback that returns a storage item key.
+   * The storage item key, or a callback that returns it.
    *
-   * By default, an {@link react-executor!ExecutorManagerOptions.keyIdGenerator executor key ID} is used.
+   * By default, the {@link react-executor!ExecutorManagerOptions.keyIdGenerator executor key ID} is used, which must
+   * be a string.
    */
   storageKey?: string | ((executor: Executor) => string);
 
   /**
-   * The storage item value serializer.
+   * Serializes the executor state to a storage item value and back.
    *
    * @default JSON
    */
@@ -44,9 +45,9 @@ export interface SyncBrowserStorageOptions {
 /**
  * Synchronizes the executor state with a browser storage item. No-op in a non-browser environment.
  *
- * If an executor is detached, then the corresponding item is removed from the storage.
+ * If the executor is detached, the storage item is removed.
  *
- * @param options Storage options.
+ * @param options Plugin options.
  */
 export default function syncBrowserStorage(options: SyncBrowserStorageOptions = emptyObject): ExecutorPlugin {
   const { storageType = 'local', storageKey, serializer = JSON } = options;

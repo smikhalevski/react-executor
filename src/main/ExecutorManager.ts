@@ -21,18 +21,17 @@ export interface ExecutorManagerOptions {
   plugins?: Array<ExecutorPlugin | null | undefined>;
 
   /**
-   * Returns the unique comparable ID for the executor key.
+   * Returns the ID of an executor key. Keys with the same ID refer to the same executor.
    *
-   * The key ID can be anything. If you want to use object identities as executor keys, provide an identity function
-   * as an ID generator.
+   * To use object identities as executor keys, pass an identity function.
    *
-   * @param key The key to get unique ID for.
+   * @param key The key to get the ID of.
    * @default JSON.stringify
    */
   keyIdGenerator?: (key: any) => any;
 
   /**
-   * If `true` then executors are registered in the devtools extension.
+   * If `true`, executors are registered in the React Executor Devtools extension, if it's installed.
    *
    * @default true
    */
@@ -65,14 +64,14 @@ export class ExecutorManager implements Iterable<Executor>, Observable<ExecutorE
   protected readonly _plugins: ExecutorPlugin[] = [];
 
   /**
-   * Returns the unique comparable ID for the executor key.
+   * Returns the ID of an executor key. Keys with the same ID refer to the same executor.
    */
   readonly keyIdGenerator: (key: unknown) => unknown;
 
   /**
    * Creates a new executor manager.
    *
-   * @param options Additional options.
+   * @param options Manager options.
    */
   constructor(options: ExecutorManagerOptions = emptyObject) {
     this.keyIdGenerator = options.keyIdGenerator || (value => JSON.stringify(value));
@@ -97,13 +96,12 @@ export class ExecutorManager implements Iterable<Executor>, Observable<ExecutorE
   }
 
   /**
-   * Injects the initial state for the executor that can be created in the future.
+   * Sets the initial state of an executor that hasn't been created yet. The state is applied when the executor is
+   * created with {@link ExecutorManager.getOrCreate getOrCreate}.
    *
    * @param key The unique executor key.
-   * @param initialState The initial state of the hydrated executor that can be created via
-   * {@link ExecutorManager.getOrCreate}.
-   * @returns `true` if the executor has been hydrated, or `false` if the executor has already been created and
-   * therefore cannot be hydrated.
+   * @param initialState The initial state of the executor.
+   * @returns `true` if the initial state was set, or `false` if the executor already exists.
    */
   hydrate(key: unknown, initialState: ExecutorState): boolean {
     const keyId = this.keyIdGenerator(key);
@@ -128,8 +126,9 @@ export class ExecutorManager implements Iterable<Executor>, Observable<ExecutorE
    * Returns an existing executor or creates a new one.
    *
    * @param key The unique executor key.
-   * @param initialValue The initial executor value.
-   * @param plugins The array of plugins that are applied to the newly created executor.
+   * @param initialValue The initial value of a new executor: a value, a promise, or a task callback to execute.
+   * It isn't applied if plugins have already settled the executor or started a task.
+   * @param plugins Plugins that are applied to a new executor.
    */
   getOrCreate<Value = any>(
     key: unknown,
@@ -141,8 +140,9 @@ export class ExecutorManager implements Iterable<Executor>, Observable<ExecutorE
    * Returns an existing executor or creates a new one.
    *
    * @param key The unique executor key.
-   * @param initialValue The initial executor value.
-   * @param plugins The array of plugins that are applied to the newly created executor.
+   * @param initialValue The initial value of a new executor: a value, a promise, or a task callback to execute.
+   * It isn't applied if plugins have already settled the executor or started a task.
+   * @param plugins Plugins that are applied to a new executor.
    */
   getOrCreate<Value = any>(
     key: unknown,
@@ -202,9 +202,9 @@ export class ExecutorManager implements Iterable<Executor>, Observable<ExecutorE
   }
 
   /**
-   * Resolves with the existing executor or waits for an executor to be created.
+   * Resolves with the executor that has the key, and waits for the executor to be created if it doesn't exist yet.
    *
-   * @param key The executor key to wait for.
+   * @param key The unique executor key.
    */
   getOrAwait(key: unknown): AbortablePromise<Executor> {
     return new AbortablePromise((resolve, _reject, signal) => {
@@ -228,13 +228,13 @@ export class ExecutorManager implements Iterable<Executor>, Observable<ExecutorE
   }
 
   /**
-   * Deletes the non-{@link Executor.isActive active} executor from the manager.
+   * Detaches an executor that isn't {@link Executor.isActive active} from the manager.
    *
-   * If the detached executor is {@link Executor.isPending pending} then it _is not_ aborted. Subscribe to the
-   * {@link ExecutorEvent detach} event on either manager or an executor and abort it manually.
+   * A pending task of the detached executor isn't aborted. To abort it, subscribe to the
+   * {@link ExecutorEvent detached} event.
    *
-   * @param key The key of the executor to delete.
-   * @returns `true` if the executor was detached, or `false` if there's no such executor, or the executor is active.
+   * @param key The unique executor key.
+   * @returns `true` if the executor was detached, or `false` if there's no such executor or it's active.
    */
   detach(key: unknown): boolean {
     const keyId = this.keyIdGenerator(key);

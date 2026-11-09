@@ -1,5 +1,5 @@
 /**
- * The plugin that persists the executor state in the observable external store.
+ * The plugin that synchronizes the executor state with an external store.
  *
  * ```ts
  * import syncExternalStore from 'react-executor/plugin/syncExternalStore';
@@ -17,7 +17,7 @@ import { isObjectLike, isShallowEqual } from '../utils.js';
 import type { ExecutorImpl } from '../ExecutorImpl.js';
 
 /**
- * The observable external store.
+ * The external store that holds a value and notifies subscribers when the value changes.
  *
  * @template Value The value held by the external store.
  */
@@ -28,22 +28,23 @@ export interface ExternalStore<Value = any> extends Observable<Value | null | un
   get(): Value | null;
 
   /**
-   * Sets a new value to the store.
+   * Stores a new value. Read-only stores can omit this method.
    *
-   * @param value A value to set.
+   * @param value The value to store.
    */
   set?(value: Value): void;
 
   /**
-   * Deletes a value from the store.
+   * Deletes the stored value. Called when the executor is detached. Read-only stores can omit this method.
    */
   delete?(): void;
 }
 
 /**
- * Persists the executor state in the observable external store.
+ * Synchronizes the executor state with an external store. The store is updated when the executor state changes,
+ * and the executor is updated when the stored state changes.
  *
- * @param store The external store to persist executor state.
+ * @param store The store that holds the executor state.
  * @template Value The value stored by the executor.
  */
 export default function syncExternalStore<Value>(store: ExternalStore<ExecutorState<Value>>): ExecutorPlugin<Value> {

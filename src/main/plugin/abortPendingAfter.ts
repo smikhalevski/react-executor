@@ -1,6 +1,6 @@
 /**
- * The plugin that aborts the pending task with {@link !DOMException TimeoutError} if the task execution took longer
- * than the given delay.
+ * The plugin that aborts the pending task with a {@link !DOMException TimeoutError} if the task takes longer than
+ * the delay.
  *
  * ```ts
  * import abortPendingAfter from 'react-executor/plugin/abortPendingAfter';
@@ -17,9 +17,9 @@ import type { ExecutorPlugin, PluginConfiguredPayload } from '../types.js';
 import { TimeoutError } from '../utils.js';
 
 /**
- * Aborts the pending executor with {@link !DOMException TimeoutError} if the task execution took longer than the delay.
+ * Aborts the pending task with a {@link !DOMException TimeoutError} if the task takes longer than the delay.
  *
- * @param delay The delay (in milliseconds) after which the executor is aborted if not settled.
+ * @param delay The delay (in milliseconds) after which the pending task is aborted.
  */
 export default function abortPendingAfter(delay: number): ExecutorPlugin {
   return executor => {

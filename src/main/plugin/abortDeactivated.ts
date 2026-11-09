@@ -1,5 +1,5 @@
 /**
- * Aborts the pending task after the delay if the executor is deactivated.
+ * The plugin that aborts the pending task after a delay if the executor is deactivated.
  *
  * The executor must be activated at least once for this plugin to have an effect.
  *
@@ -20,10 +20,8 @@ import { emptyObject } from '../utils.js';
  */
 export interface AbortDeactivatedOptions {
   /**
-   * The minimum delay (in milliseconds) that must pass after an executor is deactivated before it is aborted.
-   * If the executor is reactivated within this delay, it will not be aborted.
-   *
-   * **Note:** The executor must be activated at least once for this plugin to take effect.
+   * The minimum delay (in milliseconds) between the executor deactivation and the abort. If the executor is
+   * reactivated during this delay, the task isn't aborted.
    *
    * @default 0
    */
@@ -35,7 +33,7 @@ export interface AbortDeactivatedOptions {
  *
  * The executor must be activated at least once for this plugin to have an effect.
  *
- * @param options Abort options.
+ * @param options Plugin options.
  */
 export default function abortDeactivated(options: AbortDeactivatedOptions = emptyObject): ExecutorPlugin {
   const { delay = 0 } = options;

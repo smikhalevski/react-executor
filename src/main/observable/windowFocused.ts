@@ -1,7 +1,7 @@
 /**
  * The observable that emits `true` when
  * [the page becomes visible](https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState) or the window
- * receives focus, and emits `false` when the page becomes hidden.
+ * receives focus, and `false` when the page becomes hidden.
  *
  * ```ts
  * import retryWhen from 'react-executor/plugin/retryWhen';
@@ -32,7 +32,7 @@ function handleChange(): void {
 /**
  * The observable that emits `true` when
  * [the page becomes visible](https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState) or the window
- * receives focus, and emits `false` when the page becomes hidden.
+ * receives focus, and `false` when the page becomes hidden.
  *
  * The current state is emitted to a listener right after it subscribes.
  */
